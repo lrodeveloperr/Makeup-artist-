@@ -283,6 +283,9 @@ function tube(b, path, radius, sides = 6, taper = 0.6) {
   for (let j = 0; j < rows.length - 1; j++) for (let s = 0; s < sides; s++) b.quad(rows[j][s], rows[j][s + 1], rows[j + 1][s + 1], rows[j + 1][s]);
 }
 
+// natural volume of hair lying on the scalp: thickest over the crown, thin at the hairline and nape
+const crown = (r, m, top, edge) => (edge + (top - edge) * smooth(-0.1, 0.9, r[1])) * smooth(0, 0.6, m);
+
 // flows over the scalp
 const combedBack = (p, r) => norm([Math.sign(r[0]) * 0.15 * Math.abs(r[0]), 0.35 - 0.9 * smooth(0.2, 0.7, Math.abs(r[0])), -1]);
 const awayFromPart = (xPart) => (p, r) => norm([Math.sign(r[0] - xPart || 1) * 1.0, -0.55, -0.35]);
@@ -336,7 +339,7 @@ export class Hair {
         const curly = h.style.startsWith('curly');
         const wavy = h.style === 'long-wavy';
         const gap = (curly ? 0.12 : 0.05) * vol;
-        cap(frame, hg, hl, capB, { thick: (r, m) => (curly ? 0.1 : 0.045) * vol * smooth(0, 0.6, m), flowAt: h.part === 'none' ? combedBack : awayFromPart(xPart) });
+        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, (curly ? 0.14 : 0.08) * vol, 0.02), flowAt: h.part === 'none' ? combedBack : awayFromPart(xPart) });
         drape(frame, b, rng, {
           thetaFront: h.style === 'bob' ? 1.15 : thetaFront, yStart: 0.55, length, gap,
           wave: curly ? { amp: 0.05, freq: 22, twist: 0.04, phase: seed } : wavy ? { amp: 0.035, freq: 9, twist: 0.02, phase: seed } : null,
@@ -372,7 +375,7 @@ export class Hair {
       }
       case 'afro-puffs': {
         const pc = [[0.62, 0.95, frame.cz + 0.05], [-0.62, 0.95, frame.cz + 0.05]];
-        cap(frame, hg, hl, capB, { thick: () => 0.012, flowAt: (p) => towards(p[0] > 0 ? pc[0] : pc[1])(p) });
+        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, 0.04, 0.012), flowAt: (p) => towards(p[0] > 0 ? pc[0] : pc[1])(p) });
         for (const c of pc) ball(b, c, [0.42 * vol, 0.4 * vol, 0.42 * vol]);
         this.add(capB, HAIR_MODE.strands, colours, { seed });
         this.add(b, HAIR_MODE.coily, colours, { seed, shine: 0.5 });
@@ -380,7 +383,7 @@ export class Hair {
       }
       case 'high-ponytail': case 'low-bun': case 'top-knot': {
         const at = { 'high-ponytail': [0, 1.05, frame.cz - 0.75], 'low-bun': [0, 0.05, frame.cz - 0.98], 'top-knot': [0, 1.32, frame.cz - 0.25] }[h.style];
-        cap(frame, hg, hl, capB, { thick: () => 0.014, flowAt: towards(at) });
+        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, 0.055 * vol, 0.012), flowAt: towards(at) });
         const capMode = texMode === HAIR_MODE.coily ? HAIR_MODE.wavy : texMode === HAIR_MODE.curly ? HAIR_MODE.wavy : texMode;
         this.add(capB, capMode, colours, { seed });
         if (h.style === 'high-ponytail') {
@@ -396,7 +399,7 @@ export class Hair {
       }
       case 'box-braids': case 'locs': {
         const braid = h.style === 'box-braids';
-        cap(frame, hg, hl, capB, { thick: () => 0.03, flowAt: awayFromPart(xPart) });
+        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, 0.045, 0.02), flowAt: awayFromPart(xPart) });
         this.add(capB, braid ? HAIR_MODE.braid : HAIR_MODE.loc, colours, { seed });
         const n = braid ? 74 : 56, length = (braid ? 2.4 : 2.1) * len;
         for (let k = 0; k < n; k++) {

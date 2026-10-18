@@ -30,7 +30,7 @@ function thickness(T, u) {
 
 export class Brows {
   constructor() {
-    this.material = createStrandMaterial({ opacity: 1 });
+    this.material = createStrandMaterial({ opacity: 1, spec: 0.03 });
     this.mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material);
     this.mesh.renderOrder = 2;
   }

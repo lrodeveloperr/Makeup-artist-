@@ -4,17 +4,49 @@ import { createRng } from './rng.js';
 import { PROFILES, BLENDS, ORIGIN_WEIGHTS, TRAITS } from './profiles.js';
 import { HAIR_STYLES, PRESENTATIONS } from './hair-styles.js';
 import { DYED, HAIR_COLOURS } from './colors.js';
+import { DIM_IMPACT } from './dim-impact.js';
 
-export const GENERATOR_VERSION = 1;
+export const GENERATOR_VERSION = 2;
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 const r3 = (x) => Math.round(x * 1000) / 1000 || 0; // never -0, so records survive a JSON round trip
 
-// individual variation (standard deviation) per shape dimension; unlisted dimensions use 0.28
-const SD = {
-  gender: 0, youth: 0, 'face-fat': 0.3, 'head-width': 0.18, 'head-height': 0.15, 'head-depth': 0.15, 'forehead-height': 0.2, 'eye-bags': 0.15, 'eye-bag-height': 0.15, 'mouth-corners': 0.15,
-  'eye-spacing': 0.22, 'eye-height': 0.18, 'neck-length': 0.2, dimples: 0, 'chin-cleft': 0.15,
-  'shape-oval': 0, 'shape-round': 0, 'shape-rect': 0, 'shape-square': 0, 'shape-triangle': 0, 'shape-heart': 0, 'shape-diamond': 0,
+// ---- shape model ----
+// Each dimension's spread is set by its visible effect: one standard deviation moves the face by about
+// SPREAD[class] decimetres, whatever the MakeHuman target's own scale (DIM_IMPACT). Correlated FACTORS
+// move related dimensions together (a wide face has a wider jaw and cheekbones too), and BASE gives every
+// face the same young-adult starting point. Independent noise on ~90 sliders is what makes faces look
+// unnatural, so it is kept small (RESIDUAL).
+const SPREAD = { skull: 0.012, structure: 0.014, feature: 0.007, ear: 0.01 };
+const CLASS = (id) => /^(head-|forehead|temples|neck-)/.test(id) ? 'skull'
+  : /^(chin|jaw|prognathism|cheek|brow-proj|mouth-proj|nose-depth|nose-proj|face-fat|mouth-pos)/.test(id) ? 'structure'
+  : /^ear-/.test(id) ? 'ear' : 'feature';
+const NO_VARIATION = new Set(['gender', 'youth', 'dimples', 'shape-oval', 'shape-round', 'shape-rect', 'shape-square', 'shape-triangle', 'shape-heart', 'shape-diamond']);
+const sdOf = (id) => {
+  if (NO_VARIATION.has(id)) return 0;
+  const [p, m] = DIM_IMPACT[id];
+  return clamp(SPREAD[CLASS(id)] / Math.max(p, m, 1e-3), 0.04, 0.35);
 };
+// young-adult starting point shared by every face (slider units)
+const BASE = {
+  'eye-open-1': 0.12, 'eye-open-2': 0.18, 'eye-open-3': 0.12, 'eye-size': 0.15, 'chin-height': -0.2, 'chin-bones': -0.2,
+  'chin-width': -0.15, 'mouth-proj': -0.2, 'mouth-width': 0.15, 'cheek-volume': 0.15, 'nose-length': -0.1,
+  'forehead-slope': -0.1, 'forehead-height': -0.1, temples: 0.35, 'eye-bags': -0.3, 'brow-proj': -0.1,
+  'neck-length': 0.1, 'neck-width': -0.45, 'mouth-corners': 0.1, 'head-height': -0.15, 'head-width': 0.1,
+  'shape-heart': 0.15, 'ear-flap': -0.4,
+};
+// correlated factors: loadings in standard deviations of each dimension
+const FACTORS = [
+  { 'head-width': 0.7, cheekbones: 0.4, 'chin-width': 0.5, 'neck-width': 0.3, 'mouth-width': 0.2 },          // face width
+  { 'head-height': 0.6, 'chin-height': 0.5, 'nose-length': 0.4, 'forehead-height': 0.3, 'mouth-pos': -0.2 }, // face length
+  { 'face-fat': 0.7, 'cheek-volume': 0.6, 'neck-width': 0.3, 'chin-bones': -0.3, 'cheek-inner': 0.3 },        // fullness
+  { 'nose-proj': 0.5, 'nose-depth': 0.5, 'brow-proj': 0.5, 'eye-depth-1': 0.4, 'forehead-proj': 0.3 },       // profile depth
+  { 'eye-size': 0.7, 'eye-open-1': 0.5, 'eye-open-2': 0.6, 'eye-open-3': 0.5 },                              // eye openness
+  { 'upper-lip-volume': 0.7, 'lower-lip-volume': 0.7, 'mouth-width': 0.3, 'upper-lip-height': 0.4, 'lower-lip-height': 0.4 }, // lips
+  { 'nose-width': 0.6, 'nostril-width': 0.5, 'nose-volume': 0.5, 'nose-tip-width': 0.4, 'nose-flare': 0.3 },  // nose size
+  { 'chin-proj': 0.6, 'chin-width': 0.3, 'chin-bones': 0.5, 'jaw-drop': 0.3 },                               // jaw strength
+  { 'eye-outer-corner': 0.6, 'lid-fold-angle': 0.4, 'brow-angle': 0.4 },                                     // eye tilt
+];
+const RESIDUAL = 0.45;
 export const SHAPE_DIMS = [
   'gender', 'youth', 'shape-oval', 'shape-round', 'shape-rect', 'shape-square', 'shape-triangle', 'shape-heart', 'shape-diamond',
   'head-width', 'head-height', 'head-depth', 'face-fat', 'forehead-slope', 'forehead-height', 'temples', 'forehead-proj',
@@ -68,23 +100,25 @@ export function generateFace(seed) {
 
   // ---- shape ----
   const sr = root.fork(3);
+  const z = FACTORS.map(() => sr.gauss(1));
   const shape = {};
   for (const id of SHAPE_DIMS) {
-    let mean = 0;
+    let mean = BASE[id] || 0;
     for (const p of parts) mean += p.weight * (PROFILES[p.id].shape[id] || 0);
     const pres = PRESENTATION_SHAPE[presentation][id];
     if (typeof pres === 'number') mean += pres;
-    const sd = SD[id] ?? 0.28;
-    shape[id] = sd ? clamp(mean + sr.gauss(sd), -0.9, 0.9) : 0;
+    const sd = sdOf(id);
+    let dev = RESIDUAL * sr.gauss(1);
+    FACTORS.forEach((f, k) => { if (f[id]) dev += f[id] * z[k]; });
+    shape[id] = sd ? clamp(mean + sd * dev, -0.85, 0.85) : clamp(mean, -0.85, 0.85);
   }
   const g = PRESENTATION_SHAPE[presentation].gender;
   shape.gender = sr.range(g[0], g[1]);
-  shape.youth = sr.range(0, 0.5); // young adults only
-  shape['mouth-corners'] = clamp(0.1 + sr.gauss(0.15), -0.3, 0.5);
+  shape.youth = sr.range(0.15, 0.55); // young adults only
   shape.dimples = sr.chance(0.15) ? sr.range(0.4, 0.8) : 0;
   const fs = FACE_SHAPES[sr.int(0, FACE_SHAPES.length - 1)];
-  shape[fs] = sr.range(0.2, 0.55);
-  if (sr.chance(0.5)) shape[FACE_SHAPES[sr.int(0, FACE_SHAPES.length - 1)]] += sr.range(0.1, 0.25);
+  shape[fs] = sr.range(0.15, 0.45);
+  if (sr.chance(0.5)) shape[FACE_SHAPES[sr.int(0, FACE_SHAPES.length - 1)]] += sr.range(0.1, 0.2);
   for (const k of Object.keys(shape)) shape[k] = r3(shape[k]);
 
   // ---- skin ----
@@ -150,7 +184,7 @@ export function generateFace(seed) {
   const er = root.fork(6);
   const eyes = {
     iris: albinism ? er.pick({ 'pale-blue': 3, grey: 1 }) : er.pick(parent(er, parts).iris),
-    irisSize: r3(er.range(0.47, 0.53)), pupil: r3(er.range(0.28, 0.37)), limbal: r3(er.range(0.08, 0.18)),
+    irisSize: r3(er.range(0.41, 0.46)), pupil: r3(er.range(0.28, 0.37)), limbal: r3(er.range(0.08, 0.18)),
     seed: r3(er.range(0, 100)),
   };
   const br = root.fork(7);
@@ -171,7 +205,7 @@ export function generateFace(seed) {
 
   return {
     version: GENERATOR_VERSION, seed,
-    origin, presentation, age: Math.round(30 - 24 * shape.youth),
+    origin, presentation, age: Math.round(33 - 27 * shape.youth),
     shape, skin, eyes, brows, lashes, hair,
   };
 }

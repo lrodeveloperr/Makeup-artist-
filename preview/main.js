@@ -22,7 +22,9 @@ if (q.has('orbit')) view.orbit(+q.get('orbit'));
 if (q.has('zoom')) view.zoom(+q.get('zoom'), +(q.get('zy') || 0), +(q.get('zx') || 0));
 
 const styles = q.get('style')?.split(',');
+const sets = (q.get('set') || '').split(',').filter(Boolean).map((kv) => kv.split(':'));
 function override(face, i) {
+  for (const [k, v] of sets) face.shape[k] = (face.shape[k] || 0) + +v;
   if (styles) {
     face.hair.style = styles[i % styles.length];
     if (q.get('texture')) face.hair.texture = q.get('texture');

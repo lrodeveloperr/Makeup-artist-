@@ -31,7 +31,7 @@ void main() {
 
 const fragmentShader = /* glsl */ `
 ${LIGHT_GLSL}
-uniform float uOpacity;
+uniform float uOpacity, uSpec;
 varying vec3 vColor, vTangent, vPos, vNormalHint;
 varying vec2 vSt;
 varying float vCoverage;
@@ -47,7 +47,7 @@ void main() {
     float diff = sqrt(max(1.0 - TL * TL, 0.0)) * 0.6 + 0.4 * max(dot(n, l), 0.0);
     vec3 h = normalize(l + v);
     float TH = dot(T, h);
-    float spec = pow(sqrt(max(1.0 - TH * TH, 0.0)), 60.0) * 0.12;
+    float spec = pow(sqrt(max(1.0 - TH * TH, 0.0)), 60.0) * uSpec;
     col += uLightCol[i] * (vColor * diff * 0.75 + spec);
   }
   float edge = 1.0 - smoothstep(0.55, 1.0, abs(vSt.x));
@@ -58,11 +58,11 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-export function createStrandMaterial({ opacity = 1, minPx = 0.6 } = {}) {
+export function createStrandMaterial({ opacity = 1, minPx = 0.6, spec = 0.12 } = {}) {
   return new THREE.ShaderMaterial({
     vertexShader, fragmentShader,
     transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { ...lightUniforms(), uOpacity: { value: opacity }, uViewport: { value: new THREE.Vector2(600, 800) }, uMinPx: { value: minPx } },
+    uniforms: { ...lightUniforms(), uOpacity: { value: opacity }, uSpec: { value: spec }, uViewport: { value: new THREE.Vector2(600, 800) }, uMinPx: { value: minPx } },
   });
 }
 

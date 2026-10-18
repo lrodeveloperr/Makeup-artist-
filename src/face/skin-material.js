@@ -156,7 +156,7 @@ void main() {
   vec3 albedo = skin * (1.0 - paint.a) + paint.rgb;
 
   // --- lighting ---
-  float ao = 1.0 - 0.55 * smoothstep(0.0, 0.05, vCavity);
+  float ao = 1.0 - 0.4 * smoothstep(0.005, 0.06, vCavity);
   ao *= 1.0 - 0.6 * interior;
   float NoV = max(dot(n, v), 1e-3);
   float rough = mix(0.6, 0.47, uOil * (vRB.x + 0.6 * smoothstep(0.35, 0.75, r.y) * (1.0 - scalpMask(r))));
