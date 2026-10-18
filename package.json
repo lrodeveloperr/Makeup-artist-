@@ -1,0 +1,27 @@
+{
+  "name": "makeup-artist-",
+  "version": "1.0.0",
+  "description": "Build contract for WorksBien Studios' makeup game, using the reusable structure of [Haircut](https://github.com/lrodeveloperr/Haircut).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lrodeveloperr/Makeup-artist-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/lrodeveloperr/Makeup-artist-/issues"
+  },
+  "homepage": "https://github.com/lrodeveloperr/Makeup-artist-#readme",
+  "devDependencies": {
+    "esbuild": "^0.25.10",
+    "playwright": "^1.55.1",
+    "three": "^0.180.0"
+  }
+}
