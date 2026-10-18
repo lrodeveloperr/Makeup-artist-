@@ -17,7 +17,7 @@ export function parseHead(buffer) {
   const section = (name) => arrays[header.sections.findIndex((s) => s.name === name)];
   const dims = new Map();
   for (const d of header.dims) {
-    const side = (s) => s && { idx: arrays[s.idx], delta: arrays[s.delta], scale: s.scale };
+    const side = (s) => s && { idx: arrays[s.idx], delta: arrays[s.delta], scale: s.scale, shift: s.shift || [0, 0, 0] };
     dims.set(d.id, { plus: side(d.plus), minus: side(d.minus) });
   }
   const helpers = {};
@@ -37,15 +37,18 @@ export function parseHead(buffer) {
   };
 }
 
-// positions for one face: reference + sum of weighted sparse deltas
+// positions for one face: reference + sum of weighted sparse deltas, minus each dimension's whole-head
+// shift (so the head stays anchored in the camera frame)
 export function morph(head, values, out = new Float32Array(head.positions.length)) {
   out.set(head.positions);
+  const shift = [0, 0, 0];
   for (const [id, value] of Object.entries(values)) {
     if (!value) continue;
     const dim = head.dims.get(id);
     if (!dim) continue;
     const side = value > 0 ? dim.plus : dim.minus;
     if (!side) continue;
+    for (let a = 0; a < 3; a++) shift[a] += Math.abs(value) * side.shift[a];
     const w = Math.abs(value) * side.scale;
     const { idx, delta } = side;
     for (let j = 0; j < idx.length; j++) {
@@ -55,5 +58,6 @@ export function morph(head, values, out = new Float32Array(head.positions.length
       out[i + 2] += w * delta[j * 3 + 2];
     }
   }
+  if (shift[0] || shift[1] || shift[2]) for (let i = 0; i < out.length; i += 3) { out[i] -= shift[0]; out[i + 1] -= shift[1]; out[i + 2] -= shift[2]; }
   return out;
 }

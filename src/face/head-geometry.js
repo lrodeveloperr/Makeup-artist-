@@ -31,7 +31,9 @@ export class HeadGeometry {
     g.setAttribute('ref', new THREE.BufferAttribute(this.gather(this.refSub, 3), 3));
     // feature regions (see build-head.mjs): two vec4 attributes
     const nc = head.regionChannels.length;
-    const reg = this.gather(this.sub.refine(head.regions, null, nc), nc);
+    this.subRegions = this.sub.refine(head.regions, null, nc);
+    this.regionIndex = Object.fromEntries(head.regionChannels.map((c, i) => [c, i]));
+    const reg = this.gather(this.subRegions, nc);
     const A = new Float32Array(renderCount * 4), B = new Float32Array(renderCount * 4);
     for (let i = 0; i < renderCount; i++) for (let a = 0; a < 4; a++) { A[i * 4 + a] = reg[i * nc + a]; B[i * 4 + a] = reg[i * nc + 4 + a]; }
     g.setAttribute('regionA', new THREE.BufferAttribute(A, 4));

@@ -6,7 +6,7 @@ Repository: https://github.com/lrodeveloperr/Makeup-artist-
 
 **Status:** settled owner product decisions plus explicitly identified engineering defaults and verification requirements. Documentation only: no makeup implementation, passed game tests, upload archive or certification is represented as complete.
 
-**Graphics: unspecified.** This contract chooses no visual style, art palette, renderer, dimensional representation, lighting, resolution, effects or graphic assets. Camera proximity, face orientation and stroke accuracy below are functional requirements.
+**Graphics: owner-selected on 18 October 2026** (decision rows below; implementation and evidence in [docs/FACES.md](docs/FACES.md)). Art palette, final hair/garment art and effects beyond that decision remain open. Camera proximity, face orientation and stroke accuracy below are functional requirements.
 
 ## Authority and decision record
 
@@ -27,6 +27,11 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Ordinary Next | Available regardless of rewarded-ad availability | O/I | Continued base play; FLOW02, AD07 |
 | Interstitials | Inherit selected Haircut two-completion / 60-active-second natural-break control | O/I | Exact rules in §7; AD01–AD03 |
 | Reuse | Screen structure, customer queue, Next, rewards and platform foundation | O | Rebuild only domain-specific behavior; architecture below |
+| Graphics engine | Three.js (WebGL); one 3D head shown by a fixed front camera; procedural skin/hair/cloth shading, no photo textures | O, 18 Oct 2026 | No Unity/Godot web build; [docs/FACES.md](docs/FACES.md) |
+| Face assets | MakeHuman CC0 base mesh and targets at a pinned commit; no paid scans, non-commercial research models, MetaHuman, photographs or AI-generated faces | O, 18 Oct 2026 | Provenance in [ASSETS.md](ASSETS.md) |
+| Face diversity | All ancestries, including groups Haircut lacked, via profile *tendencies* over individual feature controls; blends and mixes common; cultural styles (head coverings, braids, dyes) offered to every face | O, 18 Oct 2026 | CONTENT01 audit in [docs/FACE-AUDIT.md](docs/FACE-AUDIT.md) |
+| Face age | Young adults only (18–30) | O, 18 Oct 2026 | Generator bound; audited |
+| Presentation mix | 80% feminine, 14% androgynous, 6% masculine; never a gate | D | `TRAITS` in `src/face/profiles.js` |
 
 One daily slot means one offered tool–colour pair, not one offer for every tool. The tool itself is never the reward. The earlier daily-video-count ambiguity is resolved: **one video**, with no 1/2 credit system. Haircut's Android policy is not authoritative for this makeup game.
 
@@ -412,7 +417,7 @@ Build the core using the selected reusable foundation, then native-input validat
 The following are remaining engineering/content/release data, not unresolved core product choices:
 
 1. Enumerated face-generator bounds, valid configurations, tool application constants and base/daily colour catalogues. Make them finite, testable and consistent with this contract; no new player settings.
-2. Final cleared art/assets and presentation direction, deliberately unspecified here.
+2. Final art pass for procedural hair and the cape/garment. The base face assets (CC0) and presentation direction are chosen (decision record above).
 3. Final public title, declared locales and portal listing, after the implemented behavior can support the claims.
 4. Verified publisher monetization access, reporting fields, inventory test route and commercial terms.
 5. Named physical devices, exact runtime representation and release performance/evidence results.

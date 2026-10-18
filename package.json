@@ -1,16 +1,20 @@
 {
   "name": "makeup-artist-",
   "version": "1.0.0",
-  "description": "Build contract for WorksBien Studios' makeup game, using the reusable structure of [Haircut](https://github.com/lrodeveloperr/Haircut).",
-  "main": "index.js",
+  "description": "WorksBien Studios freestyle makeup game: build contract and the generated-face prototype.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "fetch:makehuman": "node tools/makehuman/fetch.mjs",
+    "build:head": "node tools/makehuman/build-head.mjs",
+    "build:preview": "node tools/build-preview.mjs --minify",
+    "serve": "node tools/serve.mjs build/preview",
+    "audit": "node tests/face-audit.mjs 2000 300",
+    "test": "node tests/unit.mjs && node tests/face-audit.mjs 2000 300",
+    "test:render": "node tools/build-preview.mjs && node tests/render-smoke.mjs"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lrodeveloperr/Makeup-artist-.git"
   },
-  "keywords": [],
   "author": "",
   "license": "UNLICENSED",
   "private": true,
@@ -20,8 +24,8 @@
   },
   "homepage": "https://github.com/lrodeveloperr/Makeup-artist-#readme",
   "devDependencies": {
-    "esbuild": "^0.25.10",
-    "playwright": "^1.55.1",
-    "three": "^0.180.0"
+    "esbuild": "0.25.10",
+    "playwright": "1.55.1",
+    "three": "0.180.0"
   }
 }

@@ -1,0 +1,190 @@
+{
+ "generatorVersion": 1,
+ "faces": 2000,
+ "geometrySample": 300,
+ "failures": [],
+ "coverage": {
+  "origin": {
+   "aboriginal-australian": 108,
+   "arctic-indigenous": 101,
+   "central-asian": 152,
+   "east-african": 105,
+   "east-asian": 157,
+   "indigenous-americas": 175,
+   "mediterranean-european": 101,
+   "melanesian": 82,
+   "north-african-middle-eastern": 178,
+   "northern-european": 108,
+   "pacific-islander": 109,
+   "south-asian": 162,
+   "southeast-asian": 90,
+   "southern-central-african": 160,
+   "west-african": 212
+  },
+  "kind": {
+   "blend": 471,
+   "mix": 344,
+   "single": 1185
+  },
+  "presentation": {
+   "androgynous": 271,
+   "feminine": 1610,
+   "masculine": 119
+  },
+  "style": {
+   "afro": 106,
+   "afro-puffs": 59,
+   "bob": 159,
+   "box-braids": 65,
+   "buzz": 75,
+   "cornrows": 41,
+   "curly-long": 25,
+   "curly-shoulder": 89,
+   "curly-top": 19,
+   "headwrap": 70,
+   "high-ponytail": 177,
+   "hijab": 92,
+   "lob": 137,
+   "locs": 69,
+   "long-straight": 213,
+   "long-wavy": 87,
+   "low-bun": 183,
+   "pixie": 87,
+   "short-crop": 69,
+   "silk-press": 63,
+   "top-knot": 85,
+   "twa": 30
+  },
+  "texture": {
+   "coily": 420,
+   "curly": 329,
+   "straight": 788,
+   "wavy": 463
+  },
+  "colour": {
+   "auburn": 7,
+   "burgundy": 27,
+   "copper": 9,
+   "dark-blonde": 35,
+   "dark-brown": 266,
+   "electric-blue": 31,
+   "golden-blonde": 17,
+   "jet-black": 730,
+   "lavender": 26,
+   "light-blonde": 9,
+   "light-brown": 49,
+   "medium-brown": 98,
+   "pale-blonde": 19,
+   "pastel-pink": 24,
+   "platinum": 30,
+   "soft-black": 593,
+   "strawberry-blonde": 9,
+   "teal": 21
+  },
+  "iris": {
+   "blue": 70,
+   "brown": 639,
+   "dark-brown": 1052,
+   "green": 59,
+   "grey": 35,
+   "hazel": 94,
+   "light-brown": 40,
+   "pale-blue": 11
+  },
+  "undertone": {
+   "golden": 648,
+   "neutral": 795,
+   "olive": 220,
+   "pink": 112,
+   "red": 225
+  },
+  "tone": {
+   "0": 47,
+   "1": 108,
+   "2": 233,
+   "3": 223,
+   "4": 348,
+   "5": 361,
+   "6": 257,
+   "7": 202,
+   "8": 160,
+   "9": 61
+  },
+  "brows": {
+   "angled": 326,
+   "high-arch": 292,
+   "rounded": 313,
+   "soft-arch": 683,
+   "straight": 386
+  },
+  "age": {
+   "18": 72,
+   "19": 187,
+   "20": 184,
+   "21": 185,
+   "22": 161,
+   "23": 151,
+   "24": 129,
+   "25": 166,
+   "26": 176,
+   "27": 166,
+   "28": 169,
+   "29": 159,
+   "30": 95
+  }
+ },
+ "rates": {
+  "freckles": 0.1585,
+  "vitiligo": 0.02,
+  "albinism": 0.0095,
+  "moles": 0.4895,
+  "dyed": 0.0795,
+  "highlights": 0.092,
+  "headCovering": 0.081
+ },
+ "distinctSignatures": 1901,
+ "queue": {
+  "adjacentIdentical": 0,
+  "adjacentSameStyle": 0.0005002501250625312,
+  "adjacentSameOrigin": 0.0005002501250625312,
+  "adjacentSameToneBin": 0.014507253626813406,
+  "repeatsWithinFour": 0
+ },
+ "geometry": {
+  "eyeR": {
+   "min": 0.1331715440251093,
+   "p5": 0.14235668106627603,
+   "median": 0.15488848462206564,
+   "p95": 0.16845118423128705,
+   "max": 0.17670533696819501
+  },
+  "lidGap": {
+   "min": 0.05592891573905945,
+   "p5": 0.06555312685668468,
+   "median": 0.0824195146560669,
+   "p95": 0.10163407027721405,
+   "max": 0.11525724828243256
+  },
+  "mouthW": {
+   "min": 0.2481740564107895,
+   "p5": 0.292735755443573,
+   "median": 0.3460780084133148,
+   "p95": 0.40633392333984375,
+   "max": 0.43581750988960266
+  },
+  "top": {
+   "min": 0.7984643578529358,
+   "p5": 0.8880484700202942,
+   "median": 1.0745410919189453,
+   "p95": 1.2599455118179321,
+   "max": 1.4717246294021606
+  },
+  "chin": {
+   "min": -1.22031569480896,
+   "p5": -1.1506121158599854,
+   "median": -1.034005045890808,
+   "p95": -0.9587004780769348,
+   "max": -0.8905884027481079
+  }
+ }
+}

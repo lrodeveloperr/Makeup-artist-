@@ -7,6 +7,8 @@ import { Eyes } from './eyes.js';
 import { Brows, BROW_SHAPES } from './brows.js';
 import { Lashes } from './lashes.js';
 import { SurfaceSampler } from './surface.js';
+import { Hair, buildCape, Builder as CapeBuilder } from './hair.js';
+import { createHairMaterial, HAIR_MODE } from './hair-material.js';
 import { skinAlbedo, ALBINISM_SKIN, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
 import { createRng } from './rng.js';
 
@@ -14,12 +16,13 @@ export const CAMERA = { fov: 20, target: new THREE.Vector3(0, -0.28, 0), distanc
 
 export class FaceView {
   constructor({ canvas, width = 600, height = 800, pixelRatio = 1 } = {}) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0xd9cfc7);
     this.camera = new THREE.PerspectiveCamera(CAMERA.fov, width / height, 0.5, 60);
     this.camera.position.copy(CAMERA.target).add(new THREE.Vector3(0, 0, CAMERA.distance));
     this.camera.lookAt(CAMERA.target);
@@ -42,7 +45,8 @@ export class FaceView {
     this.sampler = new SurfaceSampler(this.headGeometry.refSub, this.headGeometry.sub.subQuads);
     this.brows = new Brows();
     this.lashes = new Lashes(head);
-    this.scene.add(this.headMesh, this.eyes.group, this.brows.mesh, this.lashes.mesh);
+    this.hair = new Hair();
+    this.scene.add(this.headMesh, this.eyes.group, this.brows.mesh, this.lashes.mesh, this.hair.group);
     this.updateViewport();
   }
 
@@ -56,6 +60,14 @@ export class FaceView {
     const t = new THREE.Vector3(x, y, 0);
     this.camera.position.set(x, y, CAMERA.distance / factor);
     this.camera.lookAt(t);
+  }
+
+  // debugging aid: look from the side (radians around the vertical axis)
+  orbit(angle) {
+    const d = this.camera.position.clone().sub(CAMERA.target);
+    d.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+    this.camera.position.copy(CAMERA.target).add(d);
+    this.camera.lookAt(CAMERA.target);
   }
 
   setSize(width, height) {
@@ -88,8 +100,10 @@ export class FaceView {
     u.uMoles.value.forEach((m, i) => { const mole = sk.moles[i]; m.set(...(mole ? [...mole.at, mole.radius] : [0, 0, 0, 0])); });
     u.uVitiligo.value.set(sk.vitiligo ? sk.vitiligo.amount : 0, sk.vitiligo ? sk.vitiligo.scale : 1, sk.vitiligo ? sk.vitiligo.seed : 0, 0);
     const hair = HAIR_COLOURS[profile.hair.colour] || HAIR_COLOURS['dark-brown'];
-    u.uHairShadow.value.set(0.82 + hair[0] * 0.3, 0.8 + hair[1] * 0.3, 0.78 + hair[2] * 0.3);
-    u.uHairShadow.value.z = profile.hair.style === 'shaved' ? 0.25 : 0.0;
+    u.uScalpTint.value.set(...hair.map((c) => c * 0.8));
+    const style = profile.hair.style;
+    u.uScalpAmount.value = ['hijab', 'headwrap'].includes(style) ? 0 : style === 'buzz' ? 0.55 : style === 'cornrows' ? 0.5 : 0.92;
+    if (this.debugScalp) { u.uScalpTint.value.set(3, 0.1, 0.1); u.uScalpAmount.value = 1; }
     u.uScalp.value.set(profile.hair.hairline.front, profile.hair.hairline.temple, profile.hair.hairline.side, 0.03);
     // eyes look at the camera
     this.eyes.place(hg, this.camera.position);
@@ -104,6 +118,25 @@ export class FaceView {
     u.uBrowCol.value.set(...bc.map((c) => c * profile.brows.shade));
     const centres = { left: this.eyes.meshes[0].position, right: this.eyes.meshes[1].position };
     this.lashes.build(profile.lashes, hg, centres);
+    this.hair.build(profile, hg);
+    this.buildCape(this.hair.frame);
+  }
+
+  // frame: the HeadFrame of the current face (shared with the hair)
+  buildCape(frame) {
+    if (!this.cape) {
+      this.cape = new THREE.Mesh(new THREE.BufferGeometry(), createHairMaterial());
+      const u = this.cape.material.uniforms;
+      u.uMode.value = HAIR_MODE.cloth;
+      this.cape.material.side = THREE.FrontSide;
+      this.cape.renderOrder = 0;
+      for (const k of ['uRoot', 'uMid', 'uTip']) u[k].value.set(0.75, 0.66, 0.66);
+      this.scene.add(this.cape);
+    }
+    const b = new CapeBuilder();
+    buildCape(frame, b);
+    this.cape.geometry.dispose();
+    this.cape.geometry = b.geometry();
   }
 
   render() {

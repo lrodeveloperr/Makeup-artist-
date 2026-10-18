@@ -8,7 +8,7 @@ const vertexShader = /* glsl */ `
 attribute vec3 ref;
 attribute float cavity;
 attribute vec4 regionA; // lipLine, lidMargin, cheek, underEye
-attribute vec4 regionB; // nose, brow, lips, interior
+attribute vec4 regionB; // nose, ear, lips, interior
 varying vec3 vPos, vNormal, vRef;
 varying vec2 vUv;
 varying float vCavity;
@@ -31,7 +31,8 @@ uniform vec4 uFreckles;  // density, contrast, size, spread over the forehead
 uniform vec3 uFreckleCol;
 uniform vec4 uMoles[4];  // reference position + radius (0 = none)
 uniform vec4 uVitiligo;  // amount, scale, seed, -
-uniform vec3 uHairShadow; // colour multiplier of skin under a hairline (scalp), and amount in z
+uniform vec3 uScalpTint;  // hair colour painted onto the scalp (fine hairs at the hairline, shading under the hair)
+uniform float uScalpAmount;
 uniform vec4 uScalp;     // hairline: front height, temple height, side height, softness
 uniform vec4 uBrowA;     // brow shape: peak position, peak height, tail, rise exponent
 uniform vec4 uBrowB;     // fall exponent, thickness, length, density
@@ -69,16 +70,22 @@ float browMask(vec3 r) {
   return (1.0 - smoothstep(0.5, 1.1, d)) * smoothstep(-0.06, 0.04, u) * (1.0 - smoothstep(0.9, 1.04, u));
 }
 
-// approximate hairline in reference coordinates: 1 on the scalp, 0 on the face
+// approximate hairline in reference coordinates: 1 on the scalp, 0 on the face and ears
+// (kept identical to scalpMask in hair.js)
 float scalpMask(vec3 r) {
-  vec3 c = r - vec3(0.0, 0.1, -0.25);
-  float az = atan(c.x, c.z);             // 0 = front
-  float el = atan(c.y, length(c.xz));    // elevation
-  float a = abs(az);
-  float front = uScalp.x, temple = uScalp.y, side = uScalp.z;
-  float h = a < 0.55 ? mix(front, temple, smoothstep(0.0, 0.55, a)) : a < 1.35 ? mix(temple, side, smoothstep(0.55, 1.35, a)) : mix(side, -0.75, smoothstep(1.6, 2.6, a));
-  // keep the ears free of hair
-  return smoothstep(-uScalp.w, uScalp.w, el - h);
+  vec3 c = r - vec3(0.0, 0.15, -0.6);
+  float a = abs(atan(c.x, c.z));        // 0 = front
+  float el = atan(c.y, length(c.xz));   // elevation
+  // hairline height around the head: forehead, temple, sideburn, around the ear, nape
+  float h = uScalp.x;
+  h = mix(h, uScalp.y, smoothstep(0.0, 0.4, a));
+  h = mix(h, uScalp.y - 0.3, smoothstep(0.4, 0.78, a));
+  h = mix(h, uScalp.z - 0.3, smoothstep(0.78, 0.98, a));
+  h = mix(h, uScalp.z, smoothstep(0.98, 1.12, a));
+  h = mix(h, -0.25, smoothstep(1.45, 1.62, a));
+  h = mix(h, -0.6, smoothstep(1.62, 2.0, a));
+  h = mix(h, -0.95, smoothstep(2.0, 2.6, a));
+  return smoothstep(-uScalp.w, uScalp.w, el - h) * (1.0 - smoothstep(0.86, 0.96, vRB.y));
 }
 
 void main() {
@@ -123,8 +130,8 @@ void main() {
   if (uVitiligo.x > 0.0) {
     float f = fbm(r * uVitiligo.y + uVitiligo.z) + 0.15 * fbm(r * uVitiligo.y * 4.0);
     float bias = (1.0 - smoothstep(0.0, 0.25, vRA.y)) * 0.15 + (1.0 - smoothstep(0.0, 0.2, vRA.x)) * 0.12;
-    float patchMask = smoothstep(0.66 - uVitiligo.x * 0.3 - bias, 0.69 - uVitiligo.x * 0.3 - bias, f);
-    skin = mix(skin, vec3(0.78, 0.6, 0.55), patchMask);
+    float patchMask = smoothstep(0.7 - uVitiligo.x * 0.3 - bias, 0.73 - uVitiligo.x * 0.3 - bias, f);
+    skin = mix(skin, vec3(0.74, 0.52, 0.46), patchMask);
   }
   // brow fill: the skin tint between and under the brow hairs
   float brow = browMask(r) * uBrowB.w * (0.6 + 0.4 * fbm(r * 140.0 + uSeed));
@@ -137,7 +144,12 @@ void main() {
   // inside the mouth and eye sockets: wet, dark pink
   skin = mix(skin, vec3(0.25, 0.06, 0.06), interior);
   // scalp under hair: slightly darker where hair roots shade it
-  skin = mix(skin, skin * uHairShadow, uHairShadow.z * scalpMask(r));
+  // hair painted onto the scalp: fine strands combed back at the hairline, denser further in, so the
+  // hair layer above never shows a hard edge
+  float sc = scalpMask(r);
+  float strands = vnoise(vec3(r.x * 520.0, r.y * 45.0 + r.z * 45.0, r.z * 520.0) + uSeed);
+  float paintHair = sc * smoothstep(0.25 - 0.25 * sc, 0.6 - 0.2 * sc, strands);
+  skin = mix(skin, uScalpTint, uScalpAmount * clamp(paintHair + sc * sc * 0.6, 0.0, 1.0));
 
   // --- applied makeup (premultiplied colour in UV space) ---
   vec4 paint = uPaintOn > 0.5 ? texture2D(uPaint, vUv) : vec4(0.0);
@@ -147,7 +159,7 @@ void main() {
   float ao = 1.0 - 0.55 * smoothstep(0.0, 0.05, vCavity);
   ao *= 1.0 - 0.6 * interior;
   float NoV = max(dot(n, v), 1e-3);
-  float rough = mix(0.55, 0.42, uOil * (vRB.x + 0.6 * smoothstep(0.35, 0.75, r.y) * (1.0 - scalpMask(r))));
+  float rough = mix(0.6, 0.47, uOil * (vRB.x + 0.6 * smoothstep(0.35, 0.75, r.y) * (1.0 - scalpMask(r))));
   rough = mix(rough, 0.28, lip);
   vec3 diffuse = ambient(n) * ao;
   vec3 spec = vec3(0.0);
@@ -169,7 +181,7 @@ void main() {
       spec += uLightCol[i] * s * F_Schlick(0.028, VoH) * nl * ao;
     }
   }
-  vec3 col = albedo * diffuse + spec * (1.0 - paint.a * 0.4);
+  vec3 col = albedo * diffuse + 0.5 * spec * (1.0 - paint.a * 0.4);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -197,8 +209,9 @@ export function createSkinMaterial() {
       uFreckleCol: { value: new THREE.Vector3(0.2, 0.1, 0.06) },
       uMoles: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) },
       uVitiligo: { value: new THREE.Vector4() },
-      uHairShadow: { value: new THREE.Vector3(1, 1, 0) },
-      uScalp: { value: new THREE.Vector4(0.62, 0.5, 0.05, 0.03) },
+      uScalpTint: { value: new THREE.Vector3(1, 1, 1) },
+      uScalpAmount: { value: 0 },
+      uScalp: { value: new THREE.Vector4(0.78, 0.5, 0.08, 0.03) },
       uBrowA: { value: new THREE.Vector4(0.64, 0.06, 0.15, 1) },
       uBrowB: { value: new THREE.Vector4(1.2, 1, 1, 0.8) },
       uBrowCol: { value: new THREE.Vector3(0.03, 0.02, 0.015) },

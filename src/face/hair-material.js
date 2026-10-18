@@ -1,0 +1,161 @@
+// Hair and head-covering shading. Surfaces carry a flow direction (the way the hair lies) and a root-to-tip
+// coordinate; the pattern (strands, curls, coils, braids, locs, cornrows or cloth) is procedural, so no
+// hair textures are shipped.
+import * as THREE from 'three';
+import { LIGHT_GLSL, lightUniforms } from './lighting.js';
+
+export const HAIR_MODE = { strands: 0, wavy: 1, curly: 2, coily: 3, braid: 4, loc: 5, cornrows: 6, cloth: 7, stubble: 8 };
+
+const vertexShader = /* glsl */ `
+attribute vec3 flow;
+attribute vec4 hair;   // x: root(0)..tip(1), y: alpha, z: strand id / tube angle, w: shade
+varying vec3 vPos, vNormal, vFlow, vObj;
+varying vec4 vHair;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vPos = mv.xyz;
+  vObj = position;
+  vNormal = normalize(normalMatrix * normal);
+  vFlow = normalize(normalMatrix * flow);
+  vHair = hair;
+  gl_Position = projectionMatrix * mv;
+}`;
+
+const fragmentShader = /* glsl */ `
+${LIGHT_GLSL}
+uniform int uMode;
+uniform vec3 uRoot, uMid, uTip;
+uniform float uSeed, uShine, uScale;
+uniform vec3 uCloth2;   // second cloth colour (prints / stripes)
+uniform int uPattern;   // cloth: 0 plain, 1 print, 2 stripe
+varying vec3 vPos, vNormal, vFlow, vObj;
+varying vec4 vHair;
+
+void main() {
+  vec3 v = normalize(-vPos);
+  vec3 n = normalize(vNormal);
+  if (!gl_FrontFacing) n = -n;
+  vec3 T = normalize(vFlow - n * dot(vFlow, n));
+  vec3 B = normalize(cross(n, T));
+  vec3 p = vObj * uScale;
+  float alpha = vHair.y;
+  float shade = vHair.w;
+  float t = vHair.x;
+  vec3 base = mix(uRoot, uMid, smoothstep(0.0, 0.35, t));
+  base = mix(base, uTip, smoothstep(0.45, 1.0, t));
+  float spec = uShine;
+  float bump = 0.0;
+  float along = dot(p, normalize(vFlow));
+  vec3 perp = p - normalize(vFlow) * along;
+
+  if (uMode <= 1) {
+    // strands: noise stretched along the flow, grouped into soft clumps
+    float clump = fbm(perp * 22.0 + vec3(along * 0.6) + uSeed);
+    float s = fbm(perp * 140.0 + vec3(along * 3.0) + uSeed) * 0.65 + 0.35 * vnoise(perp * 420.0 + along * 6.0);
+    base *= (0.62 + 0.55 * clump) * (0.75 + 0.4 * s);
+    bump = 0.6 * clump + 0.4 * s;
+    if (uMode == 1) base *= 0.85 + 0.25 * sin(along * 40.0 + fbm(perp * 8.0) * 6.0);
+  } else if (uMode == 2) {
+    // curls: ringlets as twisted clumps
+    float c = worley(p * 26.0, uSeed);
+    float twist = sin(along * 90.0 + atan(dot(perp, B), dot(perp, n)) * 3.0 + c * 12.0);
+    base *= 0.55 + 0.35 * smoothstep(0.05, 0.6, c) + 0.2 * twist;
+    bump = c + 0.2 * twist; spec *= 0.6;
+  } else if (uMode == 3) {
+    // coils: fluffy clumps with soft depth, fine kinks, little shine
+    float fluff = fbm(p * 30.0 + uSeed);
+    float kink = fbm(p * 110.0 + uSeed + 3.0);
+    base *= (0.5 + 0.7 * fluff) * (0.8 + 0.35 * kink);
+    bump = fluff; spec *= 0.35;
+  } else if (uMode == 4 || uMode == 5) {
+    // braids / locs: tubes with an angle coordinate in hair.z
+    float ang = vHair.z;
+    if (uMode == 4) {
+      float b = fract(t * 46.0 + (fract(ang / 6.2832) < 0.5 ? 0.0 : 0.5));
+      float ridge = sin(3.14159 * b);
+      base *= 0.45 + 0.75 * ridge;
+      bump = ridge;
+    } else {
+      float r = fbm(vec3(t * 60.0, ang * 1.5, uSeed)) ;
+      base *= 0.55 + 0.6 * r;
+      bump = r; spec *= 0.4;
+    }
+  } else if (uMode == 6) {
+    // cornrows: raised braided rows running front to back, with scalp showing between the rows
+    float az = atan(vObj.x, vObj.z + 0.6);
+    float row = az * 5.2 + 0.5;
+    float f = fract(row);
+    float ridge = smoothstep(0.08, 0.3, f) * (1.0 - smoothstep(0.7, 0.92, f));
+    float el = atan(vObj.y - 0.15, length(vObj.xz + vec2(0.0, 0.6)));
+    float weave = sin(3.14159 * fract(el * 16.0 + (f < 0.5 ? 0.0 : 0.5)));
+    float roundness = sin(3.14159 * clamp((f - 0.08) / 0.84, 0.0, 1.0));
+    base *= (0.4 + 0.7 * roundness) * (0.7 + 0.3 * weave);
+    alpha *= ridge;
+    bump = roundness * weave;
+  } else if (uMode == 7) {
+    // cloth: soft folds, woven sheen, optional print or stripes
+    float fold = fbm(vec3(along * 0.7, dot(perp, B) * 5.0, uSeed));
+    bump = fold * 2.0;
+    vec3 c2 = uCloth2;
+    if (uPattern == 1) {
+      float w = worley(vObj * 9.0, uSeed + 1.0);
+      base = mix(base, c2, 1.0 - smoothstep(0.18, 0.24, w));
+    } else if (uPattern == 2) {
+      base = mix(base, c2, step(0.5, fract(dot(vObj, normalize(vec3(0.3, 1.0, 0.2))) * 7.0)));
+    }
+    base *= 0.85 + 0.25 * fold;
+    spec *= 0.25;
+  } else if (uMode == 8) {
+    // very short hair on the scalp
+    float d = vnoise(vObj * 900.0 + uSeed);
+    alpha *= smoothstep(0.35, 0.75, d) * 0.9;
+  }
+  // soft, slightly broken silhouettes for curly and coily hair
+  if (uMode == 2 || uMode == 3) alpha *= smoothstep(0.05, 0.35, abs(dot(n, v)) + 0.25 * vnoise(p * 160.0));
+  if (!gl_FrontFacing) shade *= 0.3;
+  if (alpha < 0.02) discard;
+
+  // normal from the pattern
+  vec3 nb = normalize(n + B * (bump - 0.5) * 0.3);
+  vec3 col = base * ambient(nb) * shade;
+  for (int i = 0; i < 3; i++) {
+    vec3 l = uLightDir[i];
+    vec3 h = normalize(l + v);
+    float diff;
+    float s;
+    if (uMode == 7) {
+      diff = max(dot(nb, l), 0.0) * 0.85 + 0.15;
+      s = pow(1.0 - max(dot(nb, v), 0.0), 3.0) * 0.25 * max(dot(nb, l) + 0.3, 0.0);
+    } else {
+      // Kajiya-Kay: diffuse and two shifted highlights along the strand direction; the second
+      // highlight is tinted by the hair colour, the first is kept faint so dark hair stays dark
+      float TL = dot(T, l);
+      diff = mix(max(dot(nb, l), 0.0), sqrt(max(1.0 - TL * TL, 0.0)), 0.35) * 0.9 + 0.1;
+      vec3 T1 = normalize(T + nb * 0.1), T2 = normalize(T - nb * 0.1);
+      float th1 = dot(T1, h), th2 = dot(T2, h);
+      float lit = max(dot(nb, l) + 0.25, 0.0);
+      s = (pow(sqrt(max(1.0 - th1 * th1, 0.0)), 70.0) * 0.06) * lit;
+      col += uLightCol[i] * pow(sqrt(max(1.0 - th2 * th2, 0.0)), 18.0) * 0.35 * lit * spec * min(base * 3.0, vec3(1.0)) * shade;
+    }
+    col += uLightCol[i] * (base * diff + s * spec) * shade;
+  }
+  gl_FragColor = vec4(col, alpha);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
+export function createHairMaterial() {
+  return new THREE.ShaderMaterial({
+    vertexShader, fragmentShader,
+    side: THREE.DoubleSide,
+    transparent: true,
+    alphaToCoverage: false,
+    uniforms: {
+      ...lightUniforms(),
+      uMode: { value: 0 },
+      uRoot: { value: new THREE.Vector3() }, uMid: { value: new THREE.Vector3() }, uTip: { value: new THREE.Vector3() },
+      uSeed: { value: 0 }, uShine: { value: 1 }, uScale: { value: 1 },
+      uCloth2: { value: new THREE.Vector3(1, 1, 1) }, uPattern: { value: 0 },
+    },
+  });
+}

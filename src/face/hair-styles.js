@@ -26,7 +26,7 @@ export const HAIR_STYLES = {
   'short-crop': { textures: ['straight', 'wavy'], w: [0.5, 4, 10], length: 'short' },
   'curly-top': { textures: ['curly', 'coily'], w: [0.5, 3, 8], length: 'short' },
   buzz: { textures: ALL, w: [0.6, 3, 6], length: 'shaved' },
-  hijab: { textures: ALL, w: [5, 0.5, 0], length: 'covered' },
-  headwrap: { textures: ALL, w: [4, 1, 0.2], length: 'covered' },
+  hijab: { textures: ALL, w: [3, 0.3, 0], length: 'covered' },
+  headwrap: { textures: ALL, w: [2.5, 0.6, 0.2], length: 'covered' },
 };
 export const PRESENTATIONS = ['feminine', 'androgynous', 'masculine'];

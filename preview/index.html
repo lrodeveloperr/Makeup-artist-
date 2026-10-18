@@ -4,9 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Face preview</title>
-<style>html,body{margin:0;background:#d9cfc7;overflow:auto}canvas{display:block}</style>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; background: #d9cfc7; font: 13px system-ui, sans-serif; color: #2b2522; }
+  #stage { display: flex; justify-content: center; }
+  canvas { display: block; touch-action: none; }
+  #ui { display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: #f4efeb; }
+  #ui button { min-width: 64px; min-height: 44px; border: 0; border-radius: 22px; background: #2b2522; color: #fff; font: inherit; font-weight: 600; }
+  #info { flex: 1; line-height: 1.3; }
+</style>
 </head>
 <body>
+<div id="ui"><button id="back" aria-label="Previous face">Back</button><span id="info">Loading…</span><button id="next" aria-label="Next face">Next</button></div>
+<div id="stage"></div>
 <script type="module" src="main.js"></script>
 </body>
 </html>

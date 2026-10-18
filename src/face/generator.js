@@ -7,7 +7,7 @@ import { DYED, HAIR_COLOURS } from './colors.js';
 
 export const GENERATOR_VERSION = 1;
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-const r3 = (x) => Math.round(x * 1000) / 1000;
+const r3 = (x) => Math.round(x * 1000) / 1000 || 0; // never -0, so records survive a JSON round trip
 
 // individual variation (standard deviation) per shape dimension; unlisted dimensions use 0.28
 const SD = {
@@ -115,7 +115,7 @@ export function generateFace(seed) {
     part: hr.pick({ middle: 4, left: 3, right: 3, none: 2 }),
     volume: r3(hr.range(0.8, 1.2)),
     length: r3(hr.range(0.85, 1.15)),
-    hairline: { front: r3(hr.range(0.56, 0.68)), temple: r3(hr.range(0.44, 0.54)), side: r3(hr.range(0.0, 0.12)) },
+    hairline: { front: r3(hr.range(0.6, 0.68)), temple: r3(hr.range(0.36, 0.46)), side: r3(hr.range(-0.02, 0.08)) },
     wrap: covered ? { colour: WRAPS[hr.int(0, WRAPS.length - 1)], pattern: hr.pick({ plain: 5, print: 3, stripe: 2 }), seed: hr.int(0, 9999) } : null,
     seed: hr.int(0, 99999),
   };
@@ -143,7 +143,7 @@ export function generateFace(seed) {
       ? { density: r3(kr.range(0.25, 0.9)), contrast: r3(kr.range(0.25, 0.6)), size: r3(kr.range(0.7, 1.3)), forehead: kr.chance(0.4) ? 1 : 0 }
       : { density: 0, contrast: 0, size: 1, forehead: 0 },
     moles,
-    vitiligo: kr.chance(TRAITS.vitiligo) ? { amount: r3(kr.range(0.1, 0.6)), scale: r3(kr.range(2.5, 5)), seed: r3(kr.range(0, 50)) } : null,
+    vitiligo: kr.chance(TRAITS.vitiligo) ? { amount: r3(kr.range(0.05, 0.35)), scale: r3(kr.range(2.5, 5)), seed: r3(kr.range(0, 50)) } : null,
   };
 
   // ---- eyes, brows, lashes ----

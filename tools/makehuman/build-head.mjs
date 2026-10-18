@@ -151,7 +151,7 @@ list.forEach((isl, k) => {
 // Per head vertex: geodesic distance (dm) over the outer skin from the line where the lips meet and from the
 // lid margins (where the skin island meets the inner mouth / eye sockets), negative inside those islands,
 // plus soft masks from how far the matching MakeHuman targets move each vertex.
-const REGION_CHANNELS = ['lipLine', 'lidMargin', 'cheek', 'underEye', 'nose', 'brow', 'lips', 'interior'];
+const REGION_CHANNELS = ['lipLine', 'lidMargin', 'cheek', 'underEye', 'nose', 'ear', 'lips', 'interior'];
 const vIslands = Array.from({ length: headVertexCount }, () => new Set());
 headFaces.forEach((f, q) => f.v.forEach((i) => vIslands[remap.get(i)].add(islands.get(quadIsland[q]).kind)));
 const adj = Array.from({ length: headVertexCount }, () => new Map());
@@ -188,7 +188,7 @@ const masks = {
   cheek: targetMask(['cheek/l-cheek-volume-incr', 'cheek/r-cheek-volume-incr']),
   underEye: targetMask(['eyes/l-eye-bag-incr', 'eyes/r-eye-bag-incr']),
   nose: targetMask(['nose/nose-volume-incr']),
-  brow: targetMask(['eyebrows/eyebrows-trans-up']),
+  ear: targetMask(['ears/l-ear-trans-backward', 'ears/r-ear-trans-backward']),
   lips: targetMask(['mouth/mouth-upperlip-volume-incr', 'mouth/mouth-lowerlip-volume-incr']),
 };
 const regions = new Float32Array(headVertexCount * REGION_CHANNELS.length);
@@ -197,7 +197,7 @@ for (let k = 0; k < headVertexCount; k++) {
   const vals = {
     lipLine: inside && vIslands[k].has('mouth-inside') ? -0.05 : Math.min(lipLine[k], 9),
     lidMargin: inside && vIslands[k].has('eye-socket') ? -0.05 : Math.min(lidMargin[k], 9),
-    cheek: masks.cheek[k], underEye: masks.underEye[k], nose: masks.nose[k], brow: masks.brow[k], lips: masks.lips[k],
+    cheek: masks.cheek[k], underEye: masks.underEye[k], nose: masks.nose[k], ear: masks.ear[k], lips: masks.lips[k],
     interior: inside ? 1 : 0,
   };
   REGION_CHANNELS.forEach((c, j) => (regions[k * REGION_CHANNELS.length + j] = vals[c]));
@@ -243,14 +243,26 @@ function subsetDelta(names) {
   }
   return D;
 }
+// Anchor every dimension to the skull and face: MakeHuman's macro targets (gender, neck length, head
+// scale) also move the whole head, which would push faces out of the fixed camera framing.
+const anchorVerts = [];
+for (let k = 0; k < headVertexCount; k++) if (positions[k * 3 + 1] > -1.0) anchorVerts.push(k);
+// The shift is stored per dimension and subtracted at runtime, so the deltas stay sparse.
+function anchorShift(D) {
+  const t = [0, 0, 0];
+  for (const k of anchorVerts) for (let a = 0; a < 3; a++) t[a] += D[k * 3 + a] / anchorVerts.length;
+  t[0] = 0; // keep left/right symmetry
+  return t;
+}
 const dims = [], blobs = [];
 for (const dim of DIMS) {
   const entry = { id: dim.id };
   for (const side of ['plus', 'minus']) {
     if (!dim[side].length) continue;
-    const s = sparse(subsetDelta(dim[side]));
+    const D = subsetDelta(dim[side]);
+    const s = sparse(D);
     if (!s.idx.length) throw new Error(`${dim.id}.${side}: no head vertices moved`);
-    entry[side] = { targets: dim[side], count: s.idx.length, scale: s.scale, blob: blobs.length };
+    entry[side] = { targets: dim[side], count: s.idx.length, scale: s.scale, shift: anchorShift(D), blob: blobs.length };
     blobs.push(s.idx, s.d);
   }
   dims.push(entry);
