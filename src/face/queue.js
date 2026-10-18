@@ -1,5 +1,5 @@
 // Variety director for the customer queue: picks the next face so that consecutive faces look clearly
-// different (ancestry, skin tone, hairstyle, hair colour...). Deterministic from the saved state, so the
+// different (ancestry, skin tone, hairstyle, parting, hair colour...). Deterministic from the saved state, so the
 // previewed next face never changes after a reload. Never stalls: after a few candidates it takes the
 // most different one it has seen.
 import { generateFace, signature, GENERATOR_VERSION } from './generator.js';
@@ -7,7 +7,7 @@ import { generateFace, signature, GENERATOR_VERSION } from './generator.js';
 export const RECENT = 4;
 const CANDIDATES = 8;
 // weights of each signature field when comparing with the previous face (index 0) and older ones
-const FIELD_WEIGHT = [3, 1, 3, 1, 0.5, 2, 0.5]; // origin, presentation, style, hair colour, iris, tone bin, brow shape
+const FIELD_WEIGHT = [3, 1, 3, 1, 0.5, 2, 0.5, 1]; // origin, presentation, style, hair colour, iris, tone bin, brow shape, parting
 
 const mixSeed = (cursor, k) => {
   let x = (Math.imul(cursor + 1, 0x9e3779b1) ^ Math.imul(k + 1, 0x85ebca6b)) >>> 0;

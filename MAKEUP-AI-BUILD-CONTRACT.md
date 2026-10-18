@@ -31,9 +31,10 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Renderer library | Own minimal WebGL2 renderer instead of Three.js | D under the owner's load-time priority (18 Oct 2026) | Same shaders; bundle 558 KB → 95 KB |
 | Download budget | Whole game ≤ 1 MB initial download; face system ≤ 400 KB; every file < 512 KiB | O priority / D values | `tests/size-budget.mjs` in CI |
 | Face assets | MakeHuman CC0 base mesh and targets at a pinned commit; no paid scans, non-commercial research models, MetaHuman, photographs or AI-generated faces | O, 18 Oct 2026 | Provenance in [ASSETS.md](ASSETS.md) |
-| Face diversity | All ancestries, including groups Haircut lacked, via profile *tendencies* over individual feature controls; blends and mixes common; cultural styles (head coverings, braids, dyes) offered to every face | O, 18 Oct 2026 | CONTENT01 audit in [docs/FACE-AUDIT.md](docs/FACE-AUDIT.md) |
+| Face diversity | All ancestries, including groups Haircut lacked, via MakeHuman's sculpted female base heads and profile *tendencies* over individual feature controls; named blends common. Face shape, skin and natural hair texture/colour stay coherent with the ancestry | O, 18 Oct 2026 | CONTENT01 audit in [docs/FACE-AUDIT.md](docs/FACE-AUDIT.md) |
 | Face age | Young adults only (18–30) | O, 18 Oct 2026 | Generator bound; audited |
-| Presentation mix | 80% feminine, 14% androgynous, 6% masculine; never a gate | D | `TRAITS` in `src/face/profiles.js` |
+| Customers | Every face is a young woman with a clearly feminine face and head shape; no vitiligo, albinism or dyed hair (subtle natural highlights only) | O, 18 Oct 2026 (replaces the earlier mixed-presentation default) | Generator; the audit fails on anything else |
+| Hair length | Always long and visible: long straight, layered, wavy, silk press, long curls, box braids, locs or cornrow braids, chosen to suit the natural texture. No short cuts, updos or head coverings, because players prefer long hair | O, 18 Oct 2026 | `src/face/hair-styles.js`; audited |
 
 One daily slot means one offered tool–colour pair, not one offer for every tool. The tool itself is never the reward. The earlier daily-video-count ambiguity is resolved: **one video**, with no 1/2 credit system. Haircut's Android policy is not authoritative for this makeup game.
 
@@ -419,7 +420,7 @@ Build the core using the selected reusable foundation, then native-input validat
 The following are remaining engineering/content/release data, not unresolved core product choices:
 
 1. Enumerated face-generator bounds, valid configurations, tool application constants and base/daily colour catalogues. Make them finite, testable and consistent with this contract; no new player settings.
-2. Final art pass for procedural hair and the cape/garment. The base face assets (CC0) and presentation direction are chosen (decision record above).
+2. Final art pass for procedural hair and the off-shoulder wrap garment. The base face assets (CC0), customer presentation and long-hair direction are chosen (decision record above).
 3. Final public title, declared locales and portal listing, after the implemented behavior can support the claims.
 4. Verified publisher monetization access, reporting fields, inventory test route and commercial terms.
 5. Named physical devices, exact runtime representation and release performance/evidence results.

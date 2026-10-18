@@ -1,15 +1,14 @@
-// Procedural hair and head coverings, rebuilt for every face from the morphed head so they always fit.
+// Procedural long hair, rebuilt for every face from the morphed head so it always fits.
 //
 // Building blocks:
-//   cap     - a layer over the scalp (every style), following the head with a style-specific thickness
-//   drape   - hair hanging from the sides and back of the head (long styles), kept clear of the face
-//   volume  - the cap pushed out to a rounded shape (afro, curly volume, head wrap)
-//   balls   - buns, puffs and knots
-//   tubes   - box braids and locs
-//   cloth   - hijab: everything except an opening for the face, falling from the chin to the shoulders
+//   hood    - the hair lying on the head: a shell around the skull that rolls down onto the scalp at the
+//             hairline, so the hairline follows the face exactly
+//   drape   - hair hanging from that shell at the sides and back, plus face-framing front pieces
+//   tubes   - box braids, locs and cornrow braids
+//   cap     - a thin layer over the scalp (cornrows)
 import * as GL from '../gl/mini.js';
 import { createRng } from './rng.js';
-import { HAIR_COLOURS, hexToLinear } from './colors.js';
+import { HAIR_COLOURS } from './colors.js';
 import { createHairMaterial, HAIR_MODE } from './hair-material.js';
 
 const smooth = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
@@ -50,11 +49,13 @@ export class HeadFrame {
     this.depth = zmax - zmin;
     this.TH = 90; this.Y0 = -2.6; this.DY = 0.04; this.NY = Math.ceil((top + 0.1 - this.Y0) / this.DY);
     const r = (this.r = new Float32Array(this.TH * this.NY));
+    const low = (this.low = new Float32Array(this.TH).fill(Infinity)); // where the body mesh ends, by angle
     for (let i = 0; i < this.count; i++) {
       if (R[i * nc + iIn] > 0.5) continue;
       const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2] - this.cz;
       const th = Math.atan2(x, z), rad = Math.hypot(x, z);
       const ti = ((Math.round((th / (2 * Math.PI)) * this.TH) % this.TH) + this.TH) % this.TH;
+      if (y < low[ti]) low[ti] = y;
       const yi = Math.round((y - this.Y0) / this.DY);
       if (yi < 0 || yi >= this.NY) continue;
       for (const dt of [-1, 0, 1]) {
@@ -76,6 +77,13 @@ export class HeadFrame {
     return mix(mix(r[t0 * NY + y0], r[t1 * NY + y0], a), mix(r[t0 * NY + y1], r[t1 * NY + y1], a), b);
   }
   point(theta, y, rad) { return [rad * Math.sin(theta), y, this.cz + rad * Math.cos(theta)]; }
+  // lowest point of the body mesh around angle theta (it varies from face to face with the neck shape)
+  lowest(theta) {
+    const t = Math.round((theta / (2 * Math.PI)) * this.TH);
+    let y = Infinity;
+    for (const d of [-1, 0, 1]) y = Math.min(y, this.low[(((t + d) % this.TH) + this.TH) % this.TH]);
+    return Number.isFinite(y) ? y : -1.8;
+  }
   interior(i) { return this.R[i * this.nc + this.iIn] > 0.5; }
   ear(i) { return this.R[i * this.nc + this.iEar]; }
 }
@@ -123,84 +131,115 @@ function cap(frame, hg, hl, b, { thick, flowAt, place = null, soft = 0.03, minMa
   }
 }
 
+// ---------------- shell ----------------
+// An ellipsoid around the skull, `lift` (top, side, back) above it: the outer surface of hair lying on the
+// head. Loose hair falls from this shell instead of hugging the skull, which is what keeps it from
+// looking like a painted cap.
+export function skullShell(frame, { top, side, back }) {
+  let half = 0, rear = 0;
+  for (let y = 0.2; y <= 0.81; y += 0.1) {
+    half = Math.max(half, frame.radius(Math.PI / 2, y), frame.radius(-Math.PI / 2, y));
+    rear = Math.max(rear, frame.radius(Math.PI, y));
+  }
+  const fore = frame.radius(0, 0.45), yc = 0.2;
+  return { c: [0, yc, frame.cz + (fore - rear) / 2], R: [half + side, frame.top - yc + top, (fore + rear) / 2 + back] };
+}
+// distance from the head's vertical axis to the shell at angle theta and height y (0 above or below it)
+function shellRadius(frame, sh, theta, y) {
+  const s = Math.sin(theta), c = Math.cos(theta), [Rx, Ry, Rz] = sh.R;
+  const dy = (y - sh.c[1]) / Ry, dz = frame.cz - sh.c[2];
+  const A = (s / Rx) ** 2 + (c / Rz) ** 2, B = (2 * dz * c) / (Rz * Rz), C = (dz / Rz) ** 2 + dy * dy - 1;
+  const disc = B * B - 4 * A * C;
+  return disc > 0 ? (-B + Math.sqrt(disc)) / (2 * A) : 0;
+}
+
 // ---------------- drape ----------------
-// Hair falling from the scalp. A strand starts at angle theta0 around the head (0 = front) and height
-// yStart, slides down the head and neck, and below the jaw moves either in front of the shoulder (front
-// strands) or behind it (back strands), never into the face or body.
-const SPLIT = 1.85; // strands starting further back than this fall behind the shoulders
-function drapePath(frame, theta0, yStart, length, gap, wave, steps) {
+// Hair falling from the head. A strand starts at angle theta0 around the head (0 = front) and height y0,
+// moves over the shell to angle theta1 by height yTurn, then hangs: it never moves back in towards the
+// head, so the sides fall straight down from the widest part of the skull and over the ears. Below the jaw
+// it moves either in front of the shoulder (front strands) or behind it (back strands), never into the
+// face or body.
+const SPLIT = 1.85; // strands hanging further back than this fall behind the shoulders
+function drapePath(frame, sh, { theta0, theta1 = theta0, y0, yTurn = y0, length, gap, wave, steps }) {
   const pts = [];
-  const back = Math.cos(theta0) < Math.cos(SPLIT);
-  const sgn = Math.sin(theta0) >= 0 ? 1 : -1;
-  let r = frame.radius(theta0, yStart) + gap;
+  const back = Math.cos(theta1) < Math.cos(SPLIT);
+  let r = 0;
   const dy = length / steps;
   for (let j = 0; j <= steps; j++) {
-    const y = yStart - j * dy;
+    const y = y0 - j * dy;
+    const over = y0 > yTurn ? smooth(y0, yTurn, y) : 1;
+    const t0 = mix(theta0, theta1, over);
+    const sgn = Math.sin(t0) >= 0 ? 1 : -1;
     const low = smooth(-0.75, -1.45, y);
     // front strands swing forwards over the collarbone, back strands swing behind the shoulders
-    const a0 = Math.abs(theta0 > Math.PI ? theta0 - 2 * Math.PI : theta0);
-    const a = back ? mix(a0, Math.PI - (Math.PI - a0) * 0.6, low) : mix(a0, a0 * 0.62, low);
+    const a0 = Math.abs(t0 > Math.PI ? t0 - 2 * Math.PI : t0);
+    const a = back ? mix(a0, Math.PI - (Math.PI - a0) * 0.6, low) : mix(a0, a0 * 0.7, low);
     let theta = sgn * a;
     if (wave) theta += wave.twist * Math.sin(y * wave.freq * 0.5 + wave.phase);
-    // keep clear of the cape below the neck
-    const head = frame.radius(theta, y) + Math.max(gap * mix(1, 0.7, j / steps), y < -1.05 ? 0.08 : 0);
-    r = y < -1.05 ? Math.max(head, r) : Math.max(head, r * (1 - 0.2 * dy));
+    const head = frame.radius(theta, y) + Math.max(gap, y < -1.05 ? 0.08 : 0);
+    const shell = sh ? shellRadius(frame, sh, theta, y) + gap * 0.3 : 0;
+    // over the shell the strand follows it; once hanging it only ever moves outwards
+    r = Math.max(head, shell, over < 1 ? 0 : r);
     const w = wave ? wave.amp * Math.sin(y * wave.freq + wave.phase) * smooth(0, 0.3, j / steps) : 0;
     pts.push(frame.point(theta, y, r + w));
   }
   return pts;
 }
-function drapeSheet(frame, b, rng, t0, t1, NT, { yStart, length, gap, wave, jag, frontShorter, layer }) {
-  const steps = 28, rows = [];
+// A sheet of hair between two strand paths; pathAt(u, layer) gives the path options at u (0..1 across).
+function drapeSheet(frame, sh, b, rng, NT, pathAt, { length, jag, layer, steps = 28, fadeIn = 0 }) {
+  const rows = [];
   for (let i = 0; i <= NT; i++) {
-    const theta = mix(t0, t1, i / NT);
-    const side = Math.abs(Math.sin(theta / 2)); // 0 at the front, 1 at the back
-    const L = length * (1 - frontShorter * (1 - side)) * (1 + jag * (rng.next() - 0.5));
-    const ys = yStart - 0.05 * layer + (1 - side) * 0.06;
-    const wv = wave && { ...wave, phase: wave.phase + i * 0.35 + rng.next() * 0.4 };
-    const path = drapePath(frame, theta, ys, length * 1.15, gap + layer * 0.035, wv, steps);
+    const u = i / NT, o = pathAt(u);
+    const L = o.length * (1 + jag * (rng.next() - 0.5));
+    const path = drapePath(frame, sh, { ...o, length: o.length * 1.15, gap: o.gap + layer * 0.035, steps });
     rows.push(path.map((p, j) => {
       const t = (j / steps) * 1.15;
       const prev = path[Math.max(j - 1, 0)], next = path[Math.min(j + 1, steps)];
       const flow = norm([next[0] - prev[0], next[1] - prev[1], next[2] - prev[2]]);
       const out = norm([p[0], 0.15, p[2] - frame.cz]);
       const edge = smooth(0, 0.18, Math.min(i, NT - i) / NT + 0.05 * Math.sin(j * 1.7 + i * 2.3));
-      const tip = L / (length * 1.15);
-      const alpha = (1 - smooth(tip - 0.1, tip, t)) * edge;
+      const tip = L / o.length; // t runs to 1.15 so jagged ends can fall past the nominal length
+      const alpha = (1 - smooth(tip - 0.1, tip, t)) * edge * (fadeIn ? smooth(0, fadeIn, t) : 1);
       return b.vert(p, out, flow, [Math.min(t, 1), alpha, i, 0.82 + 0.18 * layer]);
     }));
   }
-  for (let i = 0; i < NT; i++) for (let j = 0; j < steps; j++) b.quad(rows[i][j], rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1]);
+  // wound so the outer side (normal `out`) is the front face
+  for (let i = 0; i < NT; i++) for (let j = 0; j < steps; j++) b.quad(rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j]);
 }
-function drape(frame, b, rng, { thetaFront, yStart, length, gap, wave = null, jag = 0.12, layers = 1, frontShorter = 0.15 }) {
-  const o = { yStart, length, gap, wave, jag, frontShorter };
+// Loose hair: sheets hanging from the shell around the sides and back, plus face-framing front pieces
+// that leave the parting, sweep over the corners of the forehead and fall beside the cheeks.
+function drape(frame, sh, b, rng, { thetaFront, yStart, length, gap, wave = null, jag = 0.12, layers = 1, frontShorter = 0.15, framing = 0, sweep = 1, xPart = 0 }) {
   for (let layer = 0; layer < layers; layer++) {
-    const opts = { ...o, layer };
-    drapeSheet(frame, b, rng, thetaFront, SPLIT + 0.1, 18, opts);                                    // front left
-    drapeSheet(frame, b, rng, SPLIT - 0.1, 2 * Math.PI - SPLIT + 0.1, 40, opts);                      // back
-    drapeSheet(frame, b, rng, 2 * Math.PI - SPLIT - 0.1, 2 * Math.PI - thetaFront, 18, opts);        // front right
+    const ys = yStart - 0.05 * layer;
+    const hang = (t0, t1) => (u) => {
+      const theta = mix(t0, t1, u);
+      const side = Math.abs(Math.sin(theta / 2)); // 0 at the front, 1 at the back
+      const wv = wave && { ...wave, phase: wave.phase + u * 9 + rng.next() * 0.4 };
+      return { theta0: theta, y0: ys + (1 - side) * 0.06, length: length * (1 - frontShorter * (1 - side)), gap, wave: wv };
+    };
+    const opts = { jag, layer };
+    drapeSheet(frame, sh, b, rng, 18, hang(thetaFront, SPLIT + 0.1), opts);                              // front left
+    drapeSheet(frame, sh, b, rng, 40, hang(SPLIT - 0.1, 2 * Math.PI - SPLIT + 0.1), opts);                // back
+    drapeSheet(frame, sh, b, rng, 18, hang(2 * Math.PI - SPLIT - 0.1, 2 * Math.PI - thetaFront), opts);  // front right
+  }
+  if (!framing) return;
+  // sweep 1: the pieces start at the parting; lower values start them further out, nearer the temples
+  for (const side of [1, -1]) {
+    const start = mix(0.75, Math.max(0.12, Math.min(0.6, 0.12 + side * xPart * 1.6)), sweep);
+    // u runs towards increasing angle on both sides, so both pieces are wound the same way
+    drapeSheet(frame, sh, b, rng, 10, (v) => {
+      const u = side > 0 ? v : 1 - v;
+      const t1 = mix(0.92, thetaFront + 0.06, u);
+      const wv = wave && { ...wave, phase: wave.phase + 3 + u * 5 };
+      return {
+        theta0: side * mix(start, 0.75, u), theta1: side * t1, y0: mix(mix(0.8, 1.0, sweep), 0.72, u), yTurn: 0.05,
+        length: length * framing * (0.85 + 0.15 * u), gap: gap * 0.6, wave: wv,
+      };
+    }, { jag: jag * 0.6, layer: 0.5, steps: 32 });
   }
 }
 
-// ---------------- balls (buns, puffs) ----------------
-function ball(b, c, radii, flowTo = null, segs = 28) {
-  const rings = segs / 2, ids = [];
-  for (let j = 0; j <= rings; j++) {
-    const v = j / rings, ph = v * Math.PI;
-    const row = [];
-    for (let i = 0; i <= segs; i++) {
-      const th = (i / segs) * 2 * Math.PI;
-      const d = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)];
-      const p = [c[0] + d[0] * radii[0], c[1] + d[1] * radii[1], c[2] + d[2] * radii[2]];
-      const flow = flowTo ? norm([flowTo[0] - p[0], flowTo[1] - p[1], flowTo[2] - p[2]]) : norm([-d[2], 0, d[0]]);
-      row.push(b.vert(p, d, flow, [0.5, 1, 0, 0.95]));
-    }
-    ids.push(row);
-  }
-  for (let j = 0; j < rings; j++) for (let i = 0; i < segs; i++) b.quad(ids[j][i], ids[j][i + 1], ids[j + 1][i + 1], ids[j + 1][i]);
-}
-
-// ---------------- hood (afro, head wrap) ----------------
+// ---------------- hood ----------------
 // A rounded shell around the head, sampled by direction from the hairline centre O (the centre used by
 // scalpMask), so the opening for the face follows the hairline exactly. Over the scalp the shell sits on
 // the ellipsoid (c, R); towards the hairline it rolls back down onto the head.
@@ -209,7 +248,7 @@ function headDistance(frame, O, d) {
   let lo = 0, hi = 2.6;
   const inside = (t) => {
     const x = O[0] + d[0] * t, y = O[1] + d[1] * t, z = O[2] + d[2] * t;
-    return Math.hypot(x, z - frame.cz) < frame.radius(Math.atan2(x, z - frame.cz), y);
+    return y < frame.top && Math.hypot(x, z - frame.cz) < frame.radius(Math.atan2(x, z - frame.cz), y);
   };
   for (let k = 0; k < 22; k++) { const m = (lo + hi) / 2; if (inside(m)) lo = m; else hi = m; }
   return hi;
@@ -222,7 +261,7 @@ function rayEllipsoid(O, d, c, R) {
   const disc = Math.max(B * B - 4 * A * C, 0);
   return (-B + Math.sqrt(disc)) / (2 * A);
 }
-function hood(frame, b, c, R, hl, { wideSoft = 0.35, lift = 0.03, bumpy = 0.05, seed = 0, fold = 0, minPh = -1.2, rise = 2.2 } = {}) {
+function hood(frame, b, c, R, hl, { wideSoft = 0.35, lift = 0.03, bumpy = 0.05, seed = 0, minPh = -1.2, rise = 2.2, flowAt = null, groove = null, pixelMask = false } = {}) {
   const O = HAIRLINE_CENTRE, NT = 128, NP = 72;
   const dirs = [], ts = [], mk = [], wd = [];
   for (let j = 0; j <= NP; j++) for (let i = 0; i <= NT; i++) {
@@ -231,7 +270,7 @@ function hood(frame, b, c, R, hl, { wideSoft = 0.35, lift = 0.03, bumpy = 0.05, 
     dirs.push(d);
     ts.push(headDistance(frame, O, d));
     const q = [O[0] + d[0], O[1] + d[1], O[2] + d[2]]; // scalpMask only uses the direction from O
-    mk.push(scalpMask(q[0], q[1], q[2], hl, 0.05));
+    mk.push(scalpMask(q[0], q[1], q[2], hl, pixelMask ? 0.12 : 0.05));
     wd.push(smooth(0, 1, scalpMask(q[0], q[1], q[2], hl, wideSoft)) ** 0.8);
   }
   // smooth the head distance (the polar head table is coarse)
@@ -245,18 +284,21 @@ function hood(frame, b, c, R, hl, { wideSoft = 0.35, lift = 0.03, bumpy = 0.05, 
   for (let k = 0; k < dirs.length; k++) {
     const d = dirs[k], th = Math.atan2(d[0], d[2]);
     const te = rayEllipsoid(O, d, c, R);
-    const wob = 1 + bumpy * Math.sin(d[0] * 7 + seed) * Math.sin(d[1] * 6 + d[2] * 5 + seed * 1.3) + fold * Math.sin((d[1] * 1.6 + th * 1.2) * 6);
+    const wob = 1 + bumpy * Math.sin(d[0] * 7 + seed) * Math.sin(d[1] * 6 + d[2] * 5 + seed * 1.3);
     // volume grows with the angle above the hairline, so the front edge rolls up instead of overhanging
     const above = Math.atan2(d[1], Math.hypot(d[0], d[2])) - hairlineHeight(Math.abs(th), hl);
     const thick = Math.min(Math.max(te * wob - ts2[k], 0), Math.max(above, 0) * rise);
-    const rr = ts2[k] + lift + thick * wd[k];
+    const p0 = [O[0] + d[0] * ts2[k], O[1] + d[1] * ts2[k], O[2] + d[2] * ts2[k]];
+    const rr = ts2[k] + lift + thick * wd[k] * (groove ? groove(p0) : 1);
     const p = [O[0] + d[0] * rr, O[1] + d[1] * rr, O[2] + d[2] * rr];
-    ids.push(b.vert(p, d, norm([d[2], 0.2, -d[0]]), [0.1 * (1 - mk[k]), smooth(0.05, 0.4, mk[k]), 0, 1]));
+    const f = flowAt ? flowAt(p) : [d[2], 0.2, -d[0]];
+    const fd = f[0] * d[0] + f[1] * d[1] + f[2] * d[2];
+    ids.push(b.vert(p, d, norm([f[0] - fd * d[0], f[1] - fd * d[1], f[2] - fd * d[2]]), [0.1 * (1 - mk[k]), pixelMask ? 1 : smooth(0.05, 0.4, mk[k]), 0, 1]));
   }
   for (let j = 0; j < NP; j++) for (let i = 0; i < NT; i++) {
     const a = j * W + i, q = [a, a + W, a + W + 1, a + 1];
     if (Math.max(...q.map((x) => mk[x])) < 0.02) continue;
-    b.quad(ids[q[0]], ids[q[1]], ids[q[2]], ids[q[3]]);
+    b.quad(ids[q[0]], ids[q[3]], ids[q[2]], ids[q[1]]); // wound so the outside is the front face
   }
 }
 
@@ -282,39 +324,52 @@ function tube(b, path, radius, sides = 6, taper = 0.6) {
   for (let j = 0; j < rows.length - 1; j++) for (let s = 0; s < sides; s++) b.quad(rows[j][s], rows[j][s + 1], rows[j + 1][s + 1], rows[j + 1][s]);
 }
 
-// natural volume of hair lying on the scalp: thickest over the crown, thin at the hairline and nape
-const crown = (r, m, top, edge) => (edge + (top - edge) * smooth(-0.1, 0.9, r[1])) * smooth(0, 0.6, m);
 
 // flows over the scalp
 const combedBack = (p, r) => norm([Math.sign(r[0]) * 0.15 * Math.abs(r[0]), 0.35 - 0.9 * smooth(0.2, 0.7, Math.abs(r[0])), -1]);
-const awayFromPart = (xPart) => (p, r) => norm([Math.sign(r[0] - xPart || 1) * 1.0, -0.55, -0.35]);
-const towards = (c) => (p) => norm([c[0] - p[0], c[1] - p[1], c[2] - p[2]]);
+// hood flows (projected onto the shell): away from a side or middle parting, or back from the hairline
+const fromPart = (xPart) => (p) => [Math.sign(p[0] - xPart || 1) * 0.9, -0.75, -0.3];
+const fromHairline = (p) => [Math.sign(p[0]) * 0.25, -0.2, -1];
+// the hair is flatter along the parting line, which runs from the front hairline back to the crown
+const partGroove = (xPart) => (p) => (p[2] > -1.0 && p[1] > 0.5 ? 1 - 0.75 * Math.exp(-(((p[0] - xPart) / 0.06) ** 2)) : 1);
+
+const SOLID = 0.9; // alpha from which hair is drawn in the solid (depth-writing) pass
 
 export class Hair {
   constructor() {
     this.group = new GL.Group();
     this.materials = [];
+    this.slots = 0;
   }
 
   clear() {
     for (const m of this.group.children) m.geometry.dispose();
     this.group.clear();
+    this.slots = 0;
   }
 
+  // Each surface is drawn in two passes: the solid part first, writing depth so hair behind it is
+  // hidden, then the soft fringes blended on top without writing depth. Writing depth for nearly
+  // transparent fringes would punch see-through holes in the hair behind them.
   add(builder, mode, colours, opts = {}) {
     if (!builder.idx.length) return;
-    const mat = this.materials[this.group.children.length] || (this.materials[this.group.children.length] = createHairMaterial());
-    const u = mat.uniforms;
-    u.uMode.value = mode;
-    u.uRoot.value.set(...colours.root); u.uMid.value.set(...colours.mid); u.uTip.value.set(...colours.tip);
-    u.uSeed.value = opts.seed || 0;
-    u.uShine.value = opts.shine ?? 1;
-    u.uScale.value = opts.scale ?? 1;
-    u.uPattern.value = opts.pattern ?? 0;
-    if (opts.cloth2) u.uCloth2.value.set(...opts.cloth2);
-    const mesh = new GL.Mesh(builder.geometry(), mat);
-    mesh.renderOrder = opts.order ?? 1;
-    this.group.add(mesh);
+    const slot = this.slots++;
+    const pair = this.materials[slot] || (this.materials[slot] = [createHairMaterial(), createHairMaterial()]);
+    const geometry = builder.geometry();
+    const hl = opts.hairline;
+    pair.forEach((mat, pass) => {
+      const u = mat.uniforms;
+      u.uMode.value = mode;
+      u.uRoot.value.set(...colours.root); u.uMid.value.set(...colours.mid); u.uTip.value.set(...colours.tip);
+      u.uSeed.value = opts.seed || 0;
+      u.uShine.value = opts.shine ?? 1;
+      u.uHairline.value.set(hl ? hl.front : 0, hl ? hl.temple : 0, hl ? hl.side : 0, hl ? 0.035 : 0);
+      u.uAlphaCut.value.set(pass ? 0.02 : SOLID, pass ? SOLID : 2);
+      mat.depthWrite = !pass;
+      const mesh = new GL.Mesh(geometry, mat);
+      mesh.renderOrder = (opts.order ?? 1) + 0.5 * pass;
+      this.group.add(mesh);
+    });
   }
 
   build(face, hg) {
@@ -325,127 +380,62 @@ export class Hair {
     const natural = HAIR_COLOURS[h.natural] || HAIR_COLOURS['dark-brown'];
     const main = HAIR_COLOURS[h.colour] || natural;
     const hi = h.highlights ? HAIR_COLOURS[h.highlights] : main;
-    const colours = { root: h.colour !== h.natural ? mixC(main, natural, 0.25) : main.map((c) => c * 0.85), mid: main, tip: mixC(main, hi, 0.75) };
-    const texMode = { straight: HAIR_MODE.strands, wavy: HAIR_MODE.wavy, curly: HAIR_MODE.curly, coily: HAIR_MODE.coily }[h.texture];
+    const colours = { root: main.map((c) => c * 0.92), mid: main, tip: mixC(main, hi, 0.75) };
     const vol = h.volume, len = h.length;
     const xPart = { middle: 0, left: 0.22, right: -0.22, none: 0 }[h.part];
     const seed = (h.seed % 1000) * 0.1;
-    const capB = new Builder(), b = new Builder(), b2 = new Builder();
+    const capB = new Builder(), b = new Builder();
     const thetaFront = 1.25;
     switch (h.style) {
-      case 'long-straight': case 'silk-press': case 'long-wavy': case 'lob': case 'bob': case 'curly-long': case 'curly-shoulder': {
-        const length = { 'long-straight': 2.3, 'silk-press': 2.2, 'long-wavy': 2.2, lob: 1.55, bob: 1.1, 'curly-long': 1.9, 'curly-shoulder': 1.4 }[h.style] * len;
-        const curly = h.style.startsWith('curly');
-        const wavy = h.style === 'long-wavy';
-        const gap = (curly ? 0.12 : 0.05) * vol;
-        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, (curly ? 0.14 : 0.08) * vol, 0.02), flowAt: h.part === 'none' ? combedBack : awayFromPart(xPart) });
-        drape(frame, b, rng, {
-          thetaFront: h.style === 'bob' ? 1.15 : thetaFront, yStart: 0.55, length, gap,
+      case 'long-straight': case 'long-layered': case 'silk-press': case 'long-wavy': case 'curly-long': {
+        // all long: the ends fall past the bottom of the frame (y = -1.94), over the shoulders and back
+        const length = { 'long-straight': 2.75, 'long-layered': 2.6, 'silk-press': 2.7, 'long-wavy': 2.65, 'curly-long': 2.45 }[h.style] * len;
+        const curly = h.style === 'curly-long';
+        const wavy = h.style === 'long-wavy' || (h.style === 'long-layered' && h.texture === 'wavy');
+        const layered = h.style === 'long-layered';
+        const sh = skullShell(frame, curly ? { top: 0.2 * vol, side: 0.3 * vol, back: 0.24 * vol } : { top: 0.1 * vol, side: 0.13 * vol, back: 0.13 * vol });
+        hood(frame, capB, sh.c, sh.R, hl, {
+          seed, bumpy: curly ? 0.04 : 0.008, lift: 0.015, rise: curly ? 1.6 : 1.1, wideSoft: 0.25,
+          flowAt: h.part === 'none' ? fromHairline : fromPart(xPart), groove: h.part === 'none' ? null : partGroove(xPart), pixelMask: true,
+        });
+        drape(frame, sh, b, rng, {
+          thetaFront, yStart: 0.45, length, gap: curly ? 0.08 * vol : 0.03,
           wave: curly ? { amp: 0.05, freq: 22, twist: 0.04, phase: seed } : wavy ? { amp: 0.035, freq: 9, twist: 0.02, phase: seed } : null,
-          layers: 2, jag: curly ? 0.2 : 0.08,
+          // layered: the front falls shorter and the framing pieces end around the jaw
+          layers: 2, jag: curly ? 0.2 : 0.08, frontShorter: layered ? 0.35 : 0.15, framing: layered ? 0.55 : 0.9, sweep: curly ? 0.3 : 1, xPart,
         });
-        const mode = h.style === 'silk-press' ? HAIR_MODE.strands : curly ? HAIR_MODE.curly : wavy ? HAIR_MODE.wavy : texMode === HAIR_MODE.coily ? HAIR_MODE.curly : texMode;
-        this.add(capB, mode, colours, { seed, shine: h.style === 'silk-press' ? 1.4 : 1 });
+        const mode = h.style === 'silk-press' ? HAIR_MODE.strands : curly ? HAIR_MODE.curly : wavy || h.texture !== 'straight' ? HAIR_MODE.wavy : HAIR_MODE.strands;
+        this.add(capB, mode, colours, { seed, shine: h.style === 'silk-press' ? 1.4 : 1, hairline: hl });
         this.add(b, mode, colours, { seed, shine: h.style === 'silk-press' ? 1.4 : 1 });
-        break;
-      }
-      case 'pixie': case 'short-crop': case 'curly-top': case 'twa': {
-        const top = { pixie: 0.07, 'short-crop': 0.06, 'curly-top': 0.17, twa: 0.1 }[h.style] * vol;
-        const sides = { pixie: 0.03, 'short-crop': 0.02, 'curly-top': 0.025, twa: 0.08 }[h.style] * vol;
-        cap(frame, hg, hl, capB, {
-          thick: (r, m) => mix(sides, top, smooth(0.35, 0.9, r[1])) * smooth(0, 0.5, m) + 0.004,
-          flowAt: h.style === 'pixie' ? awayFromPart(xPart || 0.2) : combedBack,
-        });
-        const mode = h.style === 'twa' || h.style === 'curly-top' ? (h.texture === 'coily' ? HAIR_MODE.coily : HAIR_MODE.curly) : texMode;
-        this.add(capB, mode, colours, { seed });
-        break;
-      }
-      case 'buzz': {
-        cap(frame, hg, hl, capB, { thick: () => 0.003, flowAt: combedBack, minMask: 0.05, alphaEdge: 0.3 });
-        this.add(capB, HAIR_MODE.stubble, colours, { seed, shine: 0.2 });
-        break;
-      }
-      case 'afro': {
-        const c = [0, 0.42, frame.cz - 0.08];
-        const R = [1.42 * vol, 1.3 * vol, 1.45 * vol];
-        hood(frame, capB, c, R, hl, { seed });
-        this.add(capB, HAIR_MODE.coily, colours, { seed, shine: 0.6 });
-        break;
-      }
-      case 'afro-puffs': {
-        const pc = [[0.62, 0.95, frame.cz + 0.05], [-0.62, 0.95, frame.cz + 0.05]];
-        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, 0.04, 0.012), flowAt: (p) => towards(p[0] > 0 ? pc[0] : pc[1])(p) });
-        for (const c of pc) ball(b, c, [0.42 * vol, 0.4 * vol, 0.42 * vol]);
-        this.add(capB, HAIR_MODE.strands, colours, { seed });
-        this.add(b, HAIR_MODE.coily, colours, { seed, shine: 0.5 });
-        break;
-      }
-      case 'high-ponytail': case 'low-bun': case 'top-knot': {
-        const at = { 'high-ponytail': [0, 1.05, frame.cz - 0.75], 'low-bun': [0, 0.05, frame.cz - 0.98], 'top-knot': [0, 1.32, frame.cz - 0.25] }[h.style];
-        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, 0.055 * vol, 0.012), flowAt: towards(at) });
-        const capMode = texMode === HAIR_MODE.coily ? HAIR_MODE.wavy : texMode === HAIR_MODE.curly ? HAIR_MODE.wavy : texMode;
-        this.add(capB, capMode, colours, { seed });
-        if (h.style === 'high-ponytail') {
-          const path = [];
-          for (let j = 0; j <= 16; j++) { const t = j / 16; path.push([0.05 * Math.sin(t * 3), at[1] - 2.0 * t * len + 0.25 * Math.sin(t * Math.PI), at[2] - 0.15 - 0.35 * Math.sin(t * 1.6)]); }
-          tube(b, path, 0.2 * vol, 10, 0.3);
-          this.add(b, texMode === HAIR_MODE.coily ? HAIR_MODE.curly : texMode, colours, { seed });
-        } else {
-          ball(b, at, h.style === 'low-bun' ? [0.36 * vol, 0.3 * vol, 0.3 * vol] : [0.36 * vol, 0.3 * vol, 0.36 * vol]);
-          this.add(b, texMode === HAIR_MODE.coily ? HAIR_MODE.coily : HAIR_MODE.wavy, colours, { seed });
-        }
         break;
       }
       case 'box-braids': case 'locs': {
         const braid = h.style === 'box-braids';
-        cap(frame, hg, hl, capB, { thick: (r, m) => crown(r, m, 0.045, 0.02), flowAt: awayFromPart(xPart) });
-        this.add(capB, braid ? HAIR_MODE.braid : HAIR_MODE.loc, colours, { seed });
-        const n = braid ? 74 : 56, length = (braid ? 2.4 : 2.1) * len;
+        const sh = skullShell(frame, { top: 0.09, side: 0.1, back: 0.1 });
+        hood(frame, capB, sh.c, sh.R, hl, { seed, bumpy: 0.01, lift: 0.012, rise: 1.0, wideSoft: 0.25, flowAt: fromPart(xPart), groove: partGroove(xPart), pixelMask: true });
+        this.add(capB, braid ? HAIR_MODE.braid : HAIR_MODE.loc, colours, { seed, hairline: hl });
+        const n = braid ? 74 : 56, length = (braid ? 2.8 : 2.65) * len;
         for (let k = 0; k < n; k++) {
           const layer = k % 3;
           const theta = mix(thetaFront - 0.05, 2 * Math.PI - thetaFront + 0.05, (k + rng.next() * 0.6) / n);
-          const ys = 0.55 + rng.range(-0.05, 0.12) - layer * 0.05;
-          const path = drapePath(frame, theta, ys, length * rng.range(0.9, 1.05), 0.05 + layer * 0.045, { amp: 0.015, freq: 5, twist: 0.015, phase: rng.next() * 6 }, 18);
+          const ys = 0.5 + rng.range(-0.05, 0.12) - layer * 0.05;
+          const path = drapePath(frame, sh, { theta0: theta, y0: ys, length: length * rng.range(0.9, 1.05), gap: 0.03 + layer * 0.045, wave: { amp: 0.015, freq: 5, twist: 0.015, phase: rng.next() * 6 }, steps: 18 });
           tube(b, path, braid ? 0.032 : 0.042, 6, braid ? 0.55 : 0.8);
         }
         this.add(b, braid ? HAIR_MODE.braid : HAIR_MODE.loc, colours, { seed, shine: braid ? 0.8 : 0.4 });
         break;
       }
-      case 'cornrows': {
+      case 'cornrow-braids': {
+        // cornrows running back over the scalp, ending in braids that hang behind and over the shoulders
         cap(frame, hg, hl, capB, { thick: () => 0.018, flowAt: combedBack, minMask: 0.05, alphaEdge: 0.35 });
         this.add(capB, HAIR_MODE.cornrows, colours, { seed });
-        break;
-      }
-      case 'hijab': {
-        const wrap = hexToLinear(h.wrap.colour);
-        const second = mixC(wrap, [0.9, 0.88, 0.84], 0.55);
-        cloth(frame, hg, b, rng);
-        this.add(b, HAIR_MODE.cloth, { root: wrap, mid: wrap, tip: wrap }, { seed: h.wrap.seed * 0.01, pattern: { plain: 0, print: 1, stripe: 2 }[h.wrap.pattern], cloth2: second, scale: 1 });
-        break;
-      }
-      case 'headwrap': {
-        const wrap = hexToLinear(h.wrap.colour);
-        const second = mixC(wrap, [0.95, 0.75, 0.2], 0.6);
-        const c = [0, 0.62, frame.cz - 0.12];
-        const R = [0.86, 0.98, 1.0];
-        const wrapLine = { front: hl.front - 0.05, temple: hl.temple - 0.02, side: hl.side + 0.1 };
-        cap(frame, hg, wrapLine, capB, {
-          thick: () => 0.035, flowAt: (p) => norm([1, 0.35 * Math.sign(p[0]), 0]), soft: 0.02, minMask: 0.02, alphaEdge: 0.06, ears: false,
-          place: (p, n, r, m) => {
-            const [q, nn] = volumeTo(p, n, c, R, smooth(0.0, 0.6, m) * 0.9, seed, 0.0);
-            // wrapped folds running diagonally around the head
-            const f = 0.025 * Math.sin((q[1] * 1.6 + Math.atan2(q[0], q[2] - frame.cz) * 1.2) * 6) * smooth(0.1, 0.6, m);
-            return [[q[0] + nn[0] * f, q[1] + nn[1] * f, q[2] + nn[2] * f], nn];
-          },
-        });
-        // the knot sits on the front of the wrap, a little above the forehead
-        const d = norm([0, 0.75, 0.66]);
-        const k = 1 / Math.hypot(d[0] / R[0], d[1] / R[1], d[2] / R[2]);
-        ball(b2, [c[0], c[1] + d[1] * k * 0.98, c[2] + d[2] * k * 0.98], [0.26, 0.17, 0.2]);
-        const cols = { root: wrap, mid: wrap, tip: wrap };
-        const pattern = { plain: 0, print: 1, stripe: 2 }[h.wrap.pattern];
-        this.add(capB, HAIR_MODE.cloth, cols, { seed: h.wrap.seed * 0.01, pattern, cloth2: second });
-        this.add(b2, HAIR_MODE.cloth, cols, { seed: h.wrap.seed * 0.01 + 1, pattern, cloth2: second });
+        const n = 26, length = 2.7 * len;
+        for (let k = 0; k < n; k++) {
+          const theta = mix(1.55, 2 * Math.PI - 1.55, (k + rng.next() * 0.5) / n);
+          const path = drapePath(frame, null, { theta0: theta, y0: rng.range(0.0, 0.3), length: length * rng.range(0.92, 1.04), gap: 0.04, wave: { amp: 0.012, freq: 5, twist: 0.01, phase: rng.next() * 6 }, steps: 18 });
+          tube(b, path, 0.03, 6, 0.55);
+        }
+        this.add(b, HAIR_MODE.braid, colours, { seed, shine: 0.8 });
         break;
       }
       default:
@@ -456,76 +446,32 @@ export class Hair {
 
 const mixC = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
 
-// push a scalp point towards an ellipsoid around c (weight w), with a slightly uneven outline
-function volumeTo(p, n, c, R, w, seed, bumpy = 0.05) {
-  const d = norm([p[0] - c[0], p[1] - c[1], p[2] - c[2]]);
-  // never inside the head: at least a little hair above the scalp
-  const k = Math.max(1 / Math.hypot(d[0] / R[0], d[1] / R[1], d[2] / R[2]), Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]) + 0.06);
-  const wob = 1 + bumpy * Math.sin(d[0] * 7 + seed) * Math.sin(d[1] * 6 + d[2] * 5 + seed * 1.3);
-  const target = [c[0] + d[0] * k * wob, c[1] + d[1] * k * wob, c[2] + d[2] * k * wob];
-  const out = [mix(p[0], target[0], w), mix(p[1], target[1], w), mix(p[2], target[2], w)];
-  return [out, norm([mix(n[0], d[0], w), mix(n[1], d[1], w), mix(n[2], d[2], w)])];
-}
-
-// ---------------- cape ----------------
-// A makeup cape over the shoulders: it hides where the body mesh ends and anything that falls behind
-// the shoulders.
+// ---------------- garment ----------------
+// A soft off-the-shoulder wrap at the bottom of the frame: it leaves the whole neck and the line into the
+// shoulders bare and hides where the body mesh ends, which moves with each face's neck shape. Below the
+// mesh the shoulders are continued outwards so the wrap fills the bottom of the frame.
 export function buildCape(frame, b) {
-  const NT = 96, NY = 44, rows = [];
+  const NT = 96, NY = 24, rows = [];
   for (let i = 0; i <= NT; i++) {
     const theta = (i / NT) * 2 * Math.PI;
-    const c = Math.cos(theta);
-    const yTop = c > 0 ? mix(-1.18, -1.5, c * c * c) : -1.15; // neckline: a soft scoop at the front
+    const c = Math.cos(theta), s2 = Math.sin(theta) ** 2;
+    const end = frame.lowest(theta);
+    // neckline: straight across the chest, rising a little over the shoulders, always above the mesh end
+    const yTop = Math.max(c > 0 ? mix(-1.66, -1.63, s2) : -1.63, end + 0.06);
     const row = [];
-    let r = 0;
     for (let j = 0; j <= NY; j++) {
       const t = j / NY;
-      const y = yTop - t * t * 2.2 - t * 0.2;
-      const body = frame.radius(theta, Math.max(y, -1.95)) + 0.04 + (y < -1.95 ? (-1.95 - y) * 0.12 : 0);
-      r = j === 0 ? frame.radius(theta, yTop) + 0.035 : Math.max(body, r);
-      const p = frame.point(theta, y, r);
-      row.push(b.vert(p, norm([Math.sin(theta), 0.3, c]), [0, -1, 0], [0.5, 1, 0, j === 0 ? 0.8 : 1]));
+      const y = yTop - t * t * 0.9 - t * 0.1;
+      const yb = Math.max(y, end);
+      const roll = j === 0 ? 0.02 : j === 1 ? 0.04 : 0.03; // a rolled top edge
+      // enclose the body a little below this height too, so the top edge sits in front of the chest's curve
+      const body = Math.max(frame.radius(theta, yb), frame.radius(theta, Math.max(yb - 0.06, end)), frame.radius(theta, end));
+      let p = frame.point(theta, yb, body + roll);
+      const below = Math.max(end - y, 0);
+      if (below > 0) p = [p[0] * Math.min(1 + 1.6 * below, 1.5), y, p[2] + Math.max(c, 0) * 0.35 * below];
+      row.push(b.vert(p, norm([Math.sin(theta), 0.35, c]), [Math.sin(theta) * 0.2, -1, 0], [0.5, 1, 0, j === 0 ? 0.85 : 1]));
     }
     rows.push(row);
   }
   for (let i = 0; i < NT; i++) for (let j = 0; j < NY; j++) b.quad(rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j]);
-}
-
-// ---------------- hijab ----------------
-// The skin outside a face opening, offset outwards; below the jaw the cloth falls in a straight line from
-// the chin and jaw to the shoulders instead of following the neck.
-function cloth(frame, hg, b, rng) {
-  const P = frame.P, N = frame.N, ref = frame.ref, q = hg.sub.subQuads, map = new Int32Array(frame.count).fill(-1);
-  const open = (r) => {
-    const e = Math.hypot(r[0] / 0.6, (r[1] + 0.17) / 0.92);
-    return r[2] > -0.15 ? smooth(0.97, 1.04, e) : 1; // 0 inside the face opening
-  };
-  const yJaw = -0.95, yShoulder = -1.75;
-  for (let k = 0; k < q.length; k += 4) {
-    const ids = [q[k], q[k + 1], q[k + 2], q[k + 3]];
-    if (ids.some((i) => frame.interior(i))) continue;
-    const m = ids.map((i) => open([ref[i * 3], ref[i * 3 + 1], ref[i * 3 + 2]]));
-    if (Math.max(...m) < 0.02) continue;
-    const vs = ids.map((i, c) => {
-      if (map[i] < 0) {
-        const n = [N[i * 3], N[i * 3 + 1], N[i * 3 + 2]];
-        let p = [P[i * 3] + n[0] * 0.05, P[i * 3 + 1] + n[1] * 0.05, P[i * 3 + 2] + n[2] * 0.05];
-        const y = p[1];
-        if (y < yJaw + 0.15) {
-          const th = Math.atan2(p[0], p[2] - frame.cz);
-          const rJaw = frame.radius(th, yJaw) + 0.06, rSh = frame.radius(th, yShoulder) + 0.05;
-          const t = Math.min(Math.max((y - yJaw) / (yShoulder - yJaw), 0), 1);
-          const hull = mix(rJaw, rSh, t * t * 0.6 + t * 0.4);
-          const rad = Math.hypot(p[0], p[2] - frame.cz);
-          const w = smooth(yJaw + 0.15, yJaw - 0.05, y);
-          const target = Math.max(rad, hull);
-          const rr = mix(rad, target, w);
-          p = frame.point(th, y, rr);
-        }
-        map[i] = b.vert(p, n, [0, -1, 0], [0.5, m[c] > 0 ? Math.min(1, m[c] * 3) : 0, 0, 1]);
-      }
-      return map[i];
-    });
-    b.quad(vs[0], vs[1], vs[2], vs[3]);
-  }
 }

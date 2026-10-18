@@ -30,7 +30,7 @@ function thickness(T, u) {
 
 export class Brows {
   constructor() {
-    this.material = createStrandMaterial({ opacity: 1, spec: 0.03 });
+    this.material = createStrandMaterial({ opacity: 0.75, spec: 0.03 });
     this.mesh = new GL.Mesh(new GL.BufferGeometry(), this.material);
     this.mesh.renderOrder = 2;
   }
@@ -40,7 +40,7 @@ export class Brows {
     const rng = createRng(brows.seed);
     const base = HAIR_COLOURS[brows.colour] || HAIR_COLOURS['dark-brown'];
     const tone = base.map((c) => c * brows.shade);
-    const count = Math.round(420 * brows.density * Math.sqrt(brows.thickness));
+    const count = Math.round(520 * brows.density * Math.sqrt(brows.thickness));
     const strands = [];
     const P = hg.subPos, N = hg.subNrm, root = [0, 0, 0], nrm = [0, 0, 0];
     for (const side of [1, -1]) {
@@ -57,21 +57,21 @@ export class Brows {
         const nl = Math.hypot(...nrm); nrm[0] /= nl; nrm[1] /= nl; nrm[2] /= nl;
         // growth direction: upward at the head, then outward and converging, then down at the tail
         let ang = u < 0.16 ? 78 - 40 * (u / 0.16) : u > 0.8 ? -12 + 20 * (1 - (u - 0.8) / 0.2) * (v < 0 ? 1 : 0.4) : (v < 0 ? 32 : 8) + 10 * (0.5 - u);
-        ang += r.gauss(7);
+        ang += r.gauss(5);
         const rad = (ang * Math.PI) / 180;
         let d = [side * Math.cos(rad), Math.sin(rad), 0];
         const dn = d[0] * nrm[0] + d[1] * nrm[1] + d[2] * nrm[2];
         d = [d[0] - dn * nrm[0], d[1] - dn * nrm[1], d[2] - dn * nrm[2]];
         const dl = Math.hypot(...d); d = d.map((x) => x / dl);
-        const L = (u < 0.16 ? 0.04 : u > 0.8 ? 0.05 : 0.06) * (0.8 + 0.4 * r.next());
+        const L = (u < 0.16 ? 0.03 : u > 0.8 ? 0.035 : 0.042) * (0.8 + 0.4 * r.next()); // short, groomed hairs
         const pts = [];
         for (let k = 0; k <= 4; k++) {
           const t = k / 4;
           const lift = 0.003 + 0.006 * t * (1 - t) + 0.002 * t;
           pts.push([root[0] + d[0] * L * t + nrm[0] * lift, root[1] + d[1] * L * t + nrm[1] * lift, root[2] + d[2] * L * t + nrm[2] * lift]);
         }
-        const shade = 0.8 + 0.4 * r.next();
-        strands.push({ points: pts, widths: [0.0022, 0.002, 0.0016, 0.0011, 0.0005], up: nrm.slice(), color: tone.map((c) => c * shade) });
+        const shade = 0.85 + 0.3 * r.next();
+        strands.push({ points: pts, widths: [0.0016, 0.0014, 0.0011, 0.0007, 0.0003], up: nrm.slice(), color: tone.map((c) => c * shade) });
       }
     }
     buildStrandGeometry(strands, this.mesh.geometry);

@@ -1,7 +1,7 @@
 {
  "asset": "head.bin.gz",
- "sha256": "c31414cb10941c828df5361842d4989e9c474903d792f7f7437f49a426a1de02",
- "uncompressedBytes": 621038,
+ "sha256": "fbccc951f7254bac7cd0e965ff5bd8d5dda605281334d91ff6853ba39b324ecd",
+ "uncompressedBytes": 700070,
  "source": {
   "project": "MakeHuman",
   "repo": "https://github.com/makehumancommunity/makehuman",
@@ -244,6 +244,18 @@
  "dimensions": {
   "gender.plus": [
    "macro:male"
+  ],
+  "gender.minus": [
+   "macro:female-extra"
+  ],
+  "base-african.plus": [
+   "macro:eth:african"
+  ],
+  "base-asian.plus": [
+   "macro:eth:asian"
+  ],
+  "base-caucasian.plus": [
+   "macro:eth:caucasian"
   ],
   "youth.plus": [
    "head/head-age-decr"

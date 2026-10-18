@@ -9,7 +9,7 @@ import { Lashes } from './lashes.js';
 import { SurfaceSampler } from './surface.js';
 import { Hair, buildCape, Builder as CapeBuilder } from './hair.js';
 import { createHairMaterial, HAIR_MODE } from './hair-material.js';
-import { skinAlbedo, ALBINISM_SKIN, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
+import { skinAlbedo, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
 import { createRng } from './rng.js';
 
 export const CAMERA = { fov: 20, target: new GL.Vector3(0, -0.28, 0), distance: 9.4 };
@@ -81,10 +81,10 @@ export class FaceView {
     hg.setShape(profile.shape);
     const rng = createRng(profile.seed ^ 0x5eed);
     const sk = profile.skin;
-    const skin = sk.albinism ? ALBINISM_SKIN : skinAlbedo(sk.tone, sk.undertone);
+    const skin = skinAlbedo(sk.tone, sk.undertone);
     const u = this.skin.uniforms;
     u.uSkin.value.set(...skin);
-    const lips = lipColours(skin, sk.albinism ? 0 : sk.tone, rng);
+    const lips = lipColours(skin, sk.tone, rng);
     u.uLip.value.set(...lips.outer);
     u.uLipInner.value.set(...lips.inner);
     u.uSeed.value = (profile.seed % 997) * 0.37;
@@ -95,11 +95,9 @@ export class FaceView {
     const fc = [skin[0] * 0.55, skin[1] * 0.4, skin[2] * 0.33];
     u.uFreckleCol.value.set(...fc);
     u.uMoles.value.forEach((m, i) => { const mole = sk.moles[i]; m.set(...(mole ? [...mole.at, mole.radius] : [0, 0, 0, 0])); });
-    u.uVitiligo.value.set(sk.vitiligo ? sk.vitiligo.amount : 0, sk.vitiligo ? sk.vitiligo.scale : 1, sk.vitiligo ? sk.vitiligo.seed : 0, 0);
     const hair = HAIR_COLOURS[profile.hair.colour] || HAIR_COLOURS['dark-brown'];
     u.uScalpTint.value.set(...hair.map((c) => c * 0.8));
-    const style = profile.hair.style;
-    u.uScalpAmount.value = ['hijab', 'headwrap'].includes(style) ? 0 : style === 'buzz' ? 0.55 : style === 'cornrows' ? 0.5 : 0.92;
+    u.uScalpAmount.value = 0.92;
     if (this.debugScalp) { u.uScalpTint.value.set(3, 0.1, 0.1); u.uScalpAmount.value = 1; }
     u.uScalp.value.set(profile.hair.hairline.front, profile.hair.hairline.temple, profile.hair.hairline.side, 0.03);
     // eyes look at the camera
@@ -127,9 +125,10 @@ export class FaceView {
       u.uMode.value = HAIR_MODE.cloth;
       this.cape.material.side = GL.FrontSide;
       this.cape.renderOrder = 0;
-      for (const k of ['uRoot', 'uMid', 'uTip']) u[k].value.set(0.75, 0.66, 0.66);
+      for (const k of ['uRoot', 'uMid', 'uTip']) u[k].value.set(0.6, 0.31, 0.35); // dusty rose
       this.scene.add(this.cape);
     }
+    this.cape.visible = !this.hideCape; // debugging aid
     const b = new CapeBuilder();
     buildCape(frame, b);
     this.cape.geometry.dispose();

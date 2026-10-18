@@ -1,5 +1,5 @@
-// Skin shader for the head surface. Natural features (lips, flush, under-eye tone, freckles, beauty marks,
-// vitiligo) are evaluated per pixel in the reference-head coordinate frame, so every generated face
+// Skin shader for the head surface. Natural features (lips, flush, under-eye tone, freckles, beauty marks)
+// are evaluated per pixel in the reference-head coordinate frame, so every generated face
 // carries them in the same anatomical places. Applied makeup arrives later through uPaint (UV space).
 import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
@@ -30,7 +30,6 @@ uniform float uSeed, uFlush, uUnderEye, uOil;
 uniform vec4 uFreckles;  // density, contrast, size, spread over the forehead
 uniform vec3 uFreckleCol;
 uniform vec4 uMoles[4];  // reference position + radius (0 = none)
-uniform vec4 uVitiligo;  // amount, scale, seed, -
 uniform vec3 uScalpTint;  // hair colour painted onto the scalp (fine hairs at the hairline, shading under the hair)
 uniform float uScalpAmount;
 uniform vec4 uScalp;     // hairline: front height, temple height, side height, softness
@@ -126,16 +125,12 @@ void main() {
     float d = length(r - uMoles[i].xyz) / uMoles[i].w;
     skin = mix(skin, uFreckleCol * 0.45, (1.0 - smoothstep(0.7, 1.0, d)) * 0.9);
   }
-  // vitiligo: depigmented patches with soft, irregular edges
-  if (uVitiligo.x > 0.0) {
-    float f = fbm(r * uVitiligo.y + uVitiligo.z) + 0.15 * fbm(r * uVitiligo.y * 4.0);
-    float bias = (1.0 - smoothstep(0.0, 0.25, vRA.y)) * 0.15 + (1.0 - smoothstep(0.0, 0.2, vRA.x)) * 0.12;
-    float patchMask = smoothstep(0.7 - uVitiligo.x * 0.3 - bias, 0.73 - uVitiligo.x * 0.3 - bias, f);
-    skin = mix(skin, vec3(0.74, 0.52, 0.46), patchMask);
-  }
   // brow fill: the skin tint between and under the brow hairs
   float brow = browMask(r) * uBrowB.w * (0.6 + 0.4 * fbm(r * 140.0 + uSeed));
-  skin = mix(skin, uBrowCol, brow * 0.45);
+  skin = mix(skin, uBrowCol, brow * 0.65);
+  // lash line: the lash roots darken the lid margin, mostly along the upper lid (eye centres are at y = 0)
+  float lashLine = (1.0 - smoothstep(0.004, 0.035, vRA.y)) * mix(0.25, 1.0, smoothstep(-0.02, 0.02, r.y)) * (1.0 - interior);
+  skin = mix(skin, vec3(0.01, 0.008, 0.007), lashLine * 0.85);
   // natural lips
   float lip = lipMask(r) * (1.0 - interior);
   float innerLip = lip * (1.0 - smoothstep(0.0, 0.045, vRA.x));
@@ -181,7 +176,8 @@ void main() {
       spec += uLightCol[i] * s * F_Schlick(0.028, VoH) * nl * ao;
     }
   }
-  vec3 col = albedo * diffuse + 0.5 * spec * (1.0 - paint.a * 0.4);
+  // skin under painted hair is matte: the hair layer above carries the shine
+  vec3 col = albedo * diffuse + 0.5 * spec * (1.0 - paint.a * 0.4) * (1.0 - uScalpAmount * smoothstep(0.0, 0.5, sc));
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -208,7 +204,6 @@ export function createSkinMaterial() {
       uFreckles: { value: new GL.Vector4(0, 0, 1, 0) },
       uFreckleCol: { value: new GL.Vector3(0.2, 0.1, 0.06) },
       uMoles: { value: [0, 1, 2, 3].map(() => new GL.Vector4()) },
-      uVitiligo: { value: new GL.Vector4() },
       uScalpTint: { value: new GL.Vector3(1, 1, 1) },
       uScalpAmount: { value: 0 },
       uScalp: { value: new GL.Vector4(0.78, 0.5, 0.08, 0.03) },

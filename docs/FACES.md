@@ -2,8 +2,8 @@
 
 Status: **prototype, locally verified**. It renders generated faces in the browser and passes the face audit and
 render smoke test listed below. It does not yet include makeup painting, the game screens, saves, ads or the
-YouTube adapter. Hair and clothing are procedural placeholders that work for every face, but they need an art pass
-before release (see "Known limits").
+YouTube adapter. Hair and the garment are procedural and work for every face, but they need an art pass before
+release (see "Known limits").
 
 ![24 faces from the queue](face-gallery.jpg)
 
@@ -14,7 +14,9 @@ before release (see "Known limits").
 | Engine | WebGL2 through a small purpose-built renderer (`src/gl/mini.js`, Three.js-style names). Three.js was the first choice; it was replaced on 18 October 2026 under the owner's load-time priority because the face scene used only a sliver of it (the bundle fell from 558 KB to 95 KB). No Unity or Godot web build. |
 | Presentation | One 3D head, seen by a fixed front camera ("2.5D"). There is no orbit control. A hidden debug orbit exists in the preview only. |
 | Base asset | MakeHuman's CC0 base mesh and shape targets, at a pinned commit. No paid scans, no non-commercial academic models (FLAME, BFM, SMPL-X), no MetaHuman, no AI-generated or photographed faces. |
-| Diversity | Ancestry profiles are tendencies over individual feature controls, never "race buttons". Individual variation is larger than any profile offset. Cultural choices (head coverings, braids, dyed hair) are style choices offered to everyone. |
+| Customers | Every face is a young woman with a clearly feminine face and head shape. No vitiligo, albinism or dyed hair. |
+| Hair | Always long and visible (players prefer long hair): no short cuts, updos or head coverings. |
+| Diversity | All ancestries. Ancestry profiles mix MakeHuman's sculpted female base heads and add tendencies over individual feature controls, never "race buttons". Face shape, skin and natural hair texture and colour stay coherent with the ancestry; individual variation keeps faces from one profile different. |
 | Age | Young adults only (18–30). |
 | Textures | Procedural shaders, with no shipped photo textures. |
 
@@ -26,7 +28,7 @@ MakeHuman (CC0, pinned commit)      tools/makehuman/fetch.mjs        sparse git 
                                                                      │
 src/face/generator.js  seed ──▶ face record (plain JSON)            │
 src/face/queue.js      variety director over seeds                  ▼
-src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, brows, lashes, hair, cape ─▶ src/gl/mini.js (WebGL2)
+src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, brows, lashes, hair, wrap ─▶ src/gl/mini.js (WebGL2)
 ```
 
 ### Head asset (`assets/head.bin.gz`)
@@ -34,7 +36,9 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
 - The head and shoulders of MakeHuman's hm08 base mesh: 4,478 vertices and 4,452 quads, plus eye and lash
   helper geometry. Its reference shape is a 25-year-old blend of MakeHuman's female macro targets, with the three
   ethnic macro targets weighted equally.
-- 93 **shape dimensions** (`tools/makehuman/dims.mjs`). Each one is a signed value in [-1, 1] mapped to MakeHuman's
+- 96 dimensions (`tools/makehuman/dims.mjs`): MakeHuman's three sculpted young-female base heads (African, Asian,
+  Caucasian), stored as offsets from the reference, and 93 **shape dimensions**. Each shape dimension is a signed
+  value in [-1, 1] mapped to MakeHuman's
   `incr`/`decr` targets, with left and right merged into one symmetric dimension. The dimensions cover face
   outline, forehead, brows, eye size, spacing, tilt and lids (epicanthic fold, lid crease, hooding), nose (about 20
   controls), lips (about 20 controls), cheeks, chin, jaw, neck and ears. Each dimension's whole-head translation is
@@ -52,7 +56,7 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
   deltas are stored as differences from their neighbours, and the file is gzipped. The browser inflates it with its
   native `DecompressionStream`, or with fflate (about 4 KB) where that is missing. Provenance (source file hashes,
   targets per dimension) is in `assets/head.manifest.json`, which is not loaded at runtime.
-- Size: **223,058 bytes** (621 KB inflated), down from 1,193,728 bytes in version 1. Building twice gives
+- Size: **243,991 bytes** (700,070 bytes inflated), down from 1,193,728 bytes in version 1. Building twice gives
   byte-identical output.
 
 ### Rendering (`src/face/`)
@@ -61,10 +65,10 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
 | --- | --- |
 | `../gl/mini.js` | The renderer: shader programs, buffers, alpha-blended passes, Khronos neutral tone mapping to sRGB |
 | `head-data.js`, `subdivide.js`, `head-geometry.js` | Inflate and parse the asset, apply shape dimensions, run one Catmull-Clark subdivision step, and compute normals and a cavity term (cheap occlusion in creases) |
-| `skin-material.js` | Wrapped diffuse with a red shift (a subsurface stand-in) and two specular lobes. Per pixel: natural lips, flush, under-eye tone, freckles, beauty marks, vitiligo, brow fill, a painted hairline, pores, and the `uPaint` hook for makeup |
+| `skin-material.js` | Wrapped diffuse with a red shift (a subsurface stand-in) and two specular lobes. Per pixel: natural lips, flush, under-eye tone, freckles, beauty marks, brow fill, a lash line, a painted hairline (matte, so it never shines through the hair), pores, and the `uPaint` hook for makeup |
 | `eyes.js` | Eyeballs placed from MakeHuman's eye helpers and aimed at the camera. Procedural iris, set per eye (ready for contact lenses) |
-| `brows.js`, `lashes.js`, `strands.js` | Individual brow hairs rooted on the skin, and upper and lower lashes rooted on MakeHuman's lash helper lines. Each lash keeps its own parameters, ready for mascara |
-| `hair.js`, `hair-material.js` | Procedural hairstyles and head coverings built from the morphed head (see below), plus the makeup cape |
+| `brows.js`, `lashes.js`, `strands.js` | Short, groomed brow hairs rooted on the skin over a soft brow fill, and upper and lower lashes rooted on MakeHuman's lash helper lines. Upper lashes fan out and gather into small clumps; lower lashes are fewer and lighter. Each lash keeps its own parameters, ready for mascara |
+| `hair.js`, `hair-material.js` | Procedural long hairstyles built from the morphed head (see below), plus the off-shoulder wrap |
 | `lighting.js` | One fixed "makeup station" light rig shared by every material |
 
 ### Generator (`src/face/generator.js`, `profiles.js`, `hair-styles.js`, `colors.js`)
@@ -73,73 +77,79 @@ A face record holds every resolved value. It is versioned (`GENERATOR_VERSION`) 
 seed, so a save can store the record or just `{version, seed}`.
 
 - **Origin.**
-  - 62% of faces come from a single profile. There are 16 profiles: West African; East African; Southern and
+  - 75% of faces come from a single profile. There are 15 profiles: West African; East African; Southern and
     Central African; North African and Middle Eastern; Mediterranean European; Northern European; South Asian;
     East Asian; Southeast Asian; Central Asian; Indigenous Americas; Pacific Islander; Melanesian; Aboriginal
     Australian; Arctic Indigenous.
-  - 22% are named blends: Latin American, Afro-Caribbean, Afro-Latin, South African Coloured, Central Asian ×
+  - 25% are named blends: Latin American, Afro-Caribbean, Afro-Latin, South African Coloured, Central Asian ×
     European, Arab × East African, East Asian × European, South Asian × European.
-  - 16% are free two-profile mixes.
   - Profiles are drawn evenly rather than by world population, so every session meets a wide range of people.
 - **Shape.** Independent noise on about 90 sliders made faces look unnatural (long lower faces, squinting eyes,
-  protruding mouths, egg-shaped crowns). The shape model now has three parts:
+  protruding mouths, egg-shaped crowns), and large slider offsets did not read as feminine. The shape model has
+  four parts:
+  - **Sculpted base heads.** Each profile mixes MakeHuman's three sculpted young-female heads (`BASE_HEADS`, for
+    example South Asian = 65% Caucasian, 20% African, 15% Asian head). These carry most of the ancestry and look
+    more natural than slider offsets, so profile slider tendencies are applied at half strength.
   - **Calibrated spread.** One standard deviation of a dimension moves the face by a fixed visible amount (about
     0.7 mm for small features, 1.2–1.4 mm for skull and structure). This uses each target's measured effect in
     `dim-impact.js`, which is generated from the asset and checked by the tests.
   - **Correlated factors.** Nine factors move related dimensions together: face width, face length, fullness,
     profile depth, eye openness, lip fullness, nose size, jaw strength and eye tilt. Independent noise is small on
     top of them.
-  - **Shared baseline.** Every face starts from the same young-adult point: more open eyes, a shorter and softer
-    lower face, wider temples, a slimmer neck and ears closer to the head. The profile tendencies are added to that
-    baseline.
-  - Head top above the eyes now spans 0.89–1.07 dm across 300 faces (it was 0.80–1.47).
+  - **Feminine baseline.** Every face starts from the same young-woman point: a softer jaw and smaller chin, a
+    slimmer nose, fuller lips with a defined bow, almond eyes with a relaxed upper lid and a lifted outer corner,
+    higher brows over a smooth brow ridge, a smooth forehead, a slim neck and ears close to the head. Each face also
+    leans towards an oval, heart, round or diamond outline.
+  - Head top above the eyes spans 0.93–1.10 dm across 300 faces (it was 0.80–1.47 before calibration).
 - **Skin.**
   - Tone is a continuous ramp that extends Haircut's ten anchor tones, with five undertones.
   - Freckles depend on fairness and red hair.
-  - Rates: beauty marks 49%, vitiligo 2%, albinism about 1% (pale skin, hair, brows, lashes and iris whatever the
-    ancestry).
+  - Beauty marks on about 44% of faces. No vitiligo or albinism (owner decision).
 - **Eyes, brows, lashes.** Iris colour comes from the profile. Brows use five shapes with varied thickness, density
   and colour (derived from natural hair colour). Lash length, density and curl vary.
 - **Hair.**
   - The profile sets natural texture (straight, wavy, curly, coily) and natural colour.
-  - The style is then drawn only from styles that suit that texture, weighted by presentation.
-  - Hijab and head wrap are offered to every face at the same rate.
-  - 8% of faces have dyed hair and 9% have highlights.
-- **Presentation.** 80% feminine, 14% androgynous, 6% masculine (an engineering default in `TRAITS`). Makeup tools
-  work the same on every face.
+  - The style is drawn from the profile's long styles (`STYLES`), keeping only those that suit that texture.
+  - No dyed colours. About 10% of faces have subtle highlights one natural shade lighter.
+- **Presentation.** Every face is feminine. Makeup tools work the same on every face.
 - **Labels.** Profile ids are internal. Players never see them, and they never decide tools, colours, difficulty,
   scores or a "suggested look". The dev preview shows them for review only.
 
 ### Variety director (`src/face/queue.js`)
 
 This picks each next face from up to 8 deterministic candidates. It scores each candidate against the last four
-faces on origin, hairstyle, skin-tone band, hair colour, presentation, iris and brow shape. Its state is
+faces on origin, hairstyle, parting, skin-tone band, hair colour, iris and brow shape. Its state is
 `{version, cursor, recent}` and survives a JSON save. It never stalls: after 8 candidates it takes the most
 different one.
 
-## Hairstyles and head coverings
+## Hairstyles
 
-22 styles are built procedurally around each morphed head:
+Every face has long hair (owner decision: players prefer it). Eight styles are built procedurally around each morphed
+head, each offered only to the natural textures that suit it:
 
-- Long straight, long wavy, silk press, lob, bob and pixie
-- Curly long and curly shoulder-length
-- Afro, afro puffs and short natural (TWA)
-- Box braids, locs and cornrows
-- High ponytail, low bun and top knot
-- Short crop, curly top and buzz
-- Hijab and head wrap (plain, print or striped cloth)
+- Long straight and long layered (shorter face-framing layers): straight or wavy hair
+- Long wavy: wavy, curly or straight hair
+- Long curls: curly, wavy or coily hair
+- Silk press (straightened natural hair), box braids, locs, and cornrows into long braids: coily or curly hair
+
+Partings (middle, left, right or none), length, volume and highlights vary per face. The ends fall past the bottom
+of the frame, over the shoulders and down the back.
 
 Building blocks:
 
-- **Cap.** A scalp layer follows a hairline (forehead, temples, sideburns, around the ears, nape) that varies per
-  face. The skin shader also paints fine hairs under it, so the hairline is soft.
-- **Drape.** Long hair slides down the head and falls in front of or behind the shoulders, without entering the
-  face.
-- **Hood.** A rounded volume (afro, head wrap) that rolls back onto the scalp at the hairline instead of
-  overhanging the face.
-- **Balls and tubes** for buns, puffs, braids and locs.
-- **Cloth** for the hijab: a face opening, falling from the chin to the shoulders.
-- **Cape:** a makeup cape covers the shoulders and the edge of the body mesh.
+- **Hood.** The hair lying on the head: a shell around the skull, `lift` above it, sampled by direction from the
+  hairline centre so that it rolls down onto the scalp exactly at the face's hairline. The hairline edge is
+  evaluated per pixel with a little wispy breakup, and the parting is a shallow groove. The skin shader paints
+  matte fine hairs under it.
+- **Drape.** Sheets of hair hang from the shell. They never move back in towards the head, so the sides fall
+  straight down from the widest part of the skull and over the ears instead of hugging it like a cap. Below the
+  jaw they fall in front of or behind the shoulders. Two face-framing pieces leave the parting, sweep over the
+  corners of the forehead and fall beside the cheeks.
+- **Tubes** for box braids, locs and cornrow braids; a thin **cap** layer for the cornrows on the scalp.
+- **Two-pass drawing.** Hair is drawn once for its solid parts (writing depth) and again for its soft fringes
+  (blended, not writing depth), so nearly transparent edges never punch see-through holes in the hair behind.
+- **Wrap.** An off-the-shoulder garment at the bottom of the frame leaves the whole neck and the line into the
+  shoulders bare. Its neckline follows where each face's body mesh ends.
 
 ## Commands
 
@@ -160,26 +170,27 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 
 ## Measured (local, headless Chromium with SwiftShader software WebGL)
 
-- Building a face (morph, subdivision, brows, lashes, hair, cape) takes about 70 ms on the CPU. This happens once
-  per Next, not per frame.
-- **Download:** 319,455 bytes in total: `head.bin.gz` 223,058, `main.js` 95,422 (minified, renderer included),
+- Building a face (morph, subdivision, brows, lashes, hair, wrap) takes about 60 ms on the CPU (50–96 ms over ten
+  faces). This happens once per Next, not per frame.
+- **Download:** 338,546 bytes in total: `head.bin.gz` 243,991, `main.js` 93,580 (minified, renderer included),
   `index.html` 975. That is down from about 1.75 MB, and every file is under the platform's recommended 512 KiB.
   The budget test fails above 400 KB for the face system. The whole-game target is 1 MB, against the contract's
   5 MB studio limit and the platform's 15 MiB recommendation. For comparison, Haircut's YouTube build is 1.09 MB.
-- **Time to first face:** 1.4 s after navigation from a local server, with software WebGL. This is a desktop
+- **Time to first face:** 2.4 s after navigation from a local server, with software WebGL (shader compilation
+  dominates). This is a desktop
   container, not a phone, and it excludes network time.
 - These numbers are not phone measurements. Physical mid-range Android frame-time and first-playable checks
   (contract §14) are still NOT RUN.
 
 ## How to extend
 
-- **Add a profile.** Add an entry to `PROFILES` with a tone range, weights and small shape means (|x| ≤ 0.5), then
-  run the audit. Keep cultural styles out of profiles.
+- **Add a profile.** Add an entry to `PROFILES` with a tone range, weights and small shape means (|x| ≤ 0.5), its
+  base-head mix in `BASE_HEADS` and its long styles in `STYLES`, then run the audit.
 - **Add a shape dimension.** Add it in `tools/makehuman/dims.mjs`, rebuild the head, run `impact.mjs`, and add it
   to `SHAPE_DIMS`. Its spread comes from its measured effect; add it to a factor if it should move with related
   features.
-- **Add a hairstyle.** Add a catalogue entry in `hair-styles.js` (textures and presentation weights) and a case in
-  `Hair.build`.
+- **Add a hairstyle.** It must be long. Add a catalogue entry in `hair-styles.js` (the textures that suit it), a case
+  in `Hair.build`, and weights in the `STYLES` of the profiles it fits.
 - **Makeup painting (next step).** Render brush stamps into a UV-space render target, compute distance from the 3D
   hit point in the fragment shader so strokes cross UV seams, and bind it as `uPaint` (premultiplied colour). For
   mascara, change per-lash `widthMul`, `lengthMul` and `colour` in `Lashes` and call `update`. For lenses, call
@@ -187,9 +198,10 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 
 ## Known limits (honest list)
 
-- Hair is procedural and reads well at phone size, but strand detail, curl clumping and the backs of long styles
-  need an art pass, or replacement with authored hair cards using the same building blocks.
-- The cape is a placeholder garment.
+- Hair is procedural and reads well at phone size, but strand detail, curl clumping and the hanging lengths (which
+  are a few layered sheets) need an art pass, or replacement with authored hair cards using the same building
+  blocks.
+- The off-shoulder wrap is a simple garment; it needs an art pass.
 - No blink or idle animation yet. A procedural upper-lid blink around the eye centre is the planned approach, and
   it must freeze during a stroke (contract §2).
 - Profile shape tendencies are directional and qualitative, not fitted measurements. Have people from the

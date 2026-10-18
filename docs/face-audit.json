@@ -1,121 +1,96 @@
 {
- "generatorVersion": 2,
+ "generatorVersion": 4,
  "faces": 2000,
  "geometrySample": 300,
  "failures": [],
  "coverage": {
   "origin": {
-   "aboriginal-australian": 108,
-   "arctic-indigenous": 101,
-   "central-asian": 152,
-   "east-african": 105,
-   "east-asian": 157,
-   "indigenous-americas": 175,
-   "mediterranean-european": 101,
-   "melanesian": 82,
-   "north-african-middle-eastern": 178,
-   "northern-european": 108,
-   "pacific-islander": 109,
-   "south-asian": 162,
-   "southeast-asian": 90,
-   "southern-central-african": 160,
-   "west-african": 212
+   "aboriginal-australian": 115,
+   "arctic-indigenous": 96,
+   "central-asian": 140,
+   "east-african": 95,
+   "east-asian": 158,
+   "indigenous-americas": 176,
+   "mediterranean-european": 87,
+   "melanesian": 78,
+   "north-african-middle-eastern": 169,
+   "northern-european": 101,
+   "pacific-islander": 106,
+   "south-asian": 154,
+   "southeast-asian": 92,
+   "southern-central-african": 176,
+   "west-african": 257
   },
   "kind": {
-   "blend": 471,
-   "mix": 344,
-   "single": 1185
+   "blend": 536,
+   "single": 1464
   },
   "presentation": {
-   "androgynous": 271,
-   "feminine": 1610,
-   "masculine": 119
+   "feminine": 2000
   },
   "style": {
-   "afro": 106,
-   "afro-puffs": 59,
-   "bob": 159,
-   "box-braids": 65,
-   "buzz": 75,
-   "cornrows": 41,
-   "curly-long": 25,
-   "curly-shoulder": 89,
-   "curly-top": 19,
-   "headwrap": 70,
-   "high-ponytail": 177,
-   "hijab": 92,
-   "lob": 137,
-   "locs": 69,
-   "long-straight": 213,
-   "long-wavy": 87,
-   "low-bun": 183,
-   "pixie": 87,
-   "short-crop": 69,
-   "silk-press": 63,
-   "top-knot": 85,
-   "twa": 30
+   "box-braids": 147,
+   "cornrow-braids": 86,
+   "curly-long": 276,
+   "locs": 74,
+   "long-layered": 205,
+   "long-straight": 608,
+   "long-wavy": 494,
+   "silk-press": 110
   },
   "texture": {
-   "coily": 420,
-   "curly": 329,
-   "straight": 788,
-   "wavy": 463
+   "coily": 445,
+   "curly": 310,
+   "straight": 793,
+   "wavy": 452
   },
   "colour": {
-   "auburn": 7,
-   "burgundy": 27,
+   "auburn": 13,
    "copper": 9,
-   "dark-blonde": 35,
-   "dark-brown": 266,
-   "electric-blue": 31,
-   "golden-blonde": 17,
-   "jet-black": 730,
-   "lavender": 26,
-   "light-blonde": 9,
-   "light-brown": 49,
-   "medium-brown": 98,
-   "pale-blonde": 19,
-   "pastel-pink": 24,
-   "platinum": 30,
-   "soft-black": 593,
-   "strawberry-blonde": 9,
-   "teal": 21
+   "dark-blonde": 33,
+   "dark-brown": 304,
+   "golden-blonde": 23,
+   "jet-black": 859,
+   "light-blonde": 13,
+   "light-brown": 44,
+   "medium-brown": 101,
+   "soft-black": 598,
+   "strawberry-blonde": 3
   },
   "iris": {
-   "blue": 70,
-   "brown": 639,
-   "dark-brown": 1052,
-   "green": 59,
-   "grey": 35,
-   "hazel": 94,
-   "light-brown": 40,
-   "pale-blue": 11
+   "blue": 78,
+   "brown": 626,
+   "dark-brown": 1079,
+   "green": 49,
+   "grey": 23,
+   "hazel": 95,
+   "light-brown": 50
   },
   "undertone": {
-   "golden": 648,
-   "neutral": 795,
-   "olive": 220,
-   "pink": 112,
-   "red": 225
+   "golden": 625,
+   "neutral": 803,
+   "olive": 212,
+   "pink": 104,
+   "red": 256
   },
   "tone": {
-   "0": 47,
-   "1": 108,
-   "2": 233,
-   "3": 223,
-   "4": 348,
-   "5": 361,
-   "6": 257,
-   "7": 202,
-   "8": 160,
-   "9": 61
+   "0": 40,
+   "1": 115,
+   "2": 226,
+   "3": 244,
+   "4": 312,
+   "5": 343,
+   "6": 254,
+   "7": 218,
+   "8": 185,
+   "9": 63
   },
   "brows": {
-   "angled": 326,
-   "high-arch": 292,
-   "rounded": 313,
-   "soft-arch": 683,
-   "straight": 386
+   "angled": 361,
+   "high-arch": 401,
+   "rounded": 286,
+   "soft-arch": 701,
+   "straight": 251
   },
   "age": {
    "18": 67,
@@ -133,57 +108,53 @@
   }
  },
  "rates": {
-  "freckles": 0.1585,
-  "vitiligo": 0.02,
-  "albinism": 0.0095,
-  "moles": 0.4895,
-  "dyed": 0.0795,
-  "highlights": 0.092,
-  "headCovering": 0.081
+  "freckles": 0.1235,
+  "moles": 0.4435,
+  "highlights": 0.1145
  },
- "distinctSignatures": 1901,
+ "distinctSignatures": 1771,
  "queue": {
   "adjacentIdentical": 0,
-  "adjacentSameStyle": 0.0005002501250625312,
-  "adjacentSameOrigin": 0.0005002501250625312,
-  "adjacentSameToneBin": 0.014507253626813406,
+  "adjacentSameStyle": 0.0030015007503751876,
+  "adjacentSameOrigin": 0,
+  "adjacentSameToneBin": 0.013506753376688344,
   "repeatsWithinFour": 0
  },
  "geometry": {
   "eyeR": {
-   "min": 0.14245852549217083,
-   "p5": 0.1502982826805858,
-   "median": 0.15761043340486408,
-   "p95": 0.16632670581339748,
-   "max": 0.17127273757228761
+   "min": 0.13680510659795717,
+   "p5": 0.1393810705207207,
+   "median": 0.15285559948138713,
+   "p95": 0.15898665679482593,
+   "max": 0.16228254929623528
   },
   "lidGap": {
-   "min": 0.07078079041093588,
-   "p5": 0.07696577720344067,
-   "median": 0.09134101867675781,
-   "p95": 0.10707620158791542,
-   "max": 0.1226099282503128
+   "min": 0.057707907631993294,
+   "p5": 0.06710159592330456,
+   "median": 0.07955717854201794,
+   "p95": 0.09259921312332153,
+   "max": 0.1031939759850502
   },
   "mouthW": {
-   "min": 0.3060995936393738,
-   "p5": 0.3222252428531647,
-   "median": 0.3481285870075226,
-   "p95": 0.3728868365287781,
-   "max": 0.3931196331977844
+   "min": 0.2800944149494171,
+   "p5": 0.2917602062225342,
+   "median": 0.32413583993911743,
+   "p95": 0.36159536242485046,
+   "max": 0.3876644968986511
   },
   "top": {
-   "min": 0.8880026340484619,
-   "p5": 0.9143199920654297,
-   "median": 0.9561888575553894,
-   "p95": 1.0236351490020752,
-   "max": 1.0669492483139038
+   "min": 0.9258805513381958,
+   "p5": 0.9496830105781555,
+   "median": 1.019155740737915,
+   "p95": 1.0760421752929688,
+   "max": 1.09987211227417
   },
   "chin": {
-   "min": -1.130110502243042,
-   "p5": -1.047964096069336,
-   "median": -0.9665525555610657,
-   "p95": -0.9437896013259888,
-   "max": -0.928737223148346
+   "min": -1.026618480682373,
+   "p5": -0.9995415806770325,
+   "median": -0.970956027507782,
+   "p95": -0.9418803453445435,
+   "max": -0.9294605851173401
   }
  }
 }

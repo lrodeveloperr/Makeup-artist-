@@ -24,8 +24,6 @@ export function skinAlbedo(tone, undertone = 'neutral') {
   const u = UNDERTONES[undertone] || UNDERTONES.neutral;
   return [c[0] * u[0], c[1] * u[1], c[2] * u[2]];
 }
-// albinism: very little melanin whatever the ancestry
-export const ALBINISM_SKIN = [0.74, 0.5, 0.43];
 
 // Natural (unpainted) lip colour: redder and a little darker than the skin on fair tones, browner and
 // more muted on deep tones, where the inner lower lip is often lighter and pinker.
@@ -47,23 +45,14 @@ export const HAIR_COLOURS = {
   'soft-black': [0.02, 0.017, 0.016],
   'dark-brown': [0.035, 0.024, 0.017],
   'medium-brown': [0.07, 0.045, 0.028],
-  'light-brown': [0.13, 0.085, 0.05],
-  'dark-blonde': [0.2, 0.14, 0.08],
-  'golden-blonde': [0.36, 0.25, 0.12],
-  'light-blonde': [0.55, 0.43, 0.26],
+  'light-brown': [0.14, 0.085, 0.045],
+  'dark-blonde': [0.24, 0.14, 0.06],
+  'golden-blonde': [0.42, 0.25, 0.09],
+  'light-blonde': [0.62, 0.43, 0.2],
   'strawberry-blonde': [0.4, 0.2, 0.1],
   auburn: [0.13, 0.04, 0.018],
   copper: [0.3, 0.09, 0.03],
-  'pale-blonde': [0.7, 0.62, 0.45], // albinism
-  // dyed colours, an occasional style choice for anyone
-  burgundy: [0.12, 0.012, 0.03],
-  'pastel-pink': [0.75, 0.32, 0.42],
-  lavender: [0.38, 0.27, 0.6],
-  teal: [0.03, 0.22, 0.24],
-  'electric-blue': [0.02, 0.06, 0.35],
-  platinum: [0.72, 0.7, 0.66],
 };
-export const DYED = ['burgundy', 'pastel-pink', 'lavender', 'teal', 'electric-blue', 'platinum'];
 
 // Iris colours: four stops from the pupil edge to the limbal ring (sRGB hex, as in Haircut)
 export const IRIS = {
@@ -75,5 +64,4 @@ export const IRIS = {
   green: ['#b5c49a', '#6f8e55', '#4d6b3a', '#2c3f22'],
   grey: ['#c4cdd2', '#8b9aa3', '#5f6e78', '#36424a'],
   blue: ['#a8c4d6', '#5d90b3', '#34688d', '#1d3c55'],
-  'pale-blue': ['#d6e2ea', '#a9c0d0', '#8aa5ba', '#5f7a8e'], // albinism
 };

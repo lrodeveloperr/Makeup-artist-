@@ -20,7 +20,7 @@ const finite = (x) => typeof x === 'number' && Number.isFinite(x);
 // ---------------- profile validity, determinism and coverage ----------------
 const cov = { origin: new Map(), kind: new Map(), presentation: new Map(), style: new Map(), texture: new Map(), colour: new Map(),
   iris: new Map(), undertone: new Map(), tone: new Map(), brows: new Map(), age: new Map() };
-let freckles = 0, vitiligo = 0, albinism = 0, moles = 0, dyed = 0, highlights = 0, covered = 0;
+let freckles = 0, moles = 0, highlights = 0;
 const sigs = new Set();
 for (let seed = 1; seed <= N; seed++) {
   const f = generateFace(seed);
@@ -43,12 +43,10 @@ for (let seed = 1; seed <= N; seed++) {
   count(cov.texture, f.hair.texture); count(cov.colour, f.hair.colour); count(cov.iris, f.eyes.iris); count(cov.undertone, f.skin.undertone);
   count(cov.tone, Math.min(9, Math.floor(f.skin.tone * 10))); count(cov.brows, f.brows.shape); count(cov.age, f.age);
   if (f.skin.freckles.density > 0) freckles++;
-  if (f.skin.vitiligo) vitiligo++;
-  if (f.skin.albinism) albinism++;
   if (f.skin.moles.length) moles++;
-  if (f.hair.colour !== f.hair.natural) dyed++;
+  if (f.hair.colour !== f.hair.natural) fail(seed, 'dyed hair');
+  if (f.presentation !== 'feminine') fail(seed, 'not feminine');
   if (f.hair.highlights) highlights++;
-  if (HAIR_STYLES[f.hair.style].length === 'covered') covered++;
   sigs.add(signature(f));
 }
 
@@ -115,7 +113,7 @@ const lowerBound = sigs.size;
 const report = {
   generatorVersion: GENERATOR_VERSION, faces: N, geometrySample: GEO, failures,
   coverage: Object.fromEntries(Object.entries(cov).map(([k, m]) => [k, Object.fromEntries([...m.entries()].sort())])),
-  rates: { freckles: freckles / N, vitiligo: vitiligo / N, albinism: albinism / N, moles: moles / N, dyed: dyed / N, highlights: highlights / N, headCovering: covered / N },
+  rates: { freckles: freckles / N, moles: moles / N, highlights: highlights / N },
   distinctSignatures: lowerBound,
   queue: { adjacentIdentical: adjacentSame, adjacentSameStyle: sameStyle / (N - 1), adjacentSameOrigin: sameOrigin / (N - 1), adjacentSameToneBin: sameTone / (N - 1), repeatsWithinFour: repeats4 },
   geometry: Object.fromEntries(Object.entries(geo).map(([k, v]) => [k, stat(v)])),
@@ -129,15 +127,15 @@ ${failures.length ? '\n' + failures.map((f) => '- ' + f).join('\n') + '\n' : ''}
 ## What is checked
 
 - Every profile is deterministic (same seed → identical record), uses only catalogue values, keeps every shape value in [-1, 1], ages 18–30, and never places a beauty mark on the eyes or lips.
-- Every hairstyle suits the face's natural hair texture.
+- Every face is feminine, with natural (undyed) hair in a long style from the catalogue that suits her natural hair texture.
 - The queue (\`src/face/queue.js\`) never shows the same complete face twice in a row, and its state survives a JSON save/load.
 - For the geometry sample: finite vertices, symmetric eyes, open eyelids (lash lines apart) and a usable mouth on every face.
 
 ## Variety
 
-- Distinct face signatures (origin · presentation · hairstyle · hair colour · iris · tone band · brow shape) seen in ${N} faces: **${lowerBound}**. This is a lower bound on visibly different configurations; it ignores the ${SHAPE_DIMS.length} continuous shape dimensions, freckles, marks and lip/brow detail that also differ per face. It is not a "millions of faces" claim.
+- Distinct face signatures (origin · presentation · hairstyle · hair colour · iris · tone band · brow shape · parting) seen in ${N} faces: **${lowerBound}**. This is a lower bound on visibly different configurations; it ignores the ${SHAPE_DIMS.length} continuous shape dimensions, freckles, marks and lip/brow detail that also differ per face. It is not a "millions of faces" claim.
 - Queue neighbours: ${adjacentSame} identical, ${(100 * report.queue.adjacentSameStyle).toFixed(1)}% same hairstyle, ${(100 * report.queue.adjacentSameOrigin).toFixed(1)}% same main origin, ${(100 * report.queue.adjacentSameToneBin).toFixed(1)}% same skin-tone band; ${repeats4} signature repeats within four faces.
-- Freckles ${pct(freckles)}, beauty marks ${pct(moles)}, vitiligo ${pct(vitiligo)}, albinism ${pct(albinism)}, dyed hair ${pct(dyed)}, highlights ${pct(highlights)}, head coverings ${pct(covered)}.
+- Freckles ${pct(freckles)}, beauty marks ${pct(moles)}, subtle natural highlights ${pct(highlights)}. Every face has long, visible hair (no short cuts, updos or head coverings), and no vitiligo, albinism or dyed colours (owner decisions).
 
 ## Coverage
 

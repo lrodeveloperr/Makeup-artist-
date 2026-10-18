@@ -247,8 +247,15 @@ const sparse = (delta) => { // delta: Float64Array over the subset
 function subsetDelta(names) {
   const D = new Float64Array(VC * 3);
   for (const name of names) {
-    if (name === 'macro:male') {
-      order.forEach((i, k) => { for (let a = 0; a < 3; a++) D[k * 3 + a] += MALE[i * 3 + a] - REF[i * 3 + a]; });
+    if (name.startsWith('macro:eth:')) {
+      const P = Float64Array.from(base);
+      addTarget(P, `macrodetails/${name.slice(10)}-female-young`, 1);
+      order.forEach((i, k) => { for (let a = 0; a < 3; a++) D[k * 3 + a] += P[i * 3 + a] - REF[i * 3 + a]; });
+      continue;
+    }
+    if (name === 'macro:male' || name === 'macro:female-extra') {
+      const sign = name === 'macro:male' ? 1 : -1;
+      order.forEach((i, k) => { for (let a = 0; a < 3; a++) D[k * 3 + a] += sign * (MALE[i * 3 + a] - REF[i * 3 + a]); });
       continue;
     }
     const t = target(name);

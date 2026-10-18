@@ -66,7 +66,8 @@ export function createStrandMaterial({ opacity = 1, minPx = 0.6, spec = 0.12 } =
   });
 }
 
-// Builds ribbon geometry from strands: { points: [[x,y,z]...], widths: [...], up: [x,y,z] (ribbon normal hint), color: [r,g,b] }
+// Builds ribbon geometry from strands: { points: [[x,y,z]...], widths: [...], up: [x,y,z] (ribbon normal hint), color: [r,g,b],
+// side: optional [x,y,z] across-ribbon direction used where the strand runs along the hint }
 export function buildStrandGeometry(strands, geometry = new GL.BufferGeometry()) {
   let nv = 0, ni = 0;
   for (const s of strands) { nv += s.points.length * 2; ni += (s.points.length - 1) * 6; }
@@ -82,6 +83,11 @@ export function buildStrandGeometry(strands, geometry = new GL.BufferGeometry())
       // across-ribbon direction: perpendicular to the strand and to the hint (camera or skin normal)
       const u = s.up;
       let ox = ty * u[2] - tz * u[1], oy = tz * u[0] - tx * u[2], oz = tx * u[1] - ty * u[0];
+      if (s.side && Math.hypot(ox, oy, oz) < 0.35) {
+        // strand almost along the hint (a lash pointing at the camera): use the strand's own side direction
+        const d = s.side[0] * tx + s.side[1] * ty + s.side[2] * tz;
+        ox = s.side[0] - d * tx; oy = s.side[1] - d * ty; oz = s.side[2] - d * tz;
+      }
       const ol = Math.hypot(ox, oy, oz) || 1;
       const w = s.widths[k] / 2;
       ox *= w / ol; oy *= w / ol; oz *= w / ol;

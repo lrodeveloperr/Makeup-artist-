@@ -1,16 +1,14 @@
-// Ancestry profiles for the face generator.
+// Ancestry profiles for the face generator. Every generated face is a young woman.
 //
-// A profile is a set of *tendencies*: a skin-tone range, undertone / hair-texture / hair-colour / iris
-// weights, and small mean offsets on the head-shape dimensions (see tools/makehuman/dims.mjs). Every face
-// also gets individual variation that is larger than any profile offset, so faces from one profile differ
-// from each other more than profiles differ on average. Offsets are capped (|mean| <= 0.5) so nobody is
-// drawn as a caricature. Shape tendencies follow published facial-anthropometry comparisons (e.g. Farkas
-// et al. 2005, J Craniofac Surg 16:615) only in direction and roughly in size; they are not measurements.
+// A profile sets the base head (a mix of MakeHuman's three sculpted young-female heads, `BASE_HEADS`),
+// a skin-tone range, undertone / hair-texture / natural hair-colour / iris weights, small extra shape
+// tendencies, and the hairstyles that fit it (`STYLES`), so that face,
+// skin and hair stay coherent with the ancestry (owner decision, 18 October 2026). Individual variation
+// keeps faces from one profile different from each other. Shape tendencies follow published facial-
+// anthropometry comparisons (e.g. Farkas et al. 2005, J Craniofac Surg 16:615) in direction only.
 //
 // Profile ids are internal. They are never shown to players and never decide tools, colours, difficulty,
-// scores or what makeup a face "should" wear. Cultural choices (head coverings, braids vs. loose hair as a
-// style, dyed colours) are not profile traits: they are drawn from texture-compatible style lists the same
-// way for everyone (see hair-styles.js).
+// scores or what makeup a face "should" wear.
 
 // skin tone: position on the continuous ramp in colors.js (0 = very fair, 1 = very deep)
 export const PROFILES = {
@@ -101,14 +99,13 @@ export const PROFILES = {
   },
   melanesian: {
     tone: [0.62, 1.0], undertone: { neutral: 3, red: 1, golden: 1 },
-    // naturally blond hair occurs in some Melanesian populations (a distinct TYRP1 variant)
-    texture: { coily: 75, curly: 25 }, hair: { 'jet-black': 6, 'soft-black': 3, 'golden-blonde': 0.6, 'dark-blonde': 0.4 },
+    texture: { coily: 75, curly: 25 }, hair: { 'jet-black': 6, 'soft-black': 3 },
     iris: { 'dark-brown': 8, brown: 2 },
     shape: { 'nose-width': 0.45, 'brow-proj': 0.3, 'upper-lip-volume': 0.35, 'lower-lip-volume': 0.35, 'mouth-proj': 0.2, 'nose-proj': -0.05 },
   },
   'aboriginal-australian': {
     tone: [0.6, 0.98], undertone: { neutral: 3, red: 1, golden: 1 },
-    texture: { wavy: 40, curly: 45, straight: 15 }, hair: { 'jet-black': 4, 'soft-black': 4, 'dark-brown': 3, 'dark-blonde': 0.5 },
+    texture: { wavy: 40, curly: 45, straight: 15 }, hair: { 'jet-black': 4, 'soft-black': 4, 'dark-brown': 3 },
     iris: { 'dark-brown': 7, brown: 3 },
     shape: { 'brow-proj': 0.45, 'nose-width': 0.4, 'eye-depth-1': 0.3, 'upper-lip-volume': 0.2, 'lower-lip-volume': 0.2, 'mouth-proj': 0.15 },
   },
@@ -132,15 +129,49 @@ export const BLENDS = {
   'south-asian-european': ['south-asian', 'northern-european'],
 };
 
-// How often each kind of origin is drawn. Profiles are drawn evenly (not by world population) so every
-// session meets a wide range of faces; blends and free two-profile mixes are common.
-export const ORIGIN_WEIGHTS = { single: 0.62, blend: 0.22, mix: 0.16 };
-
-// Traits independent of ancestry
-export const TRAITS = {
-  presentation: { feminine: 80, androgynous: 14, masculine: 6 },
-  albinism: 0.01,
-  vitiligo: 0.02,
-  dyedHair: 0.08,
-  highlights: 0.1,
+// Base head per profile: weights of MakeHuman's sculpted african / asian / caucasian young-female heads.
+export const BASE_HEADS = {
+  'west-african': { african: 1 },
+  'east-african': { african: 0.7, caucasian: 0.3 },
+  'southern-central-african': { african: 1 },
+  'north-african-middle-eastern': { caucasian: 0.85, african: 0.15 },
+  'mediterranean-european': { caucasian: 1 },
+  'northern-european': { caucasian: 1 },
+  'south-asian': { caucasian: 0.65, african: 0.2, asian: 0.15 },
+  'east-asian': { asian: 1 },
+  'southeast-asian': { asian: 0.8, african: 0.1, caucasian: 0.1 },
+  'central-asian': { asian: 0.6, caucasian: 0.4 },
+  'indigenous-americas': { asian: 0.75, caucasian: 0.25 },
+  'pacific-islander': { asian: 0.5, african: 0.3, caucasian: 0.2 },
+  melanesian: { african: 0.85, asian: 0.15 },
+  'aboriginal-australian': { african: 0.75, caucasian: 0.25 },
+  'arctic-indigenous': { asian: 1 },
 };
+
+// Hairstyles that fit each profile (weights; a style is only used if it suits the face's natural texture).
+// All of them are long (see hair-styles.js).
+const AFRICAN_STYLES = { 'box-braids': 8, 'silk-press': 6, 'cornrow-braids': 5, locs: 4, 'curly-long': 5 };
+export const STYLES = {
+  'west-african': AFRICAN_STYLES,
+  'east-african': { ...AFRICAN_STYLES, 'curly-long': 6, 'long-wavy': 3 },
+  'southern-central-african': AFRICAN_STYLES,
+  'north-african-middle-eastern': { 'long-wavy': 7, 'long-straight': 6, 'curly-long': 5, 'long-layered': 3 },
+  'mediterranean-european': { 'long-wavy': 7, 'long-straight': 6, 'long-layered': 4, 'curly-long': 3 },
+  'northern-european': { 'long-straight': 7, 'long-wavy': 6, 'long-layered': 5, 'curly-long': 1 },
+  'south-asian': { 'long-straight': 7, 'long-wavy': 7, 'curly-long': 3, 'long-layered': 2 },
+  'east-asian': { 'long-straight': 10, 'long-layered': 5, 'long-wavy': 3 },
+  'southeast-asian': { 'long-straight': 9, 'long-wavy': 4, 'long-layered': 3 },
+  'central-asian': { 'long-straight': 8, 'long-wavy': 4, 'long-layered': 2 },
+  'indigenous-americas': { 'long-straight': 10, 'long-wavy': 2, 'long-layered': 2 },
+  'pacific-islander': { 'long-wavy': 8, 'curly-long': 6, 'long-straight': 5 },
+  melanesian: { 'curly-long': 6, 'box-braids': 3, locs: 2, 'silk-press': 1 },
+  'aboriginal-australian': { 'long-wavy': 6, 'curly-long': 6, 'long-straight': 3 },
+  'arctic-indigenous': { 'long-straight': 10, 'long-layered': 2 },
+};
+
+// How often each kind of origin is drawn. Profiles are drawn evenly (not by world population) so every
+// session meets a wide range of faces. Mixed heritage uses the named blends only.
+export const ORIGIN_WEIGHTS = { single: 0.75, blend: 0.25 };
+// Profile shape tendencies are applied at this strength on top of the sculpted base heads.
+export const PROFILE_SHAPE_SCALE = 0.5;
+export const TRAITS = { highlights: 0.1 };

@@ -10,7 +10,14 @@ const one = (id, target) => pair(id, target, null);
 
 export const DIMS = [
   // whole head and presentation
-  pair('gender', 'macro:male', null), // neutral male minus neutral female, computed in the build
+  // neutral male minus neutral female; the minus side extrapolates the same difference past the female
+  // reference (a more feminine face: smaller jaw and chin, softer brow, fuller lips)
+  pair('gender', 'macro:male', 'macro:female-extra'),
+  // MakeHuman's sculpted young-female heads for its three base ancestries, as offsets from their equal blend
+  // (the reference). Profiles mix them; they are never exposed as single "race" controls.
+  pair('base-african', 'macro:eth:african', null),
+  pair('base-asian', 'macro:eth:asian', null),
+  pair('base-caucasian', 'macro:eth:caucasian', null),
   bi('youth', 'head', 'head-age', 'decr', 'incr'),
   one('shape-oval', 'head/head-oval'),
   one('shape-round', 'head/head-round'),
