@@ -1,23 +1,73 @@
-// Parses assets/head.bin (built by tools/makehuman/build-head.mjs) and turns a set of shape-dimension
+// Loads assets/head.bin.gz (built by tools/makehuman/build-head.mjs) and turns a set of shape-dimension
 // values into vertex positions.
-const TYPES = { Float32Array, Uint16Array, Int16Array, Uint32Array, Uint8Array };
+import { gunzipSync } from 'fflate';
+
+const TYPES = { Uint16Array, Int16Array, Uint8Array, Int8Array };
+
+// gzip -> ArrayBuffer: the browser's own decompressor where available (Chrome 80+, Safari 16.4+),
+// otherwise fflate's small inflater (about 4 KB)
+export async function inflate(buffer) {
+  if (typeof DecompressionStream === 'function') {
+    const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new Response(stream).arrayBuffer();
+  }
+  const out = gunzipSync(new Uint8Array(buffer));
+  return out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);
+}
+export async function loadHead(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`head asset: HTTP ${res.status}`);
+  return parseHead(await inflate(await res.arrayBuffer()));
+}
+
+// undo the build's predictive coding: each value was stored minus the one `stride` before it
+function undelta(arr, stride) {
+  for (let i = stride; i < arr.length; i++) arr[i] += arr[i - stride];
+  return arr;
+}
+function readVarints(bytes, count) {
+  const out = new Uint32Array(count);
+  let p = 0, prev = -1;
+  for (let j = 0; j < count; j++) {
+    let v = 0, shift = 0, b;
+    do { b = bytes[p++]; v |= (b & 0x7f) << shift; shift += 7; } while (b & 0x80);
+    out[j] = prev = prev + 1 + v;
+  }
+  return out;
+}
 
 export function parseHead(buffer) {
   const bytes = new Uint8Array(buffer);
   if (String.fromCharCode(...bytes.subarray(0, 4)) !== 'MKHD') throw new Error('not a head asset');
   const jsonLength = new DataView(buffer).getUint32(4, true);
   const header = JSON.parse(new TextDecoder().decode(bytes.subarray(8, 8 + jsonLength)));
-  if (header.format !== 'makeup-head' || header.version !== 1) throw new Error('unsupported head asset version');
+  if (header.format !== 'makeup-head' || header.version !== 2) throw new Error('unsupported head asset version');
   const pre = 8 + ((jsonLength + 3) & ~3);
   const arrays = header.sections.map((s) => {
     const T = TYPES[s.type];
-    // copy so every array is aligned and independent of the download buffer
-    return new T(buffer.slice(pre + s.offset, pre + s.offset + s.length * T.BYTES_PER_ELEMENT));
+    const a = new T(buffer.slice(pre + s.offset, pre + s.offset + s.length * T.BYTES_PER_ELEMENT));
+    return s.stride ? undelta(a, s.stride) : a;
   });
   const section = (name) => arrays[header.sections.findIndex((s) => s.name === name)];
+
+  const q = section('positions'), positions = new Float32Array(q.length);
+  for (let i = 0; i < q.length; i++) {
+    const a = i % 3;
+    positions[i] = header.posMin[a] + ((q[i] + 32768) / 65535) * (header.posMax[a] - header.posMin[a]);
+  }
+  const nc = header.regionChannels.length, qr = section('regions'), regions = new Float32Array(qr.length);
+  for (let i = 0; i < qr.length; i++) {
+    const c = i % nc;
+    regions[i] = header.regMin[c] + (qr[i] / 255) * (header.regMax[c] - header.regMin[c]);
+  }
   const dims = new Map();
   for (const d of header.dims) {
-    const side = (s) => s && { idx: arrays[s.idx], delta: arrays[s.delta], scale: s.scale, shift: s.shift || [0, 0, 0] };
+    const side = (s) => {
+      if (!s) return null;
+      const raw = arrays[s.delta], delta = new Float32Array(raw.length);
+      for (let i = 0; i < raw.length; i++) delta[i] = raw[i] * s.scale;
+      return { idx: readVarints(arrays[s.idx], s.count), delta, shift: s.shift };
+    };
     dims.set(d.id, { plus: side(d.plus), minus: side(d.minus) });
   }
   const helpers = {};
@@ -26,11 +76,11 @@ export function parseHead(buffer) {
     header,
     vertexCount: header.vertexCount,
     headVertexCount: header.headVertexCount,
-    positions: section('positions'),
+    positions,
     quadV: section('quadV'),
     quadT: section('quadT'),
     uvs: section('uvs'),
-    regions: section('regions'),
+    regions,
     regionChannels: header.regionChannels,
     helpers,
     dims,
@@ -48,8 +98,8 @@ export function morph(head, values, out = new Float32Array(head.positions.length
     if (!dim) continue;
     const side = value > 0 ? dim.plus : dim.minus;
     if (!side) continue;
-    for (let a = 0; a < 3; a++) shift[a] += Math.abs(value) * side.shift[a];
-    const w = Math.abs(value) * side.scale;
+    const w = Math.abs(value);
+    for (let a = 0; a < 3; a++) shift[a] += w * side.shift[a];
     const { idx, delta } = side;
     for (let j = 0; j < idx.length; j++) {
       const i = idx[j] * 3;

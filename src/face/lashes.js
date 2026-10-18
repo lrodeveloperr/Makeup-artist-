@@ -1,6 +1,6 @@
 // Upper and lower eyelashes rooted along the lid margins, rebuilt for every face. Each lash keeps its own parameters so mascara can change only the
 // lashes a stroke touches.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { createRng } from './rng.js';
 import { HAIR_COLOURS } from './colors.js';
 import { buildStrandGeometry, createStrandMaterial } from './strands.js';
@@ -63,7 +63,7 @@ export class Lashes {
   constructor(head) {
     this.margins = lidMargins(head);
     this.material = createStrandMaterial({ opacity: 1 });
-    this.mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material);
+    this.mesh = new GL.Mesh(new GL.BufferGeometry(), this.material);
     this.mesh.renderOrder = 3;
     this.lashes = []; // per-lash parameters (eye, row, s, length, width, colour)
   }

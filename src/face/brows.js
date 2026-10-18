@@ -1,6 +1,6 @@
 // Natural eyebrows: individual hairs rooted on the skin in a brow shape defined in reference-head
 // coordinates, so they sit correctly on every morphed face and move with the brow-shape dimensions.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { createRng } from './rng.js';
 import { evalPoint } from './surface.js';
 import { HAIR_COLOURS } from './colors.js';
@@ -31,7 +31,7 @@ function thickness(T, u) {
 export class Brows {
   constructor() {
     this.material = createStrandMaterial({ opacity: 1, spec: 0.03 });
-    this.mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material);
+    this.mesh = new GL.Mesh(new GL.BufferGeometry(), this.material);
     this.mesh.renderOrder = 2;
   }
 

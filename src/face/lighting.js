@@ -1,14 +1,14 @@
 // The fixed "makeup station" lighting shared by every face material: a large soft key light just above
 // the camera (ring light / softbox), a cooler fill from the side, a warm rim from behind, and a
 // sky/ground ambient term. Directions are in view space because the camera never moves.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 
-const dir = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
+const dir = (x, y, z) => new GL.Vector3(x, y, z).normalize();
 export const LIGHTS = {
   dir: [dir(-0.25, 0.45, 1), dir(0.9, 0.15, 0.5), dir(-0.4, 0.5, -0.9)],
-  col: [new THREE.Vector3(1.45, 1.4, 1.34), new THREE.Vector3(0.3, 0.33, 0.4), new THREE.Vector3(0.55, 0.48, 0.42)],
-  sky: new THREE.Vector3(0.3, 0.3, 0.33),
-  ground: new THREE.Vector3(0.13, 0.11, 0.1),
+  col: [new GL.Vector3(1.45, 1.4, 1.34), new GL.Vector3(0.3, 0.33, 0.4), new GL.Vector3(0.55, 0.48, 0.42)],
+  sky: new GL.Vector3(0.3, 0.3, 0.33),
+  ground: new GL.Vector3(0.13, 0.11, 0.1),
 };
 
 export function lightUniforms() {

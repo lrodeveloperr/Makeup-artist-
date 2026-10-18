@@ -2,26 +2,34 @@
 // Usage: node tests/unit.mjs
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import { parseHead, morph } from '../src/face/head-data.js';
+import crypto from 'node:crypto';
+import { morph } from '../src/face/head-data.js';
+import { readHead } from '../tools/read-head.mjs';
 import { HeadGeometry } from '../src/face/head-geometry.js';
 import { generateFace, signature, SHAPE_DIMS } from '../src/face/generator.js';
 import { createQueueState, nextFace } from '../src/face/queue.js';
 import { lidMargins } from '../src/face/lashes.js';
 import { DIMS } from '../tools/makehuman/dims.mjs';
+import { DIM_IMPACT } from '../src/face/dim-impact.js';
+import { measureImpact } from '../tools/makehuman/impact.mjs';
 
 let n = 0;
 const test = (name, fn) => { fn(); n++; console.log('ok -', name); };
-const buf = fs.readFileSync(new URL('../assets/head.bin', import.meta.url));
-const head = parseHead(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length));
+const head = readHead();
 
 test('head asset: provenance is the pinned CC0 MakeHuman commit', () => {
   assert.equal(head.header.source.license, 'CC0-1.0');
   assert.equal(head.header.source.commit, 'a8bc2d54ff0ac92e78ff71431b1023eda42bf482');
-  assert.ok(Object.keys(head.header.source.files).length > 100);
+  const manifest = JSON.parse(fs.readFileSync(new URL('../assets/head.manifest.json', import.meta.url)));
+  assert.ok(Object.keys(manifest.source.files).length > 100);
+  assert.equal(manifest.sha256, crypto.createHash('sha256').update(fs.readFileSync(new URL('../assets/head.bin.gz', import.meta.url))).digest('hex'));
 });
 test('head asset: every generator dimension exists, and every built dimension is listed', () => {
   for (const id of SHAPE_DIMS) assert.ok(head.dims.has(id), id);
   assert.deepEqual([...head.dims.keys()].sort(), DIMS.map((d) => d.id).sort());
+});
+test('dimension impact table matches the head asset', () => {
+  assert.deepEqual(measureImpact(head), DIM_IMPACT);
 });
 test('morph: neutral is the reference, values are additive and anchored', () => {
   const P0 = morph(head, {});

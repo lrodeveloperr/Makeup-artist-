@@ -15,7 +15,7 @@ const fit = () => [Math.min(innerWidth, 720), innerHeight - (ui ? ui.offsetHeigh
 let [W, H] = sheet ? [+(q.get('w') || 300), +(q.get('h') || 400)] : q.has('w') ? [+q.get('w'), +q.get('h')] : fit();
 const canvas = document.createElement('canvas');
 canvas.width = W; canvas.height = H;
-const view = await FaceView.load('head.bin', { canvas, width: W, height: H, pixelRatio: sheet ? 1 : Math.min(devicePixelRatio, 2) });
+const view = await FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: sheet ? 1 : Math.min(devicePixelRatio, 2) });
 if (q.has('scalp')) { view.debugScalp = true; view.hair.group.visible = false; }
 if (q.has('nohair')) view.hair.group.visible = false;
 if (q.has('orbit')) view.orbit(+q.get('orbit'));
@@ -86,4 +86,5 @@ if (sheet) {
   addEventListener('resize', () => { [W, H] = fit(); view.setSize(W, H); view.render(); });
   next();
 }
+window.view = view;
 window.done = true;

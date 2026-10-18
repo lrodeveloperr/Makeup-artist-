@@ -1,7 +1,7 @@
 // Hair and head-covering shading. Surfaces carry a flow direction (the way the hair lies) and a root-to-tip
 // coordinate; the pattern (strands, curls, coils, braids, locs, cornrows or cloth) is procedural, so no
 // hair textures are shipped.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 
 export const HAIR_MODE = { strands: 0, wavy: 1, curly: 2, coily: 3, braid: 4, loc: 5, cornrows: 6, cloth: 7, stubble: 8 };
@@ -145,17 +145,17 @@ void main() {
 }`;
 
 export function createHairMaterial() {
-  return new THREE.ShaderMaterial({
+  return new GL.ShaderMaterial({
     vertexShader, fragmentShader,
-    side: THREE.DoubleSide,
+    side: GL.DoubleSide,
     transparent: true,
     alphaToCoverage: false,
     uniforms: {
       ...lightUniforms(),
       uMode: { value: 0 },
-      uRoot: { value: new THREE.Vector3() }, uMid: { value: new THREE.Vector3() }, uTip: { value: new THREE.Vector3() },
+      uRoot: { value: new GL.Vector3() }, uMid: { value: new GL.Vector3() }, uTip: { value: new GL.Vector3() },
       uSeed: { value: 0 }, uShine: { value: 1 }, uScale: { value: 1 },
-      uCloth2: { value: new THREE.Vector3(1, 1, 1) }, uPattern: { value: 0 },
+      uCloth2: { value: new GL.Vector3(1, 1, 1) }, uPattern: { value: 0 },
     },
   });
 }

@@ -2,7 +2,7 @@
 // usable makeup targets, and reports coverage. Writes docs/FACE-AUDIT.md and docs/face-audit.json.
 // Usage: node tests/face-audit.mjs [count=2000] [geometry sample=300]
 import fs from 'node:fs';
-import { parseHead } from '../src/face/head-data.js';
+import { readHead } from '../tools/read-head.mjs';
 import { HeadGeometry } from '../src/face/head-geometry.js';
 import { generateFace, signature, SHAPE_DIMS, GENERATOR_VERSION } from '../src/face/generator.js';
 import { createQueueState, nextFace } from '../src/face/queue.js';
@@ -73,8 +73,7 @@ for (let i = 0; i < N; i++) {
 if (adjacentSame) failures.push(`queue: ${adjacentSame} adjacent identical faces`);
 
 // ---------------- geometry: every face keeps usable makeup targets ----------------
-const buf = fs.readFileSync(new URL('../assets/head.bin', import.meta.url));
-const head = parseHead(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length));
+const head = readHead();
 const hg = new HeadGeometry(head);
 const margins = lidMargins(head);
 const geo = { eyeR: [], lidGap: [], mouthW: [], top: [], chin: [] };

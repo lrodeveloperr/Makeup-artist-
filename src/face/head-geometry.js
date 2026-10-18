@@ -1,6 +1,6 @@
 // The paintable head surface: morph -> subdivide -> normals, written into one BufferGeometry whose
 // topology and UV layout never change between faces.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { morph } from './head-data.js';
 import { buildSubdivision, quadNormals } from './subdivide.js';
 
@@ -20,15 +20,15 @@ export class HeadGeometry {
     this.valence = new Float32Array(V);
     const ev = this.sub.edges;
     for (let e = 0; e < ev.length; e++) this.valence[ev[e]]++;
-    const g = (this.geometry = new THREE.BufferGeometry());
-    g.setIndex(new THREE.BufferAttribute(index, 1));
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(renderCount * 3), 3));
-    g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(renderCount * 3), 3));
-    g.setAttribute('uv', new THREE.BufferAttribute(renderUV, 2));
-    g.setAttribute('cavity', new THREE.BufferAttribute(new Float32Array(renderCount), 1));
+    const g = (this.geometry = new GL.BufferGeometry());
+    g.setIndex(new GL.BufferAttribute(index, 1));
+    g.setAttribute('position', new GL.BufferAttribute(new Float32Array(renderCount * 3), 3));
+    g.setAttribute('normal', new GL.BufferAttribute(new Float32Array(renderCount * 3), 3));
+    g.setAttribute('uv', new GL.BufferAttribute(renderUV, 2));
+    g.setAttribute('cavity', new GL.BufferAttribute(new Float32Array(renderCount), 1));
     // reference-head position of every render vertex: a stable coordinate frame for procedural detail
     this.refSub = this.sub.refine(head.positions);
-    g.setAttribute('ref', new THREE.BufferAttribute(this.gather(this.refSub, 3), 3));
+    g.setAttribute('ref', new GL.BufferAttribute(this.gather(this.refSub, 3), 3));
     // feature regions (see build-head.mjs): two vec4 attributes
     const nc = head.regionChannels.length;
     this.subRegions = this.sub.refine(head.regions, null, nc);
@@ -36,8 +36,8 @@ export class HeadGeometry {
     const reg = this.gather(this.subRegions, nc);
     const A = new Float32Array(renderCount * 4), B = new Float32Array(renderCount * 4);
     for (let i = 0; i < renderCount; i++) for (let a = 0; a < 4; a++) { A[i * 4 + a] = reg[i * nc + a]; B[i * 4 + a] = reg[i * nc + 4 + a]; }
-    g.setAttribute('regionA', new THREE.BufferAttribute(A, 4));
-    g.setAttribute('regionB', new THREE.BufferAttribute(B, 4));
+    g.setAttribute('regionA', new GL.BufferAttribute(A, 4));
+    g.setAttribute('regionB', new GL.BufferAttribute(B, 4));
   }
 
   // copy a per-sub-vertex field (n components) to the render vertices
@@ -58,8 +58,6 @@ export class HeadGeometry {
     this.gather(this.subNrm, 3, g.attributes.normal.array);
     this.gather(this.sub.refine(this.cavity, null, 1), 1, g.attributes.cavity.array);
     for (const a of ['position', 'normal', 'cavity']) g.attributes[a].needsUpdate = true;
-    g.computeBoundingSphere();
-    g.computeBoundingBox();
     return this.base;
   }
 
@@ -89,7 +87,7 @@ export class HeadGeometry {
   // centroid and mean radius of a helper vertex group in the current (morphed) base positions
   helperSphere(name) {
     const h = this.head.helpers[name], P = this.base;
-    const c = new THREE.Vector3();
+    const c = new GL.Vector3();
     for (let k = 0; k < h.count; k++) c.x += P[(h.start + k) * 3], c.y += P[(h.start + k) * 3 + 1], c.z += P[(h.start + k) * 3 + 2];
     c.multiplyScalar(1 / h.count);
     let r = 0;

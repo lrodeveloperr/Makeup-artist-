@@ -1,6 +1,6 @@
 // Thin hair strands (brows, lashes) drawn as ribbons. Ribbons narrower than about a pixel are widened on
 // screen and made proportionally more transparent, so fine hairs keep their coverage at any resolution.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 
 const vertexShader = /* glsl */ `
@@ -59,15 +59,15 @@ void main() {
 }`;
 
 export function createStrandMaterial({ opacity = 1, minPx = 0.6, spec = 0.12 } = {}) {
-  return new THREE.ShaderMaterial({
+  return new GL.ShaderMaterial({
     vertexShader, fragmentShader,
-    transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { ...lightUniforms(), uOpacity: { value: opacity }, uSpec: { value: spec }, uViewport: { value: new THREE.Vector2(600, 800) }, uMinPx: { value: minPx } },
+    transparent: true, depthWrite: false, side: GL.DoubleSide,
+    uniforms: { ...lightUniforms(), uOpacity: { value: opacity }, uSpec: { value: spec }, uViewport: { value: new GL.Vector2(600, 800) }, uMinPx: { value: minPx } },
   });
 }
 
 // Builds ribbon geometry from strands: { points: [[x,y,z]...], widths: [...], up: [x,y,z] (ribbon normal hint), color: [r,g,b] }
-export function buildStrandGeometry(strands, geometry = new THREE.BufferGeometry()) {
+export function buildStrandGeometry(strands, geometry = new GL.BufferGeometry()) {
   let nv = 0, ni = 0;
   for (const s of strands) { nv += s.points.length * 2; ni += (s.points.length - 1) * 6; }
   const pos = new Float32Array(nv * 3), off = new Float32Array(nv * 3), tan = new Float32Array(nv * 3), col = new Float32Array(nv * 3), st = new Float32Array(nv * 2);
@@ -98,12 +98,11 @@ export function buildStrandGeometry(strands, geometry = new THREE.BufferGeometry
       }
     }
   }
-  geometry.setIndex(new THREE.BufferAttribute(index, 1));
-  geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geometry.setAttribute('offset', new THREE.BufferAttribute(off, 3));
-  geometry.setAttribute('tangent', new THREE.BufferAttribute(tan, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geometry.setAttribute('st', new THREE.BufferAttribute(st, 2));
-  geometry.computeBoundingSphere();
+  geometry.setIndex(new GL.BufferAttribute(index, 1));
+  geometry.setAttribute('position', new GL.BufferAttribute(pos, 3));
+  geometry.setAttribute('offset', new GL.BufferAttribute(off, 3));
+  geometry.setAttribute('tangent', new GL.BufferAttribute(tan, 3));
+  geometry.setAttribute('color', new GL.BufferAttribute(col, 3));
+  geometry.setAttribute('st', new GL.BufferAttribute(st, 2));
   return geometry;
 }

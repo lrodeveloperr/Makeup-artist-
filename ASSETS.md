@@ -5,10 +5,10 @@ non-commercial research models, photographs of people, or AI-generated images ar
 
 | Item | Source | Licence | Where |
 | --- | --- | --- | --- |
-| Head base mesh and 230 shape targets (`assets/head.bin`) | [MakeHuman](https://github.com/makehumancommunity/makehuman) commit `a8bc2d54ff0ac92e78ff71431b1023eda42bf482`, `makehuman/data/3dobjs/base.obj` and `makehuman/data/targets/**` | **CC0 1.0** (bundled assets; see the repository's `LICENSE.md` §C–D). No attribution required | `licenses/makehuman-assets-CC0.md`. The SHA-256 of every source file read is recorded in the `head.bin` header (`source.files`) |
-| Three.js 0.180.0 | npm `three` | MIT | `licenses/three-MIT.txt`; include it with any shipped build |
+| Head base mesh and 230 shape targets (`assets/head.bin.gz`) | [MakeHuman](https://github.com/makehumancommunity/makehuman) commit `a8bc2d54ff0ac92e78ff71431b1023eda42bf482`, `makehuman/data/3dobjs/base.obj` and `makehuman/data/targets/**` | **CC0 1.0** (bundled assets; see the repository's `LICENSE.md` §C–D). No attribution required | `licenses/makehuman-assets-CC0.md`. The SHA-256 of every source file read is recorded in `assets/head.manifest.json` (`source.files`) |
+| fflate 0.8.3 (gunzip only, fallback where the browser lacks `DecompressionStream`) | npm `fflate` | MIT | `licenses/fflate-MIT.txt`; include it with any shipped build |
 | Skin-tone anchors, iris colour stops, seeded PRNG | Studio's own Haircut code (`source/customers/people.js`) | Studio-owned | Adapted in `src/face/colors.js` and `src/face/rng.js` |
-| Everything else in `src/face/`, `tools/`, `tests/` | Written for this game | Studio-owned | — |
+| WebGL2 renderer (`src/gl/mini.js`) and everything else in `src/`, `tools/`, `tests/` | Written for this game (renderer API names follow Three.js; no Three.js code is included) | Studio-owned | — |
 
 Notes:
 

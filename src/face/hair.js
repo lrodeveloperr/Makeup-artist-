@@ -7,7 +7,7 @@
 //   balls   - buns, puffs and knots
 //   tubes   - box braids and locs
 //   cloth   - hijab: everything except an opening for the face, falling from the chin to the shoulders
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { createRng } from './rng.js';
 import { HAIR_COLOURS, hexToLinear } from './colors.js';
 import { createHairMaterial, HAIR_MODE } from './hair-material.js';
@@ -87,13 +87,12 @@ export class Builder {
   vert(p, nrm, flow, hair) { this.pos.push(...p); this.nrm.push(...nrm); this.flow.push(...flow); this.hair.push(...hair); return this.n - 1; }
   quad(a, b, c, d) { this.idx.push(a, b, c, a, c, d); }
   geometry() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nrm, 3));
-    g.setAttribute('flow', new THREE.Float32BufferAttribute(this.flow, 3));
-    g.setAttribute('hair', new THREE.Float32BufferAttribute(this.hair, 4));
+    const g = new GL.BufferGeometry();
+    g.setAttribute('position', new GL.Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new GL.Float32BufferAttribute(this.nrm, 3));
+    g.setAttribute('flow', new GL.Float32BufferAttribute(this.flow, 3));
+    g.setAttribute('hair', new GL.Float32BufferAttribute(this.hair, 4));
     g.setIndex(this.idx);
-    g.computeBoundingSphere();
     return g;
   }
 }
@@ -293,7 +292,7 @@ const towards = (c) => (p) => norm([c[0] - p[0], c[1] - p[1], c[2] - p[2]]);
 
 export class Hair {
   constructor() {
-    this.group = new THREE.Group();
+    this.group = new GL.Group();
     this.materials = [];
   }
 
@@ -313,7 +312,7 @@ export class Hair {
     u.uScale.value = opts.scale ?? 1;
     u.uPattern.value = opts.pattern ?? 0;
     if (opts.cloth2) u.uCloth2.value.set(...opts.cloth2);
-    const mesh = new THREE.Mesh(builder.geometry(), mat);
+    const mesh = new GL.Mesh(builder.geometry(), mat);
     mesh.renderOrder = opts.order ?? 1;
     this.group.add(mesh);
   }

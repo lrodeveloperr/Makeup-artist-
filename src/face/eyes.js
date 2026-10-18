@@ -1,6 +1,6 @@
 // Eyeballs placed in the head's eye sockets (from MakeHuman's eye helper geometry), with a procedural
 // iris. Iris colours come from the face profile; contact lenses later override the same uniforms.
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 import { hexToLinear } from './colors.js';
 
@@ -65,23 +65,22 @@ void main() {
 
 export class Eyes {
   constructor() {
-    this.material = new THREE.ShaderMaterial({
+    this.material = new GL.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
         ...lightUniforms(),
-        uIris: { value: [0, 1, 2, 3].map(() => new THREE.Vector3()) },
+        uIris: { value: [0, 1, 2, 3].map(() => new GL.Vector3()) },
         uSeed: { value: 0 },
         uIrisSize: { value: 0.5 },
         uPupil: { value: 0.33 },
         uLimbal: { value: 0.12 },
-        uSclera: { value: new THREE.Vector3(0.78, 0.72, 0.66) },
+        uSclera: { value: new GL.Vector3(0.78, 0.72, 0.66) },
       },
     });
-    const geo = new THREE.SphereGeometry(1, 48, 32);
-    geo.rotateX(Math.PI / 2); // put the sphere's pole on +z so the iris has an even mesh
-    this.meshes = [new THREE.Mesh(geo, this.material), new THREE.Mesh(geo, this.material.clone())];
-    this.group = new THREE.Group();
+    const geo = new GL.SphereGeometry(1, 48, 32);
+    this.meshes = [new GL.Mesh(geo, this.material), new GL.Mesh(geo, this.material.clone())];
+    this.group = new GL.Group();
     this.meshes.forEach((m) => this.group.add(m));
   }
 

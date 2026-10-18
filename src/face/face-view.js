@@ -1,6 +1,6 @@
 // Renders one generated face: head surface, eyes, brows, lashes and hair, with a fixed front camera.
-import * as THREE from 'three';
-import { parseHead } from './head-data.js';
+import * as GL from '../gl/mini.js';
+import { loadHead } from './head-data.js';
 import { HeadGeometry } from './head-geometry.js';
 import { createSkinMaterial, setMouthLandmarks } from './skin-material.js';
 import { Eyes } from './eyes.js';
@@ -12,26 +12,23 @@ import { createHairMaterial, HAIR_MODE } from './hair-material.js';
 import { skinAlbedo, ALBINISM_SKIN, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
 import { createRng } from './rng.js';
 
-export const CAMERA = { fov: 20, target: new THREE.Vector3(0, -0.28, 0), distance: 9.4 };
+export const CAMERA = { fov: 20, target: new GL.Vector3(0, -0.28, 0), distance: 9.4 };
 
 export class FaceView {
   constructor({ canvas, width = 600, height = 800, pixelRatio = 1 } = {}) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
+    this.renderer = new GL.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
-    this.renderer.toneMapping = THREE.NeutralToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xd9cfc7);
-    this.camera = new THREE.PerspectiveCamera(CAMERA.fov, width / height, 0.5, 60);
-    this.camera.position.copy(CAMERA.target).add(new THREE.Vector3(0, 0, CAMERA.distance));
+    this.scene = new GL.Scene();
+    this.scene.background = new GL.Color(0xd9cfc7);
+    this.camera = new GL.PerspectiveCamera(CAMERA.fov, width / height, 0.5, 60);
+    this.camera.position.copy(CAMERA.target).add(new GL.Vector3(0, 0, CAMERA.distance));
     this.camera.lookAt(CAMERA.target);
   }
 
   static async load(url, options) {
     const view = new FaceView(options);
-    const buffer = await (await fetch(url)).arrayBuffer();
-    view.init(parseHead(buffer));
+    view.init(await loadHead(url));
     return view;
   }
 
@@ -40,7 +37,7 @@ export class FaceView {
     this.headGeometry = new HeadGeometry(head);
     this.skin = createSkinMaterial();
     setMouthLandmarks(this.skin, head.header.landmarks.mouth);
-    this.headMesh = new THREE.Mesh(this.headGeometry.geometry, this.skin);
+    this.headMesh = new GL.Mesh(this.headGeometry.geometry, this.skin);
     this.eyes = new Eyes();
     this.sampler = new SurfaceSampler(this.headGeometry.refSub, this.headGeometry.sub.subQuads);
     this.brows = new Brows();
@@ -51,13 +48,13 @@ export class FaceView {
   }
 
   updateViewport() {
-    const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    const size = this.renderer.getDrawingBufferSize(new GL.Vector2());
     for (const m of [this.brows.material, this.lashes.material]) m.uniforms.uViewport.value.copy(size);
   }
 
   // debugging aid: move the camera closer to a point of the face
   zoom(factor, y = 0, x = 0) {
-    const t = new THREE.Vector3(x, y, 0);
+    const t = new GL.Vector3(x, y, 0);
     this.camera.position.set(x, y, CAMERA.distance / factor);
     this.camera.lookAt(t);
   }
@@ -65,7 +62,7 @@ export class FaceView {
   // debugging aid: look from the side (radians around the vertical axis)
   orbit(angle) {
     const d = this.camera.position.clone().sub(CAMERA.target);
-    d.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+    d.applyAxisAngle(new GL.Vector3(0, 1, 0), angle);
     this.camera.position.copy(CAMERA.target).add(d);
     this.camera.lookAt(CAMERA.target);
   }
@@ -125,10 +122,10 @@ export class FaceView {
   // frame: the HeadFrame of the current face (shared with the hair)
   buildCape(frame) {
     if (!this.cape) {
-      this.cape = new THREE.Mesh(new THREE.BufferGeometry(), createHairMaterial());
+      this.cape = new GL.Mesh(new GL.BufferGeometry(), createHairMaterial());
       const u = this.cape.material.uniforms;
       u.uMode.value = HAIR_MODE.cloth;
-      this.cape.material.side = THREE.FrontSide;
+      this.cape.material.side = GL.FrontSide;
       this.cape.renderOrder = 0;
       for (const k of ['uRoot', 'uMid', 'uTip']) u[k].value.set(0.75, 0.66, 0.66);
       this.scene.add(this.cape);

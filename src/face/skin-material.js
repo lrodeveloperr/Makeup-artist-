@@ -1,7 +1,7 @@
 // Skin shader for the head surface. Natural features (lips, flush, under-eye tone, freckles, beauty marks,
 // vitiligo) are evaluated per pixel in the reference-head coordinate frame, so every generated face
 // carries them in the same anatomical places. Applied makeup arrives later through uPaint (UV space).
-import * as THREE from 'three';
+import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 
 const vertexShader = /* glsl */ `
@@ -188,33 +188,33 @@ void main() {
 }`;
 
 export function createSkinMaterial() {
-  const emptyPaint = new THREE.DataTexture(new Uint8Array(4), 1, 1);
+  const emptyPaint = new GL.DataTexture(new Uint8Array(4), 1, 1);
   emptyPaint.needsUpdate = true;
-  return new THREE.ShaderMaterial({
+  return new GL.ShaderMaterial({
     vertexShader,
     fragmentShader,
-    side: THREE.DoubleSide,
+    side: GL.DoubleSide,
     uniforms: {
       ...lightUniforms(),
-      uSkin: { value: new THREE.Vector3(0.5, 0.3, 0.2) },
-      uLip: { value: new THREE.Vector3(0.4, 0.15, 0.13) },
-      uLipInner: { value: new THREE.Vector3(0.4, 0.15, 0.13) },
-      uMouth: { value: new THREE.Vector4() },
-      uMouth2: { value: new THREE.Vector4() },
+      uSkin: { value: new GL.Vector3(0.5, 0.3, 0.2) },
+      uLip: { value: new GL.Vector3(0.4, 0.15, 0.13) },
+      uLipInner: { value: new GL.Vector3(0.4, 0.15, 0.13) },
+      uMouth: { value: new GL.Vector4() },
+      uMouth2: { value: new GL.Vector4() },
       uSeed: { value: 0 },
       uFlush: { value: 0.3 },
       uUnderEye: { value: 0.3 },
       uOil: { value: 0.5 },
-      uFreckles: { value: new THREE.Vector4(0, 0, 1, 0) },
-      uFreckleCol: { value: new THREE.Vector3(0.2, 0.1, 0.06) },
-      uMoles: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) },
-      uVitiligo: { value: new THREE.Vector4() },
-      uScalpTint: { value: new THREE.Vector3(1, 1, 1) },
+      uFreckles: { value: new GL.Vector4(0, 0, 1, 0) },
+      uFreckleCol: { value: new GL.Vector3(0.2, 0.1, 0.06) },
+      uMoles: { value: [0, 1, 2, 3].map(() => new GL.Vector4()) },
+      uVitiligo: { value: new GL.Vector4() },
+      uScalpTint: { value: new GL.Vector3(1, 1, 1) },
       uScalpAmount: { value: 0 },
-      uScalp: { value: new THREE.Vector4(0.78, 0.5, 0.08, 0.03) },
-      uBrowA: { value: new THREE.Vector4(0.64, 0.06, 0.15, 1) },
-      uBrowB: { value: new THREE.Vector4(1.2, 1, 1, 0.8) },
-      uBrowCol: { value: new THREE.Vector3(0.03, 0.02, 0.015) },
+      uScalp: { value: new GL.Vector4(0.78, 0.5, 0.08, 0.03) },
+      uBrowA: { value: new GL.Vector4(0.64, 0.06, 0.15, 1) },
+      uBrowB: { value: new GL.Vector4(1.2, 1, 1, 0.8) },
+      uBrowCol: { value: new GL.Vector3(0.03, 0.02, 0.015) },
       uPaint: { value: emptyPaint },
       uPaintOn: { value: 0 },
     },

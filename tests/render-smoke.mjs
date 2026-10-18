@@ -14,6 +14,13 @@ try {
   const page = await browser.newPage({ viewport: { width: cols * w, height: Math.ceil(n / cols) * h } });
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' || /Shader Error|THREE\.WebGLProgram/.test(m.text())) errors.push(m.text()); });
+  // time to the first rendered face in the normal (non-sheet) view, for the record
+  const first = await browser.newPage({ viewport: { width: 400, height: 700 } });
+  const t0 = Date.now();
+  await first.goto('http://localhost:8132/index.html?seed=1');
+  await first.waitForFunction('window.done === true', null, { timeout: 120000 });
+  console.log(`first face on screen ${Date.now() - t0} ms after navigation (local server, ${process.env.CI ? 'CI' : 'software'} WebGL)`);
+  await first.close();
   await page.goto(`http://localhost:8132/index.html?sheet&queue&seed=3&n=${n}&cols=${cols}&w=${w}&h=${h}`);
   await page.waitForFunction('window.done === true', null, { timeout: 120000 });
   // every tile must contain more than the background colour

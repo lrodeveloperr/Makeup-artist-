@@ -27,7 +27,9 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Ordinary Next | Available regardless of rewarded-ad availability | O/I | Continued base play; FLOW02, AD07 |
 | Interstitials | Inherit selected Haircut two-completion / 60-active-second natural-break control | O/I | Exact rules in §7; AD01–AD03 |
 | Reuse | Screen structure, customer queue, Next, rewards and platform foundation | O | Rebuild only domain-specific behavior; architecture below |
-| Graphics engine | Three.js (WebGL); one 3D head shown by a fixed front camera; procedural skin/hair/cloth shading, no photo textures | O, 18 Oct 2026 | No Unity/Godot web build; [docs/FACES.md](docs/FACES.md) |
+| Graphics engine | WebGL2; one 3D head shown by a fixed front camera; procedural skin/hair/cloth shading, no photo textures | O, 18 Oct 2026 | No Unity/Godot web build; [docs/FACES.md](docs/FACES.md) |
+| Renderer library | Own minimal WebGL2 renderer instead of Three.js | D under the owner's load-time priority (18 Oct 2026) | Same shaders; bundle 558 KB → 95 KB |
+| Download budget | Whole game ≤ 1 MB initial download; face system ≤ 400 KB; every file < 512 KiB | O priority / D values | `tests/size-budget.mjs` in CI |
 | Face assets | MakeHuman CC0 base mesh and targets at a pinned commit; no paid scans, non-commercial research models, MetaHuman, photographs or AI-generated faces | O, 18 Oct 2026 | Provenance in [ASSETS.md](ASSETS.md) |
 | Face diversity | All ancestries, including groups Haircut lacked, via profile *tendencies* over individual feature controls; blends and mixes common; cultural styles (head coverings, braids, dyes) offered to every face | O, 18 Oct 2026 | CONTENT01 audit in [docs/FACE-AUDIT.md](docs/FACE-AUDIT.md) |
 | Face age | Young adults only (18–30) | O, 18 Oct 2026 | Generator bound; audited |

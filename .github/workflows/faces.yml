@@ -18,14 +18,18 @@ jobs:
       - name: Head asset is reproducible from the pinned CC0 sources
         run: |
           node tools/makehuman/fetch.mjs
-          cp assets/head.bin /tmp/head.committed.bin
+          cp assets/head.bin.gz /tmp/head.committed.bin.gz
           node tools/makehuman/build-head.mjs
-          cmp assets/head.bin /tmp/head.committed.bin
+          cmp assets/head.bin.gz /tmp/head.committed.bin.gz
+          node tools/makehuman/impact.mjs
+          git diff --exit-code src/face/dim-impact.js
       - name: Unit tests and face audit
         run: |
           node tests/unit.mjs
           node tests/face-audit.mjs 2000 300
           git diff --exit-code docs/FACE-AUDIT.md docs/face-audit.json
+      - name: Download size budget
+        run: node tests/size-budget.mjs
       - name: Browser render smoke test
         run: |
           npx playwright install --with-deps chromium

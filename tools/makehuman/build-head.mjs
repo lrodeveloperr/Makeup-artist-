@@ -1,4 +1,4 @@
-// Builds assets/head.bin from the pinned CC0 MakeHuman base mesh and targets.
+// Builds assets/head.bin.gz (and head.manifest.json) from the pinned CC0 MakeHuman base mesh and targets.
 // Usage: node tools/makehuman/fetch.mjs && node tools/makehuman/build-head.mjs
 //
 // Output: the head and neck of the hm08 base mesh as a young-adult neutral reference (equal blend of the
@@ -7,10 +7,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import zlib from 'node:zlib';
 import { openSource, parseObj, parseTarget, MAKEHUMAN_COMMIT, MAKEHUMAN_REPO } from './source.mjs';
 import { DIMS } from './dims.mjs';
 
-const OUT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../assets/head.bin');
+const OUT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../assets/head.bin.gz');
 const NECK_BELOW_EYES = 1.8; // keep faces whose every vertex is at most this far below the eyes (decimetres)
 const UV_PAD = 8 / 2048;
 const HELPERS = ['helper-l-eye', 'helper-r-eye', 'helper-l-eyelashes-1', 'helper-r-eyelashes-1', 'helper-l-eyelashes-2', 'helper-r-eyelashes-2'];
@@ -53,7 +54,15 @@ const headFaces = obj.F.filter((f) => f.group === 'body' && f.v.every((i) => REF
 if (headFaces.some((f) => f.v.length !== 4)) throw new Error('expected quads only');
 const order = [], remap = new Map();
 const use = (i) => { if (!remap.has(i)) { remap.set(i, order.length); order.push(i); } return remap.get(i); };
-headFaces.forEach((f) => f.v.forEach(use));
+// head vertices in Morton (Z-curve) order of their position, so neighbouring vertices get neighbouring
+// indices: sparse target indices then compress to short runs
+const morton = (i) => {
+  let code = 0n;
+  const q = [0, 1, 2].map((a) => BigInt(Math.max(0, Math.min(1023, Math.round((REF[i * 3 + a] + 9) * 56)))));
+  for (let b = 9n; b >= 0n; b--) for (const c of q) code = (code << 1n) | ((c >> b) & 1n);
+  return code;
+};
+[...new Set(headFaces.flatMap((f) => f.v))].sort((a, b) => (morton(a) < morton(b) ? -1 : morton(a) > morton(b) ? 1 : a - b)).forEach(use);
 const headVertexCount = order.length;
 const helpers = {};
 for (const g of HELPERS) {
@@ -79,6 +88,8 @@ order.forEach((i, k) => { for (let a = 0; a < 3; a++) positions[k * 3 + a] = REF
 // ---------------- UV layout: islands rotated upright and packed, face island first ----------------
 const uvOrder = [], uvRemap = new Map();
 const useUV = (t) => { if (!uvRemap.has(t)) { uvRemap.set(t, uvOrder.length); uvOrder.push(t); } return uvRemap.get(t); };
+// faces in the order of their lowest (spatially sorted) vertex, so consecutive faces are neighbours
+headFaces.sort((a, b) => Math.min(...a.v.map((i) => remap.get(i))) - Math.min(...b.v.map((i) => remap.get(i))));
 const quadV = new Uint16Array(headFaces.length * 4), quadT = new Uint16Array(headFaces.length * 4);
 headFaces.forEach((f, q) => { for (let c = 0; c < 4; c++) { quadV[q * 4 + c] = remap.get(f.v[c]); quadT[q * 4 + c] = useUV(f.t[c]); } });
 const UVC = uvOrder.length;
@@ -215,17 +226,23 @@ const landmarks = {
 };
 
 // ---------------- shape dimensions ----------------
+// sparse delta: varint-coded index gaps and int8 components with one scale per dimension side
+const varint = (values) => {
+  const bytes = [];
+  for (let v of values) { while (v >= 0x80) { bytes.push((v & 0x7f) | 0x80); v >>>= 7; } bytes.push(v); }
+  return Uint8Array.from(bytes);
+};
 const sparse = (delta) => { // delta: Float64Array over the subset
-  const idx = [];
   let max = 0;
+  for (let k = 0; k < VC * 3; k++) max = Math.max(max, Math.abs(delta[k]));
+  const s = max / 127 || 1;
+  const idx = [], d = [];
   for (let k = 0; k < VC; k++) {
-    const m = Math.max(Math.abs(delta[k * 3]), Math.abs(delta[k * 3 + 1]), Math.abs(delta[k * 3 + 2]));
-    if (m > 1e-3) { idx.push(k); max = Math.max(max, m); }
+    const q = [0, 1, 2].map((a) => Math.round(delta[k * 3 + a] / s));
+    if (Math.max(...q.map(Math.abs)) * s < 1e-3 || q.every((x) => x === 0)) continue;
+    idx.push(k); d.push(...q);
   }
-  const s = max / 32767 || 1;
-  const d = new Int16Array(idx.length * 3);
-  idx.forEach((k, j) => { for (let a = 0; a < 3; a++) d[j * 3 + a] = Math.round(delta[k * 3 + a] / s); });
-  return { idx: Uint16Array.from(idx), d, scale: s };
+  return { idx: varint(idx.map((k, j) => k - (j ? idx[j - 1] : -1) - 1)), count: idx.length, d: Int8Array.from(d), scale: s };
 };
 function subsetDelta(names) {
   const D = new Float64Array(VC * 3);
@@ -254,15 +271,16 @@ function anchorShift(D) {
   t[0] = 0; // keep left/right symmetry
   return t;
 }
-const dims = [], blobs = [];
+const dims = [], blobs = [], manifestDims = {};
 for (const dim of DIMS) {
   const entry = { id: dim.id };
   for (const side of ['plus', 'minus']) {
     if (!dim[side].length) continue;
     const D = subsetDelta(dim[side]);
     const s = sparse(D);
-    if (!s.idx.length) throw new Error(`${dim.id}.${side}: no head vertices moved`);
-    entry[side] = { targets: dim[side], count: s.idx.length, scale: s.scale, shift: anchorShift(D), blob: blobs.length };
+    if (!s.count) throw new Error(`${dim.id}.${side}: no head vertices moved`);
+    entry[side] = { count: s.count, scale: s.scale, shift: anchorShift(D).map((x) => Math.round(x * 1e6) / 1e6), blob: blobs.length };
+    manifestDims[`${dim.id}.${side}`] = dim[side];
     blobs.push(s.idx, s.d);
   }
   dims.push(entry);
@@ -270,24 +288,45 @@ for (const dim of DIMS) {
 
 // ---------------- write ----------------
 const sections = [];
-const addSection = (name, arr) => { sections.push({ name, type: arr.constructor.name, length: arr.length, arr }); return sections.length - 1; };
-addSection('positions', positions);
-addSection('quadV', quadV);
-addSection('quadT', quadT);
-addSection('uvs', uvs);
-addSection('regions', regions);
+// Optional predictive coding: store each value minus the one `stride` before it (wrapping in the array's
+// integer width). Spatially ordered data then becomes small numbers that gzip far better.
+const deltaCode = (arr, stride) => {
+  const out = new arr.constructor(arr.length);
+  for (let i = 0; i < arr.length; i++) out[i] = arr[i] - (i >= stride ? arr[i - stride] : 0);
+  return out;
+};
+const addSection = (name, arr, stride = 0) => {
+  sections.push({ name, type: arr.constructor.name, length: arr.length, stride, arr: stride ? deltaCode(arr, stride) : arr });
+  return sections.length - 1;
+};
+// positions: int16 over the bounding box; regions: uint8 per channel range
+const posMin = [0, 1, 2].map((a) => Math.min(...positions.filter((_, i) => i % 3 === a)));
+const posMax = [0, 1, 2].map((a) => Math.max(...positions.filter((_, i) => i % 3 === a)));
+const qPos = Int16Array.from(positions, (v, i) => Math.round(((v - posMin[i % 3]) / (posMax[i % 3] - posMin[i % 3])) * 65535 - 32768));
+const NCH = REGION_CHANNELS.length;
+const regMin = REGION_CHANNELS.map((_, c) => Math.min(...regions.filter((_, i) => i % NCH === c)));
+const regMax = REGION_CHANNELS.map((_, c) => Math.max(...regions.filter((_, i) => i % NCH === c)));
+// distances are only needed near the features: clamp them to 1.2 dm for finer steps
+REGION_CHANNELS.forEach((c, j) => { if (c === 'lipLine' || c === 'lidMargin') regMax[j] = Math.min(regMax[j], 1.2); });
+const qReg = Uint8Array.from(regions, (v, i) => Math.round((Math.min(Math.max(v, regMin[i % NCH]), regMax[i % NCH]) - regMin[i % NCH]) / (regMax[i % NCH] - regMin[i % NCH]) * 255));
+addSection('positions', qPos, 3);
+addSection('quadV', quadV, 1);
+addSection('quadT', quadT, 1);
+addSection('uvs', uvs, 2);
+addSection('regions', qReg);
 for (const [g, h] of Object.entries(helpers)) h.section = addSection(`${g}.quads`, Uint16Array.from(h.quads));
 const blobBase = sections.length;
-blobs.forEach((b, i) => addSection(`blob${i}`, b));
+blobs.forEach((b, i) => addSection(`blob${i}`, b, b instanceof Int8Array ? 3 : 0));
 for (const d of dims) for (const side of ['plus', 'minus']) if (d[side]) {
   d[side].idx = blobBase + d[side].blob; d[side].delta = blobBase + d[side].blob + 1; delete d[side].blob;
 }
 
+const r6 = (x) => Math.round(x * 1e6) / 1e6;
 const header = {
-  format: 'makeup-head', version: 1,
-  source: { project: 'MakeHuman', repo: MAKEHUMAN_REPO, commit: MAKEHUMAN_COMMIT, license: 'CC0-1.0',
-    files: Object.fromEntries([...src.used.entries()].sort()) },
-  units: 'decimetre', origin, neckCut: NECK_CUT - origin[1],
+  format: 'makeup-head', version: 2,
+  source: { project: 'MakeHuman', commit: MAKEHUMAN_COMMIT, license: 'CC0-1.0', manifest: 'head.manifest.json' },
+  units: 'decimetre', origin: origin.map(r6), neckCut: r6(NECK_CUT - origin[1]),
+  posMin: posMin.map(r6), posMax: posMax.map(r6), regMin: regMin.map(r6), regMax: regMax.map(r6),
   vertexCount: VC, headVertexCount, quadCount: headFaces.length, uvCount: UVC,
   regionChannels: REGION_CHANNELS, landmarks,
   helpers: Object.fromEntries(Object.entries(helpers).map(([g, h]) => [g, { start: h.start, count: h.count, quads: h.section }])),
@@ -296,7 +335,7 @@ const header = {
 let offset = 0;
 for (const s of sections) {
   offset = (offset + 3) & ~3;
-  header.sections.push({ name: s.name, type: s.type, length: s.length, offset });
+  header.sections.push({ name: s.name, type: s.type, length: s.length, offset, ...(s.stride ? { stride: s.stride } : {}) });
   offset += s.arr.byteLength;
 }
 const json = Buffer.from(JSON.stringify(header));
@@ -306,7 +345,16 @@ out.write('MKHD', 0, 'ascii');
 out.writeUInt32LE(json.length, 4);
 json.copy(out, 8);
 header.sections.forEach((s, k) => Buffer.from(sections[k].arr.buffer, sections[k].arr.byteOffset, sections[k].arr.byteLength).copy(out, pre + s.offset));
+// gzip at maximum level (fixed header fields, so the bytes are reproducible); the runtime inflates it
+const gz = zlib.gzipSync(out, { level: 9 });
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, out);
-console.log(`${path.relative(process.cwd(), OUT)}: ${out.length} bytes, ${VC} vertices (${headVertexCount} head), ` +
-  `${headFaces.length} quads, ${UVC} uvs, ${dims.length} dimensions, sha256 ${crypto.createHash('sha256').update(out).digest('hex')}`);
+fs.writeFileSync(OUT, gz);
+const manifest = {
+  asset: path.basename(OUT), sha256: crypto.createHash('sha256').update(gz).digest('hex'), uncompressedBytes: out.length,
+  source: { project: 'MakeHuman', repo: MAKEHUMAN_REPO, commit: MAKEHUMAN_COMMIT, license: 'CC0-1.0',
+    files: Object.fromEntries([...src.used.entries()].sort()) },
+  dimensions: manifestDims,
+};
+fs.writeFileSync(OUT.replace(/head\.bin\.gz$/, 'head.manifest.json'), JSON.stringify(manifest, null, 1) + '\n');
+console.log(`${path.relative(process.cwd(), OUT)}: ${gz.length} bytes (${out.length} inflated), ${VC} vertices (${headVertexCount} head), ` +
+  `${headFaces.length} quads, ${UVC} uvs, ${dims.length} dimensions, sha256 ${manifest.sha256}`);

@@ -11,7 +11,7 @@ before release (see "Known limits").
 
 | Decision | Value |
 | --- | --- |
-| Engine | Three.js (WebGL), the same engine Haircut uses. No Unity or Godot web build. |
+| Engine | WebGL2 through a small purpose-built renderer (`src/gl/mini.js`, Three.js-style names). Three.js was the first choice; it was replaced on 18 October 2026 under the owner's load-time priority because the face scene used only a sliver of it (the bundle fell from 558 KB to 95 KB). No Unity or Godot web build. |
 | Presentation | One 3D head, seen by a fixed front camera ("2.5D"). There is no orbit control. A hidden debug orbit exists in the preview only. |
 | Base asset | MakeHuman's CC0 base mesh and shape targets, at a pinned commit. No paid scans, no non-commercial academic models (FLAME, BFM, SMPL-X), no MetaHuman, no AI-generated or photographed faces. |
 | Diversity | Ancestry profiles are tendencies over individual feature controls, never "race buttons". Individual variation is larger than any profile offset. Cultural choices (head coverings, braids, dyed hair) are style choices offered to everyone. |
@@ -22,14 +22,14 @@ before release (see "Known limits").
 
 ```
 MakeHuman (CC0, pinned commit)      tools/makehuman/fetch.mjs        sparse git checkout into .cache/
-  base.obj + 230 .target files    ─ tools/makehuman/build-head.mjs ─▶ assets/head.bin (committed, reproducible)
+  base.obj + 230 .target files    ─ tools/makehuman/build-head.mjs ─▶ assets/head.bin.gz (committed, reproducible)
                                                                      │
 src/face/generator.js  seed ──▶ face record (plain JSON)            │
 src/face/queue.js      variety director over seeds                  ▼
-src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, brows, lashes, hair, cape ─▶ WebGL
+src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, brows, lashes, hair, cape ─▶ src/gl/mini.js (WebGL2)
 ```
 
-### Head asset (`assets/head.bin`)
+### Head asset (`assets/head.bin.gz`)
 
 - The head and shoulders of MakeHuman's hm08 base mesh: 4,478 vertices and 4,452 quads, plus eye and lash
   helper geometry. Its reference shape is a 25-year-old blend of MakeHuman's female macro targets, with the three
@@ -47,13 +47,20 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
   painting can use them later.
 - **Landmarks.** The asset stores eye centres and the lip outline. The vermilion (lip-colour) border is evaluated
   per pixel, so it stays crisp on every face.
-- Size: 1,193,728 bytes, 446 KB gzipped. Building twice gives byte-identical output.
+- **Encoding (version 2).** Vertices and faces are in spatial (Morton) order. Positions are 16-bit, regions 8-bit,
+  shape deltas 8-bit with one scale per dimension, and target indices are varint gaps. Positions, faces, UVs and
+  deltas are stored as differences from their neighbours, and the file is gzipped. The browser inflates it with its
+  native `DecompressionStream`, or with fflate (about 4 KB) where that is missing. Provenance (source file hashes,
+  targets per dimension) is in `assets/head.manifest.json`, which is not loaded at runtime.
+- Size: **223,058 bytes** (621 KB inflated), down from 1,193,728 bytes in version 1. Building twice gives
+  byte-identical output.
 
 ### Rendering (`src/face/`)
 
 | Module | What it does |
 | --- | --- |
-| `head-data.js`, `subdivide.js`, `head-geometry.js` | Parse the asset, apply shape dimensions, run one Catmull-Clark subdivision step, and compute normals and a cavity term (cheap occlusion in creases) |
+| `../gl/mini.js` | The renderer: shader programs, buffers, alpha-blended passes, Khronos neutral tone mapping to sRGB |
+| `head-data.js`, `subdivide.js`, `head-geometry.js` | Inflate and parse the asset, apply shape dimensions, run one Catmull-Clark subdivision step, and compute normals and a cavity term (cheap occlusion in creases) |
 | `skin-material.js` | Wrapped diffuse with a red shift (a subsurface stand-in) and two specular lobes. Per pixel: natural lips, flush, under-eye tone, freckles, beauty marks, vitiligo, brow fill, a painted hairline, pores, and the `uPaint` hook for makeup |
 | `eyes.js` | Eyeballs placed from MakeHuman's eye helpers and aimed at the camera. Procedural iris, set per eye (ready for contact lenses) |
 | `brows.js`, `lashes.js`, `strands.js` | Individual brow hairs rooted on the skin, and upper and lower lashes rooted on MakeHuman's lash helper lines. Each lash keeps its own parameters, ready for mascara |
@@ -74,8 +81,18 @@ seed, so a save can store the record or just `{version, seed}`.
     European, Arab × East African, East Asian × European, South Asian × European.
   - 16% are free two-profile mixes.
   - Profiles are drawn evenly rather than by world population, so every session meets a wide range of people.
-- **Shape.** Each dimension gets the weighted profile mean (capped at |0.5|) plus individual variation (standard
-  deviation around 0.28), clamped to ±0.9. Each face also gets one or two face-outline blends.
+- **Shape.** Independent noise on about 90 sliders made faces look unnatural (long lower faces, squinting eyes,
+  protruding mouths, egg-shaped crowns). The shape model now has three parts:
+  - **Calibrated spread.** One standard deviation of a dimension moves the face by a fixed visible amount (about
+    0.7 mm for small features, 1.2–1.4 mm for skull and structure). This uses each target's measured effect in
+    `dim-impact.js`, which is generated from the asset and checked by the tests.
+  - **Correlated factors.** Nine factors move related dimensions together: face width, face length, fullness,
+    profile depth, eye openness, lip fullness, nose size, jaw strength and eye tilt. Independent noise is small on
+    top of them.
+  - **Shared baseline.** Every face starts from the same young-adult point: more open eyes, a shorter and softer
+    lower face, wider temples, a slimmer neck and ears closer to the head. The profile tendencies are added to that
+    baseline.
+  - Head top above the eyes now spans 0.89–1.07 dm across 300 faces (it was 0.80–1.47).
 - **Skin.**
   - Tone is a continuous ramp that extends Haircut's ten anchor tones, with five undertones.
   - Freckles depend on fairness and red hair.
@@ -129,10 +146,12 @@ Building blocks:
 ```sh
 npm ci
 node tools/makehuman/fetch.mjs          # only needed to rebuild the head asset
-node tools/makehuman/build-head.mjs     # rebuilds assets/head.bin (byte-identical)
+node tools/makehuman/build-head.mjs     # rebuilds assets/head.bin.gz + head.manifest.json (byte-identical)
+node tools/makehuman/impact.mjs         # regenerates src/face/dim-impact.js after a head rebuild
 node tools/build-preview.mjs            # build/preview; serve with: node tools/serve.mjs build/preview
 node tests/unit.mjs                     # asset, generator and queue checks
 node tests/face-audit.mjs 2000 300      # writes docs/FACE-AUDIT.md and docs/face-audit.json
+node tests/size-budget.mjs              # download-size budget (fails over 400 KB total or 512 KiB per file)
 node tests/render-smoke.mjs [--gallery] # Chromium WebGL render check; --gallery rewrites docs/face-gallery.jpg
 ```
 
@@ -143,10 +162,12 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 
 - Building a face (morph, subdivision, brows, lashes, hair, cape) takes about 70 ms on the CPU. This happens once
   per Next, not per frame.
-- Preview bundle: `main.js` is 558,088 bytes minified (149 KB gzipped), including Three.js, plus `head.bin` at
-  1,193,728 bytes (446 KB gzipped). That is well under the 5 MB studio limit. Both files are above the platform's
-  *recommended* 512 KiB per file, so the release packager should split or further quantise `head.bin` (deltas are
-  int16) and split the bundle.
+- **Download:** 319,455 bytes in total: `head.bin.gz` 223,058, `main.js` 95,422 (minified, renderer included),
+  `index.html` 975. That is down from about 1.75 MB, and every file is under the platform's recommended 512 KiB.
+  The budget test fails above 400 KB for the face system. The whole-game target is 1 MB, against the contract's
+  5 MB studio limit and the platform's 15 MiB recommendation. For comparison, Haircut's YouTube build is 1.09 MB.
+- **Time to first face:** 1.4 s after navigation from a local server, with software WebGL. This is a desktop
+  container, not a phone, and it excludes network time.
 - These numbers are not phone measurements. Physical mid-range Android frame-time and first-playable checks
   (contract §14) are still NOT RUN.
 
@@ -154,8 +175,9 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 
 - **Add a profile.** Add an entry to `PROFILES` with a tone range, weights and small shape means (|x| ≤ 0.5), then
   run the audit. Keep cultural styles out of profiles.
-- **Add a shape dimension.** Add it in `tools/makehuman/dims.mjs`, rebuild the head, add it to `SHAPE_DIMS`, and
-  give it an individual SD if the default 0.28 is too much.
+- **Add a shape dimension.** Add it in `tools/makehuman/dims.mjs`, rebuild the head, run `impact.mjs`, and add it
+  to `SHAPE_DIMS`. Its spread comes from its measured effect; add it to a factor if it should move with related
+  features.
 - **Add a hairstyle.** Add a catalogue entry in `hair-styles.js` (textures and presentation weights) and a case in
   `Hair.build`.
 - **Makeup painting (next step).** Render brush stamps into a UV-space render target, compute distance from the 3D
@@ -173,4 +195,6 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 - Profile shape tendencies are directional and qualitative, not fitted measurements. Have people from the
   represented communities review sample faces before launch.
 - Shader cost on low-end phones is unmeasured. The skin shader uses 3D cellular noise for pores and freckles; if
-  needed, bake those into a small tiling texture.
+  needed, bake those into a small tiling texture and cap the pixel ratio at 1.5.
+- The renderer covers only this scene's needs: no lights objects, shadows, frustum culling or texture formats beyond
+  RGBA8. Painting will add one render target.
