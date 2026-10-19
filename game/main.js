@@ -6,7 +6,7 @@ import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
-import { chime, hush } from './sound.js';
+import { chime, hush, setEnabled, stroke, tap, ui, stats as sounds } from './sound.js';
 import { productShot } from './reward.js';
 import { createHost } from '../src/game/youtube.js';
 import * as G from '../src/game/game.js';
@@ -128,13 +128,31 @@ async function main() {
       return { tool: s.selection.tool, colour: s.selection.colour[s.selection.tool] };
     },
     onChange: redraw,
-    onCommit: () => session.applied(view.makeup.makeup),
+    onCommit: (change) => {
+      session.applied(view.makeup.makeup);
+      if (change.lens) tap('lens');
+      else if (change.stroke?.tool === 'gem') tap('gem', colourById(change.stroke.colour));
+    },
+    feedback: {
+      // each stroke's sound follows the hand, in decimetres a second on the face (the same on every screen)
+      down(sel) { this.voice = stroke(sel.tool, colourById(sel.colour)); this.last = null; },
+      move(x, y, contact) {
+        const t = performance.now() / 1000, P = view.makeup.picker;
+        if (this.voice && this.last) {
+          const [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]);
+          this.voice.move(Math.hypot(x - this.last[0], y - this.last[1]) / (Math.abs(bx - ax) * 10), t - this.last[2], contact);
+        }
+        this.last = [x, y, t];
+      },
+      up() { this.voice?.end(); this.voice = null; },
+    },
   });
   host.onPause = () => { input.interrupt(); session.flush().catch(() => {}); }; // the final-save window
   let audio = false;
   host.onState((st) => {
     paused = st.paused;
     audio = st.audio;
+    setEnabled(audio);
     if (paused) input.interrupt();
     hush(!audio);
     $('app').inert = paused;
@@ -149,7 +167,7 @@ async function main() {
     b.className = 'ctl';
     b.setAttribute('aria-label', label);
     b.innerHTML = ICON[id];
-    b.onclick = () => session.select(id);
+    b.onclick = () => { if (session.state.selection.tool !== id) ui('tool'); session.select(id); };
     toolbar.appendChild(b);
   }
   let shownSelection = '';
@@ -164,7 +182,7 @@ async function main() {
       b.setAttribute('aria-label', c.daily ? `${c.name} (colour of the day)` : c.name);
       b.setAttribute('aria-checked', String(s.selection.colour[tool] === c.id));
       if (c.daily) b.insertAdjacentHTML('beforeend', ICON.star);
-      b.onclick = () => session.select(tool, c.id);
+      b.onclick = () => { if (session.state.selection.colour[tool] !== c.id) ui('colour'); session.select(tool, c.id); };
       return b;
     }));
     swatches.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -238,7 +256,7 @@ async function main() {
     if (finishing || session.busy) return;
     input.interrupt();
     const s = session.state, changed = isChanged(s.attempt.makeup, s.face.eyes.iris);
-    if (audio) chime(changed);
+    chime(changed);
     if (!changed) { session.finish(); return; } // an untouched look: straight to review, quietly
     // a finished look: the seal pops, a chime, sparkles; then review rises onto the counter
     finishing = true;
@@ -247,14 +265,14 @@ async function main() {
     setTimeout(() => { finishing = false; $('done').classList.remove('pop'); session.finish(); }, 380);
   };
   // a request marks the session busy straight away, so the buttons are disabled while it runs
-  $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); prepare(); };
+  $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); prepare(); ui('next'); };
   $('redo').onclick = async () => {
     const p = session.reward('replay');
     render();
-    if (!(await p)) nope($('redo'));
+    if (await p) ui('next'); else nope($('redo'));
     sync(); render();
   };
-  const nope = (el) => { el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); };
+  const nope = (el) => { el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); ui('nope'); };
 
   // ---- the colour of the day ----
   const daily = $('daily'), panel = $('panel'), card = panel.querySelector('.card');
@@ -289,6 +307,7 @@ async function main() {
   };
   const openPanel = () => {
     input.interrupt();
+    ui('panel');
     session.refreshDaily(); session.openedDaily();
     panelOpen = true; panel.hidden = false;
     renderPanel();
@@ -315,7 +334,7 @@ async function main() {
     if (session.state.owned.includes(session.state.pick?.colour)) { closePanel(); return; } // "use it now": it is selected
     const p = session.reward('daily');
     renderPanel();
-    if (!(await p)) nope(get);
+    if (await p) ui('reward'); else nope(get);
     render();
   };
 
@@ -404,7 +423,7 @@ async function main() {
   $('cover').hidden = true;
   prepare();
   await host.gameReady();
-  Object.assign(globalThis, { game: { session, view, host, input } }); // for tests and debugging
+  Object.assign(globalThis, { game: { session, view, host, input, sounds } }); // for tests and debugging
 }
 
 main().catch((e) => fail('START', e));

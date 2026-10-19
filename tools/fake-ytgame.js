@@ -3,7 +3,8 @@
 //   interstitial: closes itself after a moment
 //   rewarded:     "Skip" (not earned) or "Watch to the end" (earned)
 // Automation: window.__fakeAds = { auto: true, rewarded: true|false, interstitialFails: false } answers without
-// clicks; window.__adLog records every SDK call; window.ytgame.__pause() / __resume() play the host.
+// clicks; window.__adLog records every SDK call; window.ytgame.__pause() / __resume() play the host, and
+// window.ytgame.__audio(false) turns the host's sound off.
 (function () {
   if (globalThis.ytgame) return;
   // on the development page the stand-in is opt-in: add ?testads to the address
@@ -11,7 +12,7 @@
   const KEY = 'fake-ytgame-save';
   const log = (globalThis.__adLog = []);
   const opts = () => globalThis.__fakeAds || {};
-  const pauseCbs = new Set(), resumeCbs = new Set();
+  const pauseCbs = new Set(), resumeCbs = new Set(), audio = { on: true, cbs: new Set() };
   function overlay(title, buttons) {
     return new Promise((resolve) => {
       const el = document.createElement('div');
@@ -40,8 +41,8 @@
       async saveData(data) { log.push('saveData'); localStorage.setItem(KEY, data); },
     },
     system: {
-      isAudioEnabled: () => true,
-      onAudioEnabledChange: () => () => {},
+      isAudioEnabled: () => audio.on,
+      onAudioEnabledChange(cb) { audio.cbs.add(cb); return () => audio.cbs.delete(cb); },
       onPause(cb) { pauseCbs.add(cb); return () => pauseCbs.delete(cb); },
       onResume(cb) { resumeCbs.add(cb); return () => resumeCbs.delete(cb); },
       getLanguage: async () => 'en',
@@ -60,6 +61,7 @@
       },
     },
     __pause() { log.push('pause'); for (const cb of pauseCbs) cb(); },
+    __audio(on) { audio.on = on; for (const cb of audio.cbs) cb(on); },
     __resume() { log.push('resume'); for (const cb of resumeCbs) cb(); },
   };
 })();

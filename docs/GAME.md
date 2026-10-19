@@ -5,7 +5,7 @@ plays end to end in the browser: make up a face, review it, move on to the next 
 YouTube Playables SDK and has the owner's ad rules. Not done yet:
 - checks on the real YouTube host and on phones
 - languages other than English
-- more sound (only the finish chime exists)
+- listening checks on real phones (the sounds are measured and rendered, not yet heard on devices)
 - a first-use hint
 - score reporting
 
@@ -80,6 +80,32 @@ on each screen.
 
 There is no eraser, undo or free reset. Redo is the rewarded replay the contract promises. An untouched
 Done/Next is allowed, but counts nothing.
+
+## Sound (owner decision, 19 October 2026: satisfying ASMR sounds, no music)
+
+Every sound is synthesised in `game/sound.js` (no audio files, no music) and plays only while the host allows
+sound. Each tool sounds like the real product touching the face:
+
+| Tool | Sound |
+| --- | --- |
+| Soft brush | Bristles sweeping powder over skin |
+| Highlighter | A lighter, airier fan brush with fine glints |
+| Pencil | The grainy scratch of a kohl tip |
+| Liquid liner | A smooth felt-tip glide, and a soft tick as the tip lifts |
+| Mascara | The wand's bristles flicking through lashes (only while it touches lashes) |
+| Lipstick | A creamy, waxy glide that drags a little; gloss is wet and tacky |
+| Face gems | A click as the gem sets, then its ring: crystal (iridescent glass adds glints), pearl or metal |
+| Lenses | A soft, wet plip |
+
+- **A stroke follows the hand.** Its speed is measured on the face (decimetres a second, the same on every
+  screen): faster is louder and brighter. It falls silent when the hand stops or leaves the face.
+- **The controls:** a soft tactile click when a tool is picked up, a tap when a colour is chosen, a pop as the
+  colour of the day opens, a whoosh as the next customer sits down, a rising sparkle for an earned colour, and a
+  low soft bump when something is refused. The finish keeps Haircut's bell chime.
+- **Levels:** strokes peak at about 0.17 of full scale, about as loud as the finish chime; a gentle compressor
+  keeps many small sounds from clipping.
+- **Checks:** the browser test checks that a stroke makes a sound, and that nothing plays, not even a tool's
+  click, while the host has sound off. `tests/out/sounds/*.wav` are rendered samples of every sound, for listening.
 
 ## Ads (owner decisions, 19 October 2026)
 
@@ -206,13 +232,13 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - the dev page without ads
 - no visible words on any screen
 
-**Size:** the game page is 458 KB (`tests/size-budget.mjs`, game budget 1 MB).
+**Size:** the game page is 467 KB (`tests/size-budget.mjs`, game budget 1 MB).
 
 ## Not built yet
 
 - **Localisation:** the contract asks for the host language, and the final locale list is still to be decided.
   English only for now.
-- **More sound and a first-use hint:** only the finish chime exists so far.
+- **A first-use hint.**
 - **Score reporting:** `engagement.sendScore` with acknowledged completions.
 - **Real-host and device checks:** YouTube's Playables test suite, permitted test inventory, physical phones,
   and other browsers.

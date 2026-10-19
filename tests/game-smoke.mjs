@@ -59,8 +59,9 @@ try {
     assert.equal(s.phase, 'create');
     assert.equal(await words(page), '', 'no words on the create screen');
     const nextSeed = s.next;
-    // look 1: a stroke, Done, Next (no ad yet)
+    // look 1: a stroke (it sounds), Done, Next (no ad yet)
     await stroke(page);
+    assert.ok(await page.evaluate(() => game.sounds.played) > 0, 'the stroke made a sound');
     await done(page);
     s = await state(page);
     assert.deepEqual([s.phase, s.strokes, s.completions], ['review', 1, 1]);
@@ -72,6 +73,14 @@ try {
     // an untouched look: Done, Next, nothing counted
     await done(page); await page.click('#next'); await idle(page);
     assert.equal((await state(page)).completions, 1);
+    // the host turns sound off: nothing plays, not even a tool's click; back on, it sounds again
+    await page.evaluate(() => ytgame.__audio(false));
+    const heard = await page.evaluate(() => game.sounds.played);
+    await page.click('#toolbar [data-tool="pencil"]'); await page.click('#toolbar [data-tool="brush"]');
+    assert.equal(await page.evaluate(() => game.sounds.played), heard, 'silent while the host has sound off');
+    await page.evaluate(() => ytgame.__audio(true));
+    await page.click('#toolbar [data-tool="pencil"]'); await page.click('#toolbar [data-tool="brush"]');
+    assert.ok(await page.evaluate(() => game.sounds.played) > heard, 'sound is back');
     // look 2 after a minute of making: one interstitial at Next
     await making(page); await stroke(page);
     await done(page); await page.click('#next'); await idle(page);

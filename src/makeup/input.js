@@ -8,8 +8,10 @@ const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move
 
 // canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses, 'gem' for gems), or null
 // while the face takes no input (review, an open panel, a pause);
-// onChange(): the face changed and needs a redraw; onCommit(change): a stroke or lens change was stored
-export function attachInput(canvas, applicator, { selection, onChange, onCommit }) {
+// onChange(): the face changed and needs a redraw; onCommit(change): a stroke or lens change was stored;
+// feedback (optional): follows each stroke as it happens, for its sound: down(selection), move(x, y, contact) for
+// every sample (contact: the tool is on the skin; the mascara wand: on lashes), up()
+export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback }) {
   let active = null;
   const local = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 
@@ -25,6 +27,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
       if (stroke) { onChange(); onCommit({ stroke }); }
       return;
     }
+    feedback?.up();
     const stroke = applicator.end(a.g); // valid work up to the last applied sample is kept either way
     if (stroke) { onChange(); onCommit({ stroke }); }
   };
@@ -40,7 +43,10 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
     const g = applicator.begin(sel.tool, sel.colour);
     if (!g) return;
     active = { id: e.pointerId, g };
-    if (applicator.move(g, x, y)) onChange();
+    feedback?.down(sel);
+    const changed = applicator.move(g, x, y);
+    feedback?.move(x, y, g.painter ? !!g.seg : changed);
+    if (changed) onChange();
   };
   const move = (e) => {
     if (!active || e.pointerId !== active.id) return;
@@ -49,7 +55,9 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
     for (const ev of events) {
       const [x, y] = local(ev);
       if (active.tap) { if (Math.hypot(x - active.x, y - active.y) > TAP_SLOP) active.moved = true; continue; }
-      changed = applicator.move(active.g, x, y) || changed;
+      const g = active.g, moved = applicator.move(g, x, y);
+      feedback?.move(x, y, g.painter ? !!g.seg : moved);
+      changed = moved || changed;
     }
     if (changed) onChange();
   };
