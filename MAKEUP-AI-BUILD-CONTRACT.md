@@ -20,7 +20,7 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Eye colour | Add contact lenses as a simple selector | O | Independent iris colours possible; G05 |
 | Camera | Front-facing and already close enough; no 360 or precision zoom control | O | Functional accuracy at ordinary framing; G06, UI01 |
 | Application controls | Player strokes and repeated passes determine the result; no size/intensity sliders | O | No settings work before creating; G01–G04, UI01 |
-| Finish | Review the actual result, with before/after. Done is a seal the size of the other top buttons; a finished look plays Haircut's chime and a sparkle burst, then review shows Retry (video) and Next with the next customer pictured, as Haircut's completion | O, 19 Oct 2026 | Payoff precedes Next/ad; FLOW01 |
+| Finish | Review the actual result (no before/after comparison: owner decision, 19 October 2026). Done is a seal the size of the other top buttons; a finished look plays Haircut's chime and a sparkle burst, then review shows Retry (video) and Next with the next customer pictured, as Haircut's completion | O, 19 Oct 2026 | Payoff precedes Next/ad; FLOW01 |
 | Replay | Remains rewarded: one earned video restarts the same clean face | O/I | Optional correction/retry; R01 |
 | Daily unlock | One colour of the day for one specified tool (or the lenses); one earned video adds it to that tool's colours for good. The offer runs to the player's local midnight with a countdown, in a daily section like Haircut's daily pick | O, 19 Oct 2026 (replaces the 24-hour entitlement) | Replaces all-tool sets and two-video proposal; `src/game/daily.js`; R02–R06 |
 | Lens reward | A lens colour can occupy that same single daily slot | Accepted scope from the lens discussion; D scheduling | No additional placement; R02 |
@@ -135,7 +135,7 @@ On a new save, create the first valid generated face with the soft brush and an 
 
 On return, restore the exact face, makeup, eye colours, selected tool/colour where still available, current creation/review state and upcoming customer. Never substitute a stock finished face.
 
-**Finish:** End the current gesture and open review. Show the actual final work and a player-controlled before/after comparison with this same attempt's clean starting face. Comparing is read-only; it is not an eraser and cannot be saved as a clean replacement. No mandatory spin, 360 camera, rating, client request, percentage coverage or wait timer. The player can inspect for as long as desired.
+**Finish:** End the current gesture and open review. Show the actual final work. **Owner decision, 19 October 2026:** review has no before/after comparison (the hold-to-see-before eye was removed); the finished look stays on screen. No mandatory spin, 360 camera, rating, client request, percentage coverage or wait timer. The player can inspect for as long as desired.
 
 **Completion predicate (D):** A meaningful completion requires a persistent makeup or iris difference from the clean starting state. Tool/colour selection, touching an invalid area or returning a lens to its starting colour with no other change is not sufficient. Commit one completion per attempt ID at Finish. Reopening review, reloading or double tapping cannot count it twice.
 
@@ -186,7 +186,7 @@ Keep Haircut's reusable placement/flow structure where it fits. Creation exposes
 | BOOT / RESTORE | Wait or Retry after a failure | Read/validate before mutation; never erase unknown data | None |
 | CREATE | Select tool/colour; apply; Finish; open daily offer | Applied samples/committed gestures and selected state checkpoint | Explicit daily request only |
 | DAILY OFFER | Inspect promised pair; dismiss; request one ad | Offer/request identity; no grant for opening panel | One explicit daily request |
-| REVIEW | Before/after; Next; rewarded Replay; inspect daily offer | Completion once; exact final/before/next state checkpoint | Explicit replay/daily; interstitial only after Next |
+| REVIEW | The finished look; Next; rewarded Replay; inspect daily offer | Completion once; exact final/before/next state checkpoint | Explicit replay/daily; interstitial only after Next |
 | AD PENDING | Await request outcome; block conflicting Next/draw/second ad | Pre-ad acknowledged snapshot and request identity | Existing request only |
 | NEXT COMMIT | Advance once after eligibility/save/ad handling | New attempt + exact queued face + next queue atomically | At most one eligible interstitial |
 | RECOVERY | Read usable explanation and Retry | Preserve unread/dirty/acknowledged data as appropriate | None |
@@ -217,7 +217,7 @@ Active time means unpaused CREATE time, matching the reference's gameplay-state 
 
 Persist qualified count and accumulated active milliseconds. **Reference restart semantics:** attempt cooldown and recent-reward timestamps are runtime-only in Haircut; a full reload begins fresh runtime timers while retaining saved cadence progress. Adopt that behavior rather than silently inventing persisted suppression. A reload does not itself call an ad: another explicit eligible Next is required. Any proposal to change this timing must be documented as a monetization change.
 
-An untouched current attempt must not be used as the Next trigger for accumulated interstitial eligibility. A changed Finish is the natural break. No ad during a stroke, on tool/colour selection, between facial features, during before/after comparison, on panel opening, on replay grant or automatically on return.
+An untouched current attempt must not be used as the Next trigger for accumulated interstitial eligibility. A changed Finish is the natural break. No ad during a stroke, on tool/colour selection, between facial features, on panel opening, on replay grant or automatically on return.
 
 ### Exactly two rewarded purposes
 
@@ -368,7 +368,7 @@ Every case below starts **NOT RUN**. Implement named procedures or executable te
 | G05 | Lens colour on left/right and invalid area | Independent iris change; no paint loss; miss is no-op | Domain + native tap |
 | G06 | Fast strokes, face motion, pointer cancel, resize, lost capture | Continuous valid work retained; stable target; no accidental resumed stroke | Native input + fault injection |
 | G07 | Invalid paths/numbers, max work, saturated/no-op application | Validation; finite bounded state; no silent work loss | Domain/property tests |
-| FLOW01 | Finish, toggle before/after, reopen/reload review | Actual result and correct baseline; completion at most once | Domain + browser |
+| FLOW01 | Finish, reopen/reload review | Actual result; completion at most once | Domain + browser |
 | FLOW02 | Untouched Finish/Next; repeated Next double tap | Skip allowed, zero completion/ad progress; one customer advance | Domain + browser |
 | FLOW03 | Changed completion, Next, then replay and reload | Previewed queue stays fixed; new attempt IDs; no free reset | Domain + browser |
 | CONTENT01 | Audit 1,000 seeded generated profiles / deck exhaustion | Valid targets; coverage report; reproducibility; no adjacent identical full face | Generator audit |

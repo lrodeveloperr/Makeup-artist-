@@ -101,12 +101,9 @@
   #swatches button.gem { background: var(--panel); display: grid; place-items: center; }
   #swatches button.gem > svg:not(.star) { width: 30px; height: 30px; overflow: visible; }
   #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
-  /* review, as Haircut's completion: the top buttons give way (the eye for the before takes the corner); on the
-     counter, Retry for a video and the next customer, pictured, docked against the Next arrow */
+  /* review, as Haircut's completion: the top buttons give way; on the counter, Retry for a video and the next
+     customer, pictured, docked against the Next arrow */
   body.review #daily, body.review #done { display: none; }
-  #before { display: none; }
-  body.review #before { display: grid; }
-  #before[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
   #review { display: flex; gap: 22px; justify-content: center; align-items: center; }
   #review > * { animation: rise .45s .25s ease-out both; }
   @keyframes rise { from { opacity: 0; transform: translateY(26px); } }
@@ -201,7 +198,6 @@
   <div id="backdrop" aria-hidden="true"><div class="mirror"><i class="bulbs l"></i><i class="bulbs r"></i><i class="bulbs t"></i></div></div>
   <header id="top">
     <button id="daily" class="ctl round" aria-label="Colour of the day" hidden></button>
-    <button id="before" class="ctl round" aria-pressed="false" aria-label="Hold to see before"></button>
     <span></span>
     <button id="done" class="ctl" aria-label="Done"></button>
   </header>

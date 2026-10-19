@@ -30,7 +30,6 @@ export class Applicator {
 
   // a new face (or the same face's clean start): no makeup, natural lashes and irises
   reset(profile) {
-    this.showBefore(false);
     this.profile = profile;
     this.makeup = createMakeup();
     this.paint.clear();
@@ -43,7 +42,6 @@ export class Applicator {
   // rebuild the look from a saved makeup state for the current face; false if the state is invalid
   restore(makeup) {
     if (!validMakeup(makeup)) return false;
-    this.showBefore(false);
     this.makeup = makeup;
     this.paint.clear();
     this.view.lashes.resetCoats();
@@ -69,24 +67,6 @@ export class Applicator {
   layout() {
     const v = this.view, size = v.cssSize;
     this.picker.update(v.headGeometry, v.eyes, v.camera, size[0], size[1]);
-  }
-
-  // Review's before/after (read-only): true shows the clean starting face, false the finished look again.
-  showBefore(on) {
-    const v = this.view;
-    if (!!on === !!this.before) return;
-    v.skin.uniforms.uPaintOn.value = on ? 0 : 1;
-    this.gems.mesh.visible = !on && this.gems.list.length > 0;
-    if (on) {
-      this.before = v.lashes.snapshot();
-      v.lashes.resetCoats();
-      const natural = IRIS[this.profile.eyes.iris];
-      v.eyes.setIris(natural, natural, this.profile.eyes.seed);
-    } else {
-      v.lashes.restore(this.before);
-      this.before = null;
-      this.applyLenses();
-    }
   }
 
   applyLenses() {

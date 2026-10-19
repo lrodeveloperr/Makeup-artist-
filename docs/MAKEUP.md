@@ -62,8 +62,7 @@ part of every face at any screen size.
   is not stored.
 - **Face gems.** Select a gem and tap the skin: the gem sticks there, facing out from the skin and upright to the
   face, and catches the salon lights in its facets (glass, iridescent glass, pearl or metal). A drag, the eyes, the
-  outfit and empty space place nothing. Each tap is one gem; a face holds up to 200. The before/after comparison
-  hides them with the rest of the look.
+  outfit and empty space place nothing. Each tap is one gem; a face holds up to 200.
 - **Contact lenses.** Select a lens colour and tap an iris. Each eye is independent. A tap anywhere else, or a
   drag, does nothing. A lens never changes the makeup.
 

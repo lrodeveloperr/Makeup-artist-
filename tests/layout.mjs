@@ -36,7 +36,7 @@ try {
   const measure = (state) => page.evaluate((state) => {
     const r = (el) => { const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; };
     const visible = (el) => el && !el.closest('[hidden]') && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
-    const sel = { create: ['#daily', '#done', '#toolbar .ctl'], daily: ['#panel .card', '#panel .get', '#panel .x'], review: ['#before', '#redo', '#next'] }[state];
+    const sel = { create: ['#daily', '#done', '#toolbar .ctl'], daily: ['#panel .card', '#panel .get', '#panel .x'], review: ['#redo', '#next'] }[state];
     const controls = sel.flatMap((s) => [...document.querySelectorAll(s)]).filter(visible).map((el) => ({ id: el.id || el.className || el.dataset.tool, ...r(el) }));
     const swatches = [...document.querySelectorAll('#swatches button')].filter(visible).map(r);
     const canvas = r(document.querySelector('#stage canvas')), v = game.view, P = v.makeup.picker;

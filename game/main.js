@@ -1,6 +1,6 @@
 // The game: one screen. Create (seven tools and the lenses, their colours, Done) → the finish (a chime and a burst
-// of sparkles) → review, as in Haircut (Retry for a video, the next customer pictured beside Next, the eye to
-// compare with the before) → the next customer. The colour of the day is behind the button at the top left.
+// of sparkles) → review, as in Haircut (Retry for a video, the next customer pictured beside Next) → the next
+// customer. The colour of the day is behind the button at the top left.
 // Rules and saving are in src/game; this file is the screen.
 import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
@@ -27,7 +27,6 @@ const ICON = {
   check: svg('M5 12.5l4.5 4.5L19 7.5', ' stroke-width="3.6"'),
   next: svg('M5 12h13M12.5 5.5L19 12l-6.5 6.5', ' stroke-width="3.2"'),
   redo: svg('M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 4.2v4.6h4.6', ' stroke-width="3"'),
-  eye: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 10a2 2 0 1 0 0 4 2 2 0 1 0 0-4', ' stroke-width="2.6"'),
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
   clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2M9.5 2.5h5', ' stroke-width="2.6"'), // Haircut's stopwatch
   close: svg('M6.5 6.5l11 11M17.5 6.5l-11 11', ' stroke-width="3.2"'),
@@ -198,7 +197,6 @@ async function main() {
   $('done').innerHTML = `${SEAL}${ICON.check}`;
   $('next').querySelector('.go').innerHTML = ICON.next;
   $('redo').innerHTML = `${ICON.redo}${BADGE}`;
-  $('before').innerHTML = ICON.eye;
   // sparkles burst from the face (positions in the stage, in pixels)
   const burst = () => {
     const fx = $('fx'), w = stage.clientWidth, h = stage.clientHeight;
@@ -238,14 +236,6 @@ async function main() {
     if (!(await p)) nope($('redo'));
     sync(); render();
   };
-  // hold to compare with the clean starting face (read-only)
-  const before = $('before');
-  const compare = (on) => { if (session.state.attempt.phase !== 'review') return; view.makeup.showBefore(on); before.setAttribute('aria-pressed', String(on)); redraw(); };
-  before.addEventListener('pointerdown', (e) => { e.preventDefault(); before.setPointerCapture(e.pointerId); compare(true); });
-  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) before.addEventListener(type, () => compare(false));
-  before.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); compare(true); } });
-  before.addEventListener('keyup', () => compare(false));
-  before.addEventListener('contextmenu', (e) => e.preventDefault());
   const nope = (el) => { el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); };
 
   // ---- the colour of the day ----

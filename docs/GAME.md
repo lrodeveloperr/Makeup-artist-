@@ -17,7 +17,7 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 | --- | --- |
 | Create | The face. Seven tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right, the size of the daily button), and the daily button (top left). |
 | The finish | A look that changed the face: the Done seal pops, Haircut's bell chime plays (if the host allows sound), and sparkles burst from the face. Review then rises onto the counter. An untouched Done goes straight to review with a soft tone. |
-| Review | As Haircut's completion. The top buttons give way to the **eye** (hold to see the clean starting face; read-only). On the counter: **Retry** (breathing, with the video badge: the same face again, clean) and **Next**, with a picture of the next customer docked against the arrow (always free). |
+| Review | As Haircut's completion. The top buttons give way, leaving the finished look on its own (no before/after button: owner decision, 19 October 2026). On the counter: **Retry** (breathing, with the video badge: the same face again, clean) and **Next**, with a picture of the next customer docked against the arrow (always free). |
 | Colour of the day | Minimal: a **product shot** of today's colour (owner's choice, 19 October 2026), one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
 | Loading / Retry | A loading cover until the face is on screen. A missing SDK, a failed load, or a save that isn't this game's stops at **Retry**, and the save is never overwritten. |
 
@@ -84,8 +84,7 @@ Done/Next is allowed, but counts nothing.
     requests, and a minute after a rewarded video.
   - **A rewarded video also stands in for the next interstitial:** that break is skipped and counting starts
     again.
-  - It never plays during making, a stroke, tool or colour choice, review, the before/after comparison, or a
-    panel.
+  - It never plays during making, a stroke, tool or colour choice, review, or a panel.
   - A refused or failed request lets the next face come normally and keeps the count.
 - **Rewarded, exactly two purposes, always the player's choice:**
   1. **Redo this face** (`makeup-replay-face`, in review). One video: the same face, clean, as a new attempt.
@@ -190,7 +189,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 
 **`tests/game-smoke.mjs`** runs the full flow with the mouse:
 - readiness signals
-- review and before/after
+- review
 - Next and an untouched Next
 - the interstitial on the second look
 - a refused, then an earned, colour of the day

@@ -1,6 +1,6 @@
 // Browser test of the game screen (build/game, the YouTube page) with the test stand-in for the YouTube SDK
 // (tools/fake-ytgame.js, injected here by the test runner in place of https://www.youtube.com/game_api/v1).
-// Covers: readiness signals, painting with the mouse, Done → review → before/after, Next, the interstitial on the
+// Covers: readiness signals, painting with the mouse, Done → review, Next, the interstitial on the
 // second finished look, the colour of the day (refused, then earned and kept), Redo for a video, a host pause,
 // reload restoring everything, a missing SDK and a protected save showing Retry, and the dev page without ads.
 // Usage: node tools/build-game.mjs && node tests/game-smoke.mjs
@@ -59,17 +59,12 @@ try {
     assert.equal(s.phase, 'create');
     assert.equal(await words(page), '', 'no words on the create screen');
     const nextSeed = s.next;
-    // look 1: a stroke, Done, hold Before, Next (no ad yet)
+    // look 1: a stroke, Done, Next (no ad yet)
     await stroke(page);
     await done(page);
     s = await state(page);
     assert.deepEqual([s.phase, s.strokes, s.completions], ['review', 1, 1]);
     assert.equal(await words(page), '', 'no words in review');
-    const bb = await page.locator('#before').boundingBox();
-    await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await page.mouse.down();
-    assert.equal(await page.evaluate(() => game.view.skin.uniforms.uPaintOn.value), 0, 'held: the clean face');
-    await page.mouse.up();
-    assert.equal(await page.evaluate(() => game.view.skin.uniforms.uPaintOn.value), 1, 'released: the finished look');
     await page.click('#next'); await idle(page);
     s = await state(page);
     assert.equal(s.seed, nextSeed, 'the previewed customer came next');
