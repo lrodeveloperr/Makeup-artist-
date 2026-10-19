@@ -3,30 +3,34 @@
 recordings, free of copyright, no music). Every source is CC0 (public domain); each is credited in ASSETS.md.
 
 For each tool, the recording is cleaned (rumble cut; pencil and felt tip, recorded on paper, softened towards
-skin), only the moments where the tool is moving are kept, and they are joined with short crossfades into a
-seamless 2.5 s loop. Each loop is saved with 0.15 s of the loop's own sound on both sides, so the game can loop the
-middle exactly however much silence an MP3 decoder adds at the start. Taps (gems, lenses) are trimmed one-shots.
+skin) and cut into its single movements, its units: one brush swish, one lipstick rub, one gloss swipe, one burst of
+mascara bristles, one pencil stroke. Each unit is the rise and fall of the tool's sound around one peak, cut at the
+quietest point between neighbouring peaks; sharp transients (lip pops, knocks) are left out, and the most typical
+units are kept (about 2.2 s a tool), each evened to the same level. They are saved one after another with 0.12 s of
+silence between them, so the game finds each unit in the decoded sound however much silence an MP3 decoder adds at
+the start. The game plays one unit per sweep of the hand (game/sound.js). Taps (gems, lenses) are trimmed one-shots.
 
-Writes assets/sounds/*.mp3 (mono, 64 kbit/s). Needs python3 with numpy, ffmpeg and network access to freesound.org.
+Writes assets/sounds/*.mp3 (mono, 56 kbit/s). Needs python3 with numpy, ffmpeg and network access to freesound.org.
 Usage: python3 tools/make-sounds.py
 """
 import os, re, subprocess, tempfile, urllib.request
 import numpy as np
 
 SR = 44100
-LOOP, PAD, XFADE = 2.5, 0.15, 0.025
+KEEP, GAP = 2.2, 0.12  # seconds of units kept a tool; silence between units
 OUT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'sounds')
 
-# tool loops: Freesound id (or ids, whose moving stretches are used in turn), ffmpeg clean-up filter, the band whose energy marks the tool moving, the shortest
-# moment kept (s), and where in the recording to look (s)
-LOOPS = {
-    'brush': dict(id=489425, af='highpass=f=250,lowpass=f=11000', band=(2000, 9000), min_len=0.12),          # makeup brush on skin
-    'glow': dict(id=512288, af='highpass=f=300,lowpass=f=12000', band=(2000, 10000), min_len=0.12),          # a soft brush pass, airier
-    'pencil': dict(id=809937, af='highpass=f=200,lowpass=f=5000', band=(1000, 6000), min_len=0.2),           # a soft pencil stroke
-    'liner': dict(id=[321138, 351145], af='highpass=f=200,lowpass=f=3500', band=(800, 6000), min_len=0.2),   # fine felt tips
-    'mascara': dict(id=410069, af='highpass=f=400,lowpass=f=12000', band=(2000, 10000), min_len=0.06),       # a mascara wand's bristles
-    'lip': dict(id=740836, af='highpass=f=120,lowpass=f=8000', band=(500, 6000), min_len=0.15),              # a creamy rub on skin
-    'gloss': dict(id=788343, af='highpass=f=150,lowpass=f=9000', band=(500, 8000), min_len=0.18),            # lip gloss applied (swipes only)
+# tool units: Freesound id (or ids), ffmpeg clean-up filter, the band whose energy is the tool moving, a unit's
+# shortest and longest length (s), the least time between two units' peaks (s), and how much of the quiet ends to
+# keep (a fraction of the energy range above the floor where a unit starts and ends)
+UNITS = {
+    'brush': dict(id=489425, af='highpass=f=250,lowpass=f=11000', band=(2000, 9000), lo=0.1, hi=0.5, gap=0.12, edge=0.08),        # makeup brush on skin
+    'glow': dict(id=512288, af='highpass=f=300,lowpass=f=12000', band=(2000, 10000), lo=0.2, hi=1.0, gap=0.25, edge=0.25),        # a soft brush pass, airier
+    'pencil': dict(id=809937, af='highpass=f=200,lowpass=f=5000', band=(1000, 6000), lo=0.25, hi=1.2, gap=0.3, edge=0.25),         # a soft pencil stroke
+    'liner': dict(id=[321138, 351145], af='highpass=f=200,lowpass=f=3500', band=(800, 6000), lo=0.25, hi=1.2, gap=0.3, edge=0.25), # fine felt tips
+    'mascara': dict(id=410069, af='highpass=f=400,lowpass=f=12000', band=(2000, 10000), lo=0.08, hi=0.45, gap=0.1, edge=0.25),    # a mascara wand's bristles
+    'lip': dict(id=740836, af='highpass=f=120,lowpass=f=8000', band=(500, 6000), lo=0.15, hi=0.7, gap=0.15, edge=0.25),            # a creamy rub on skin
+    'gloss': dict(id=788343, af='highpass=f=150,lowpass=f=9000', band=(500, 8000), lo=0.15, hi=0.6, gap=0.2, edge=0.25),           # lip gloss applied (swipes)
 }
 # taps: Freesound id, clean-up filter, start (s), longest length (s)
 SHOTS = {
@@ -57,7 +61,7 @@ def decode(data, af):
 def encode(x, name):
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f'{name}.mp3')
-    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '1', '-i', '-', '-c:a', 'libmp3lame', '-b:a', '64k', path], input=x.astype(np.float32).tobytes(), check=True)
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '1', '-i', '-', '-c:a', 'libmp3lame', '-b:a', '56k', path], input=x.astype(np.float32).tobytes(), check=True)
     return path
 
 
@@ -69,67 +73,53 @@ def band_energy(x, lo, hi, frame=0.02):
     return 10 * np.log10(spec[:, (f >= lo) & (f < hi)].sum(1) + 1e-12), n
 
 
-def moving(x, band, min_len):
-    """The stretches where the tool is moving: band energy well above the recording's quiet floor."""
-    e, n = band_energy(x, *band)
-    floor, top = np.percentile(e, 15), np.percentile(e, 95)
-    # well above the floor, and within 20 dB of the loudest moments (a recording gated to silence between strokes
-    # would otherwise keep its quiet tails)
-    on = e > max(floor + 0.45 * (top - floor), top - 20)
-    # close gaps shorter than 60 ms
-    gap = int(0.06 / 0.02)
-    idx = np.flatnonzero(on)
-    for a, b in zip(idx[:-1], idx[1:]):
-        if 1 < b - a <= gap: on[a:b] = True
-    runs, start = [], None
-    for i, v in enumerate(np.append(on, False)):
-        if v and start is None: start = i
-        if not v and start is not None:
-            if (i - start) * 0.02 >= min_len: runs.append((start * n, i * n))
-            start = None
-    # trim the ends a little (the tool landing and lifting)
-    t = int(0.015 * SR)
-    return [(a + t, b - t) for a, b in runs if b - a > 4 * t]
-
-
-def crossfade_join(parts):
-    k = int(XFADE * SR)
-    ramp = np.sin(np.linspace(0, np.pi / 2, k)) ** 2
-    out = parts[0].copy()
-    for p in parts[1:]:
-        out[-k:] = out[-k:] * (1 - ramp) + p[:k] * ramp
-        out = np.concatenate([out, p[k:]])
+def units(x, spec):
+    """The single movements in a recording: each the rise and fall of the band's energy around one peak, cut at the
+    quietest point between neighbouring peaks, its quiet ends trimmed."""
+    e, n = band_energy(x, *spec['band'], frame=0.01)
+    es = np.convolve(e, np.ones(5) / 5, mode='same')
+    floor, top = np.percentile(es, 10), np.percentile(es, 98)
+    thr, edge = floor + 0.5 * (top - floor), floor + spec['edge'] * (top - floor)
+    g = max(1, int(spec['gap'] / 0.01))
+    peaks = [i for i in range(1, len(es) - 1) if es[i] >= thr and es[i] == es[max(0, i - g):i + g + 1].max()]
+    out = []
+    for k, p in enumerate(peaks):
+        left = max(0, p - g) if k == 0 else peaks[k - 1] + int(np.argmin(es[peaks[k - 1]:p]))
+        right = min(len(es) - 1, p + g) if k == len(peaks) - 1 else p + int(np.argmin(es[p:peaks[k + 1]]))
+        while left < p and es[left] < edge: left += 1
+        while right > p and es[right] < edge: right -= 1
+        if spec['lo'] <= (right - left) * 0.01 <= spec['hi']: out.append(x[left * n:right * n].copy())
     return out
 
 
-def make_loop(name, spec):
+def make_units(name, spec):
     ids = spec['id'] if isinstance(spec['id'], list) else [spec['id']]
-    stretches = []
+    found = []
     for sid in ids:
-        x = decode(preview(sid), spec['af'])
-        x /= np.sqrt(np.mean(x ** 2)) + 1e-9  # recordings of different loudness, evened out
-        stretches += [x[a:b] for a, b in moving(x, spec['band'], spec['min_len'])]
-    if not stretches: raise SystemExit(f'{name}: no movement found')
-    runs = stretches
-    need = int((LOOP + 2 * XFADE) * SR) + int(2 * PAD * SR)
-    parts, i = [], 0
-    while sum(len(p) for p in parts) < need * 1.2:
-        parts.append(runs[i % len(runs)]); i += 1
-        if i > 400: break
-    y = crossfade_join(parts)
-    L = int(LOOP * SR)
-    # a seamless cycle: the end crossfades into the start
-    k = int(XFADE * SR)
-    ramp = np.sin(np.linspace(0, np.pi / 2, k)) ** 2
-    cyc = y[:L].copy()
-    cyc[:k] = y[L:L + k] * (1 - ramp) + cyc[:k] * ramp
-    # level: RMS -20 dBFS, peaks rounded off
-    cyc *= 0.1 / (np.sqrt(np.mean(cyc ** 2)) + 1e-9)
-    cyc = np.tanh(cyc * 1.5) / 1.5
-    p = int(PAD * SR)
-    padded = np.concatenate([cyc[-p:], cyc, cyc[:p]])
-    path = encode(padded, name)
-    print(f'{name:10} {str(spec["id"]):>16}  {len(runs):3d} moving stretches -> {LOOP}s loop  {os.path.getsize(path)} bytes')
+        found += units(decode(preview(sid), spec['af']), spec)
+    if not found: raise SystemExit(f'{name}: no units found')
+    rms = lambda u: np.sqrt(np.mean(u ** 2)) + 1e-9
+    level = np.array([20 * np.log10(rms(u)) for u in found])
+    crest = np.array([np.abs(u).max() / rms(u) for u in found])
+    # leave out sharp transients (a pop or a knock: far peakier than the tool's own units); keep the most typical
+    # units, in recording order
+    ok = [i for i in range(len(found)) if crest[i] < 1.6 * np.median(crest)]
+    ok.sort(key=lambda i: abs(level[i] - np.median(level[ok])))
+    keep, total = [], 0
+    for i in ok:
+        if total >= KEEP: break
+        keep.append(i); total += len(found[i]) / SR
+    keep.sort()
+    silence = np.zeros(int(GAP * SR), dtype=np.float32)
+    parts = [silence]
+    for i in keep:
+        u = found[i] * (0.1 / rms(found[i]))  # every unit at RMS -20 dBFS
+        u = np.tanh(u * 1.5) / 1.5
+        a, b = int(0.004 * SR), int(0.025 * SR)
+        u[:a] *= np.linspace(0, 1, a); u[-b:] *= np.linspace(1, 0, b) ** 2
+        parts += [u, silence]
+    path = encode(np.concatenate(parts), name)
+    print(f'{name:10} {str(spec["id"]):>16}  {len(keep):3d} of {len(found):3d} units, {total:.1f}s  {os.path.getsize(path)} bytes')
 
 
 def make_shot(name, spec):
@@ -145,5 +135,5 @@ def make_shot(name, spec):
 
 
 if __name__ == '__main__':
-    for name, spec in LOOPS.items(): make_loop(name, spec)
+    for name, spec in UNITS.items(): make_units(name, spec)
     for name, spec in SHOTS.items(): make_shot(name, spec)

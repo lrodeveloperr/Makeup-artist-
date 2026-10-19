@@ -6,7 +6,7 @@ import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
-import { chime, hush, setEnabled, stroke, tap, ui, preload, stats as sounds } from './sound.js';
+import { chime, hush, setEnabled, stroke, tap, ui, preload, logUnits, stats as sounds } from './sound.js';
 import { productShot } from './reward.js';
 import { createHost } from '../src/game/youtube.js';
 import * as G from '../src/game/game.js';
@@ -141,7 +141,8 @@ async function main() {
         const t = performance.now() / 1000, P = view.makeup.picker;
         if (this.voice && this.last) {
           const [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]);
-          this.voice.move(Math.hypot(x - this.last[0], y - this.last[1]) / (Math.abs(bx - ax) * 10), t - this.last[2], contact);
+          const dx = x - this.last[0], dy = y - this.last[1];
+          this.voice.move(Math.hypot(dx, dy) / (Math.abs(bx - ax) * 10), t - this.last[2], contact, dx, dy);
         }
         this.last = [x, y, t];
       },
@@ -424,7 +425,7 @@ async function main() {
   $('cover').hidden = true;
   prepare();
   await host.gameReady();
-  Object.assign(globalThis, { game: { session, view, host, input, sounds } }); // for tests and debugging
+  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits } }); // for tests and debugging
 }
 
 main().catch((e) => fail('START', e));

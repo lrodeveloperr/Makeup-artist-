@@ -84,10 +84,19 @@ Done/Next is allowed, but counts nothing.
 ## Sound (owner decisions, 19 October 2026: satisfying ASMR sounds, no music; real recordings, free of copyright)
 
 The tools and the taps on the face are **real recordings, all CC0** (public domain, from Freesound; each credited
-in [ASSETS.md](../ASSETS.md)). `tools/make-sounds.py` fetches each one, checks that its page still says CC0, cleans
-it, keeps only the moments where the tool is moving and joins them into a seamless 2.5 s loop
-(`assets/sounds/*.mp3`, mono, 64 kbit/s, about 23 KB each). Each loop carries 0.15 s of its own sound on both sides,
-so the game loops the middle exactly whatever an MP3 decoder adds at the start. The files load with the face.
+in [ASSETS.md](../ASSETS.md)). `tools/make-sounds.py` (`npm run sounds`) fetches each one, checks that its page still
+says CC0, cleans it and cuts it into its **units**, its single movements: one brush swish, one lipstick rub, one
+gloss swipe, one burst of mascara bristles, one pencil stroke (each the rise and fall of the tool's sound around one
+peak). Pops and knocks are left out and the most typical units kept, about 2.2 s a tool, saved with silence between
+them (`assets/sounds/*.mp3`, mono, 56 kbit/s, 20–29 KB a tool); the game finds each unit by that silence. The files
+load with the face.
+
+**The sound keeps time with the hand, not with the recording.** Every sweep of the hand plays one unit: a fresh one
+when the hand turns back (brushing back and forth: swish, swish, in time) or moves on after a pause. The game learns
+how long the hand's sweeps take and picks a unit of about that length (one of the three closest, never the same twice
+running), played up to 15 % faster or slower to fit and running a little past the sweep, so the turn, not the
+recording, brings the next movement; when the hand is about to turn it waits for the turn. Only a sweep longer than
+any unit runs on into a second unit, reaching for the longer ones.
 
 | Tool | Recording |
 | --- | --- |
@@ -102,18 +111,21 @@ so the game loops the middle exactly whatever an MP3 decoder adds at the start. 
 
 No CC0 recording of lipstick going onto lips was found; the creamy rub is the closest real texture.
 
-- **A stroke follows the hand.** Its speed is measured on the face (decimetres a second, the same on every
-  screen): faster plays the recording louder, a touch quicker and brighter, as friction does. It falls silent when
-  the hand stops or leaves the face. No two gems ring quite alike (a small random pitch).
+- **Speed and stopping.** The hand's speed is measured on the face (decimetres a second, the same on every
+  screen): faster plays the unit louder and brighter, as friction does. The sound fades when the hand stops or
+  leaves the face. No two gems ring quite alike (a small random pitch).
 - **The controls** are synthesised: a soft tactile click when a tool is picked up, a tap when a colour is chosen,
   a pop as the colour of the day opens, a whoosh as the next customer sits down, a rising sparkle for an earned
   colour, and a low soft bump when something is refused. The finish keeps Haircut's bell chime.
 - **Levels (owner, 19 October 2026: the tools were too loud):** the tools are quiet and close, about −45 dB on
   average and peaking at 0.03–0.07 of full scale, under the controls (0.12) and the finish chime (0.26). A gentle
   compressor keeps many small sounds from clipping.
-- **Checks:** the browser test checks that all 11 recordings load and a stroke plays its recording, and that
-  nothing plays, not even a tool's click, while the host has sound off. `tests/out/sounds/*.wav` are rendered
-  samples of every sound, for listening.
+- **Checks:** `tests/sound.mjs` (`npm run test:sound`) renders every sound offline with a hand brushing back and
+  forth at a known tempo, then resting, then sweeping slowly: every tool's recording splits into several units, a
+  fresh unit begins within 60 ms of every turn of the hand, units never stutter (none within 60 ms of another, none
+  closer than 0.1 s inside a sweep), it is silent while the hand rests, and the tools peak under the controls. It
+  writes `tests/out/sounds/*.wav` to listen to. The browser game test checks that all 11 recordings load, a stroke
+  plays its recording, and nothing plays, not even a tool's click, while the host has sound off.
 
 ## Ads (owner decisions, 19 October 2026)
 
@@ -240,7 +252,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - the dev page without ads
 - no visible words on any screen
 
-**Size:** the game page is 641 KB (of which the recordings are 172 KB) (`tests/size-budget.mjs`, game budget 1 MB).
+**Size:** the game page is 656 KB (of which the recordings are 188 KB) (`tests/size-budget.mjs`, game budget 1 MB).
 
 ## Not built yet
 

@@ -36,9 +36,9 @@ function context() {
   if (sfx.ctx.state === 'suspended') sfx.ctx.resume().catch(() => {});
   return sfx.ctx;
 }
-// for tests: how many sounds were asked for while sound was on, how many recordings are decoded, and how many
-// strokes played their tool's recording
-export const stats = { played: 0, loaded: 0, strokes: 0 };
+// for tests: how many sounds were asked for while sound was on, how many recordings are decoded (and how many
+// units each tool's has), and how many strokes played their tool's recording
+export const stats = { played: 0, loaded: 0, units: {}, strokes: 0 };
 const live = () => { const c = sfx.on ? context() : null; if (c) stats.played++; return c; };
 
 // the host's audio setting (sounds are created only while it allows them)
@@ -46,6 +46,8 @@ export function setEnabled(on) {
   sfx.on = !!on;
   if (sfx.on) context(); // start now, so the recordings are decoded before the first stroke
 }
+// for tests: log when each stroke unit starts ([tool, time]) into this array, or stop logging (null)
+export function logUnits(list) { sfx.log = list; }
 // for rendering the sounds offline (tests and listening samples): play into this context instead
 export function useContext(c) { Object.assign(sfx, { ctx: c, out: master(c), on: true, white: null, pink: null }); decodeAll(c); }
 
@@ -104,13 +106,12 @@ function glide(c, t, f0, f1, gain, dur) {
 const hold = (p, t) => (p.cancelAndHoldAtTime ? p.cancelAndHoldAtTime(t) : p.cancelScheduledValues(t));
 
 // ---- the tools' recordings ----
-// Real CC0 recordings (Freesound; credited in ASSETS.md), cut by tools/make-sounds.py: a 2.5 s loop of each tool
-// moving (with 0.15 s of the loop's own sound on both sides, so the loop is exact whatever an MP3 decoder adds at
-// the start), and a one-shot for each kind of tap. The files load as the game starts; a sound whose file has not
-// arrived yet stays silent.
+// Real CC0 recordings (Freesound; credited in ASSETS.md), cut by tools/make-sounds.py into each tool's units, its
+// single movements (one brush swish, one lipstick rub, one gloss swipe, one burst of mascara bristles, one pencil
+// stroke), saved with silence between them; and a one-shot for each kind of tap. The files load as the game starts;
+// a sound whose file has not arrived yet stays silent.
 const FILES = ['brush', 'glow', 'pencil', 'liner', 'mascara', 'lip', 'gloss', 'gem-glass', 'gem-pearl', 'gem-metal', 'lens'];
-const LOOP = 2.5, PAD = 0.15;
-const files = { base: '', bytes: null, ctx: null, buffers: new Map(), decoding: Promise.resolve() };
+const files = { base: '', bytes: null, ctx: null, buffers: new Map(), units: new Map(), decoding: Promise.resolve() };
 // fetch the recordings (base: where they are, relative to the page)
 export function preload(base = '') {
   files.base = base;
@@ -120,20 +121,34 @@ export function preload(base = '') {
 function decodeAll(c) {
   if (files.ctx === c) return files.decoding;
   if (!files.bytes) preload(files.base);
-  files.ctx = c; files.buffers = new Map();
+  files.ctx = c; files.buffers = new Map(); files.units = new Map();
   files.decoding = Promise.all([...files.bytes].map(async ([n, p]) => {
     const bytes = await p;
-    if (bytes) try { files.buffers.set(n, await c.decodeAudioData(bytes.slice(0))); } catch { /* an undecodable file stays silent */ }
+    if (bytes) try { const b = await c.decodeAudioData(bytes.slice(0)); files.buffers.set(n, b); files.units.set(n, findUnits(b)); stats.units[n] = files.units.get(n).length; } catch { /* an undecodable file stays silent */ }
     stats.loaded = files.buffers.size;
   }));
   return files.decoding;
 }
+// a tool's units in its decoded sound: [start, end] in seconds, found by the silence between them (so they are exact
+// whatever silence the decoder adds at the start)
+function findUnits(b) {
+  const d = b.getChannelData(0), step = Math.round(b.sampleRate * 0.005), out = [];
+  let start = -1, quiet = 0;
+  for (let i = 0; i < d.length; i += step) {
+    let m = 0;
+    for (let j = i; j < Math.min(i + step, d.length); j++) m = Math.max(m, Math.abs(d[j]));
+    if (m > 0.003) { if (start < 0) start = i; quiet = 0; }
+    else if (start >= 0 && ++quiet * 0.005 >= 0.05) { out.push([start / b.sampleRate, (i - (quiet - 1) * step) / b.sampleRate]); start = -1; }
+  }
+  if (start >= 0) out.push([start / b.sampleRate, d.length / b.sampleRate]);
+  return out.filter(([a, e]) => e - a > 0.05);
+}
 // resolves once the recordings are decoded for the current context (for tests)
 export const ready = () => (sfx.ctx ? decodeAll(sfx.ctx) : Promise.resolve());
 
-// How each tool plays its recording: its level at full speed (quiet and close, well under the menu sounds), ref:
-// the speed (decimetres a second) that reaches full level, lp: its brightness at full speed. Gloss has its own
-// recording, played by the lip applicator for a gloss colour.
+// How each tool plays its units: its level at full speed (quiet and close, well under the menu sounds), ref: the
+// speed (decimetres a second) that reaches full level, lp: its brightness at full speed. Gloss has its own units,
+// played by the lip applicator for a gloss colour.
 const TOOL = {
   brush: { gain: 0.14, ref: 1.6, lp: 11000 },
   glow: { gain: 0.11, ref: 1.3, lp: 12000 },
@@ -142,42 +157,99 @@ const TOOL = {
   mascara: { gain: 0.1, ref: 1, lp: 12000 },
   lip: { gain: 0.12, ref: 1, lp: 8000 },
 };
+const TURN_PX = 3; // pixels of travel that set a sweep's direction
+const BACK_PX = 2; // pixels moved back against it that make a turn
 
 // A stroke's voice: stroke(tool, colour) at pointer-down, move() for every pointer sample, end() at pointer-up.
+// The sound keeps time with the hand, not with the recording: every sweep plays one of the tool's units, a fresh one
+// whenever the hand turns back (brushing back and forth: swish, swish) or moves on after a pause. The voice learns
+// how long the hand's sweeps take and picks a unit of about that length, played a touch faster or slower to fit, so
+// one sweep sounds as one movement; only a sweep longer than any unit runs on into a second, overlapping the end of
+// the first. A quicker hand plays it louder and brighter; when the hand stops or leaves the face, it fades.
 // Returns null when sound is off, the tool makes no stroke sound or its recording has not arrived.
 export function stroke(tool, colour) {
-  const c = live(), r = TOOL[tool], buffer = c && r && files.buffers.get(tool === 'lip' && colour?.gloss ? 'gloss' : tool);
-  if (!buffer) return null;
+  const c = live(), r = TOOL[tool], name = tool === 'lip' && colour?.gloss ? 'gloss' : tool;
+  const buffer = c && r && files.buffers.get(name), units = files.units.get(name);
+  if (!buffer || !units?.length) return null;
   stats.strokes++;
-  const t0 = c.currentTime;
-  const src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
-  src.buffer = buffer; src.loop = true; src.loopStart = PAD; src.loopEnd = PAD + LOOP;
+  const lp = c.createBiquadFilter();
   lp.type = 'lowpass'; lp.frequency.value = r.lp; lp.Q.value = 0.5;
-  g.gain.value = 0;
-  src.connect(lp).connect(g).connect(sfx.out);
-  src.start(t0, PAD + Math.random() * LOOP);
-  let ended = false;
+  lp.connect(sfx.out);
+  let cur = null, last = -1, dir = null, ax = 0, ay = 0, back = 0, lastMove = -1, ended = false;
+  let sweep = 0.35, began = -1; // the hand's sweeps (seconds, learnt as it goes), and when this one began
+  const level = (k) => r.gain * Math.pow(k, 0.7);
+  const fade = (u, at, tau = 0.03) => {
+    if (!u) return;
+    hold(u.g.gain, at); u.g.gain.setTargetAtTime(0, at, tau);
+    try { u.s.stop(at + tau * 8); } catch { /* already stopped */ }
+  };
+  // one movement: a unit about as long as the hand's sweeps (one of the three closest, never the same one twice
+  // running), played a touch faster or slower to fit, faded in from where the last one is fading out
+  const play = (at, k, want = sweep) => {
+    fade(cur, at);
+    const fit = units.map((u, i) => [Math.abs(Math.log((u[1] - u[0]) / (want * 1.15))), i]).sort((p, q) => p[0] - q[0]).slice(0, Math.min(3, units.length));
+    let i = fit[Math.floor(Math.random() * fit.length)][1];
+    if (units.length > 1 && i === last) i = fit.find(([, j]) => j !== last)?.[1] ?? i;
+    last = i;
+    // fitted to run a little past the sweep, so the turn, not the unit's end, starts the next movement
+    const [a, e] = units[i], rate = Math.min(1.2, Math.max(0.85, (e - a) / (want * 1.15)));
+    sfx.log?.push([tool, at]);
+    const s = c.createBufferSource(), g = c.createGain();
+    s.buffer = buffer; s.playbackRate.value = rate;
+    g.gain.setValueAtTime(0, at); g.gain.setTargetAtTime(level(k), at, 0.012);
+    s.connect(g).connect(lp);
+    s.start(at, a, e - a + 0.01);
+    s.stop(at + (e - a) / rate + 0.05);
+    cur = { s, g, start: at, end: at + (e - a) / rate };
+  };
   return {
     // d: decimetres the hand moved over the face since the last sample; dt: seconds; contact: the tool is on the
-    // skin (the mascara wand: on lashes); at: when (defaults to now)
-    move(d, dt, contact, at = c.currentTime) {
+    // skin (the mascara wand: on lashes); dx, dy: the move on screen (pixels), for the sweep's direction; at: when
+    move(d, dt, contact, dx = 0, dy = 0, at = c.currentTime) {
       if (ended) return;
       const k = contact && dt > 0 ? Math.min(1.3, d / dt / r.ref) : 0;
-      hold(g.gain, at);
-      g.gain.setTargetAtTime(r.gain * Math.pow(k, 0.7), at, 0.03);
-      g.gain.setTargetAtTime(0, at + 0.09, 0.04); // the hand stops: the sound fades with it
-      if (k > 0) {
-        // a quicker hand: the recording a touch faster and brighter, as friction is
-        src.playbackRate.setTargetAtTime(0.92 + 0.16 * Math.min(k, 1), at, 0.06);
-        lp.frequency.setTargetAtTime(r.lp * (0.6 + 0.4 * Math.min(k, 1)), at, 0.06);
+      if (k <= 0.02) return; // still or off the face: the scheduled fade runs on
+      // after a pause the sweep's direction is learnt afresh
+      const paused = lastMove < 0 || at - lastMove > 0.12;
+      if (paused) { dir = null; ax = ay = back = 0; }
+      // the sweep's direction, from a few pixels of travel; a turn as soon as the hand has moved a little back
+      // against it
+      let turned = false;
+      ax += dx; ay += dy;
+      if (!dir) {
+        const len = Math.hypot(ax, ay);
+        if (len >= TURN_PX) { dir = [ax / len, ay / len]; ax = ay = 0; }
+      } else {
+        const along = dx * dir[0] + dy * dir[1];
+        back = along < 0 ? back - along : 0;
+        if (back >= BACK_PX) {
+          const len = Math.hypot(ax, ay) || 1;
+          turned = true; dir = [ax / len, ay / len]; back = 0;
+        }
+        if (along >= 0) ax = ay = 0;
       }
+      lastMove = at;
+      // learn the sweep's length from the hand turning back
+      if (turned && began >= 0) sweep = Math.min(1.2, Math.max(0.12, 0.6 * sweep + 0.4 * (at - began)));
+      if (turned || paused) began = at;
+      // a new movement: the first, after a pause, on turning back, or as a sweep runs on longer than the hand's
+      // sweeps usually do near the unit's end (or past it)
+      // (but not when the hand is about to turn, as it usually does now: the turn brings the next movement)
+      const turnDue = Math.abs(at - began - sweep) < 0.08;
+      const runsOn = cur && !turnDue && (at >= cur.end - 0.03 || (at >= cur.start + 0.85 * (cur.end - cur.start) && at - began >= 0.8 * sweep));
+      // a sweep running long reaches for the longer units; a unit that has only just begun is the new movement
+      const fresh = cur && at - cur.start < 0.06;
+      if (!cur || ((paused || turned || runsOn) && !fresh)) play(at, k, runsOn ? Math.max(sweep, 1.5 * (at - began)) : sweep);
+      else { hold(cur.g.gain, at); cur.g.gain.setTargetAtTime(level(k), at, 0.03); }
+      lp.frequency.setTargetAtTime(r.lp * (0.6 + 0.4 * Math.min(k, 1)), at, 0.06);
+      // the hand stops: the sound fades with it
+      cur.g.gain.setTargetAtTime(0, at + 0.09, 0.04);
     },
     end(at = c.currentTime) {
       if (ended) return;
       ended = true;
-      hold(g.gain, at);
-      g.gain.setTargetAtTime(0, at, 0.03);
-      src.stop(at + 0.3);
+      fade(cur, at);
+      cur = null;
     },
   };
 }
