@@ -21,7 +21,7 @@ representation and limits).
 | `src/makeup/gems.js` | Face gems: finds a gem's place on the current face and draws the gems as small faceted 3D pieces |
 | `src/makeup/input.js` | Pointer events: one captured primary pointer, coalesced samples, commit and cancel, lens and gem taps |
 | `src/face/lashes.js` | Mascara coats on the lashes (`coat`, `resetCoats`) |
-| `src/face/skin-material.js` | Shades the painted colour, gloss, shimmer and glow on the skin (`uPaint`, `uFinish`) |
+| `src/face/skin-material.js` | Shades the painted colour, the gloss coat over it, shimmer and glow on the skin (`uPaint`, `uCoat`, `uFinish`) |
 
 ## The tools (fixed; no size, opacity, intensity or pressure settings)
 
@@ -45,12 +45,24 @@ part of every face at any screen size.
 - **Order matters and build-up is bounded.** Each dab is laid over what is there. Repeated passes approach the
   colour (1 − (1 − pass)ⁿ) and never exceed it. A new colour covers older marks only where it is applied; it never
   recolours earlier marks.
-- **Finishes are properties of a colour, not settings.** Gloss (wet shine: lower roughness and a stronger
-  highlight) on the glosses. Shimmer (a soft sheen in the product's colour plus fine glints fixed to the skin) on
+- **Finishes are properties of a colour, not settings.** Gloss on the glosses (below). Shimmer (a soft sheen in the product's colour plus fine glints fixed to the skin) on
   champagne, gold and pearl (brush) and gold (pencil). Glow (highlighter): the high points catch the light in a
   broad, pearly lustre in the product's tint, with fine glints; where the light doesn't reach, little shows. Sheer
-  products (clear gloss, champagne, pearl, every highlighter) build their pigment more slowly, but their shine at
+  products (champagne, pearl, every highlighter) build their pigment more slowly, but their shimmer and glow at
   full rate.
+- **Lipstick and gloss mix the same in either order (owner, 19 October 2026: "the mix has to be spot on,
+  regardless of whether the person applies A or B first").** As on real lips, lipstick is the colour and a gloss is a
+  clear, lightly tinted coat over it. A gloss paints only its own coat layer and lipstick only the pigment layer, and
+  the skin shader always lays the coat on top, so gloss then lipstick gives exactly the paint and the face of
+  lipstick then gloss (the browser smoke test checks clear, tinted and glitter glosses, value for value and pixel for
+  pixel). Under the coat, the colour looks deeper and richer, as anything does under a wet film. The coat's tint is
+  mostly a dye that filters what is under it, plus a little pigment that lightens it towards the gloss's colour:
+  pink gloss over red lipstick gives a raspberry red, clear gloss keeps the red and deepens it. Each gloss's `tint`
+  (how strongly it colours what is under it once built up) is 0 for clear gloss, 0.2–0.5 for light and glitter
+  glosses and 0.7 for red, berry and plum, so a gloss never covers a lipstick and on bare lips reads as a sheer
+  wash of its colour. Its shine is a clear lacquer: a sharp, bright reflection of each light over the lipstick's own
+  satin sheen, and the room glancing off the film. Glitter belongs to the coat, so a lipstick put on after a glitter
+  gloss keeps the glitter. Two lipsticks, or two glosses, still layer in the order applied.
 - **The liner tapers.** Every segment of a liner stroke thins to 30 % of its width over its first 2 mm and its
   last 7 mm, so a flick ends in a sharp wing tip (`TaperWalker`). The end isn't known while the pen moves, so the
   dabs within 7 mm of the pen wait (a few pixels behind it) until the line goes on, or until the pen lifts and
@@ -89,8 +101,9 @@ Rose (contract §3).
 
 ## How painting works
 
-- **Texture space, measured on the body.** Paint lives in two 1024 × 1024 textures laid out like the head's UV
-  map: colour (premultiplied) and finish (gloss, shimmer, glow). Both are half-float where the device can render to them,
+- **Texture space, measured on the body.** Paint lives in three 1024 × 1024 textures laid out like the head's UV
+  map: colour (the pigment layer, premultiplied), coat (the gloss's tint and shine) and finish (the coat's tint
+  strength, shimmer, glow, the coat's glitter). All are half-float where the device can render to them,
   with an 8-bit fallback. A dab is drawn by rendering the head mesh into the texture and measuring each texel's
   distance to the dab's centre on the reference body. Dabs are therefore round on the face, have the same size on
   every face, and continue across UV seams.

@@ -4,11 +4,14 @@
 // saves: a look keeps its colours, and a selection the player can't use falls back to the default.
 //
 // hex: sRGB. Optional finish: gloss (wet shine, lips) and shimmer (fine sparkle) in 0..1. Optional sheer: a
-// lighter product (clear gloss, highlighter) whose colour builds more slowly while its shine does not; it is a
-// property of the colour, not a setting.
+// lighter product (highlighter, pearly shimmers) whose colour builds more slowly while its shimmer and glow do not;
+// it is a property of the colour, not a setting. A gloss is a clear, tinted film over whatever is on the lips
+// (paint.js): its tint is how strongly it colours what is under it once built up (a clear gloss not at all, a deep
+// red one about two thirds: glosses are less pigmented than lipstick), never covering it as a lipstick does.
 const c = (id, name, hex, extra = {}) => ({ id, name, hex, ...extra });
 // a highlighter is light in pigment and strong in glow
 const GLOW = { glow: 1, sheer: 0.2 };
+const GLOSS = (tint, extra = {}) => ({ gloss: 1, tint, ...extra });
 const gem = (id, name, hex, shape, look) => c(id, name, hex, { shape, look });
 
 // The base colours, all available from the start: the basics only (owner decisions, 19 October 2026), a starter kit
@@ -271,24 +274,24 @@ export const DAILY = {
     c('lip-white', 'White', '#f4efe9'),
     c('lip-black', 'Black', '#1a1416'),
     // glosses
-    c('lip-clear-gloss', 'Clear gloss', '#f3d4cf', { gloss: 1, sheer: 0.25 }),
-    c('lip-nude-gloss', 'Nude gloss', '#d9a08e', { gloss: 1 }),
-    c('lip-rose-gloss', 'Rose gloss', '#d9748a', { gloss: 1 }),
-    c('lip-pink-gloss', 'Pink gloss', '#ef8fab', { gloss: 1 }),
-    c('lip-coral-gloss', 'Coral gloss', '#ef7a66', { gloss: 1 }),
-    c('lip-red-gloss', 'Red gloss', '#c42a3a', { gloss: 1 }),
-    c('lip-berry-gloss', 'Berry gloss', '#9c1f4f', { gloss: 1 }),
-    c('lip-plum-gloss', 'Plum gloss', '#6b2d55', { gloss: 1 }),
-    c('lip-lilac-gloss', 'Lilac gloss', '#c9a6e6', { gloss: 1 }),
+    c('lip-clear-gloss', 'Clear gloss', '#f3d4cf', GLOSS(0)),
+    c('lip-nude-gloss', 'Nude gloss', '#d9a08e', GLOSS(0.4)),
+    c('lip-rose-gloss', 'Rose gloss', '#d9748a', GLOSS(0.5)),
+    c('lip-pink-gloss', 'Pink gloss', '#ef8fab', GLOSS(0.5)),
+    c('lip-coral-gloss', 'Coral gloss', '#ef7a66', GLOSS(0.5)),
+    c('lip-red-gloss', 'Red gloss', '#c42a3a', GLOSS(0.7)),
+    c('lip-berry-gloss', 'Berry gloss', '#9c1f4f', GLOSS(0.7)),
+    c('lip-plum-gloss', 'Plum gloss', '#6b2d55', GLOSS(0.7)),
+    c('lip-lilac-gloss', 'Lilac gloss', '#c9a6e6', GLOSS(0.45)),
     // metallics and glitter
-    c('lip-holo-gloss', 'Holographic gloss', '#f2d6f0', { gloss: 1, shimmer: 1, sheer: 0.4 }),
-    c('lip-gold-gloss', 'Gold gloss', '#d8a64a', { gloss: 1, shimmer: 0.9 }),
+    c('lip-holo-gloss', 'Holographic gloss', '#f2d6f0', GLOSS(0.2, { shimmer: 1 })),
+    c('lip-gold-gloss', 'Gold gloss', '#d8a64a', GLOSS(0.4, { shimmer: 0.9 })),
     c('lip-rose-gold', 'Rose gold', '#cf8f72', { shimmer: 0.9 }),
     c('lip-copper', 'Copper', '#b8633a', { shimmer: 0.9 }),
     c('lip-bronze', 'Bronze', '#8f5a35', { shimmer: 0.8 }),
     c('lip-silver', 'Silver', '#c0c4cc', { shimmer: 0.9 }),
-    c('lip-pink-glitter', 'Pink glitter', '#f06aa8', { gloss: 1, shimmer: 1 }),
-    c('lip-red-glitter', 'Red glitter', '#d81b4a', { gloss: 1, shimmer: 1 }),
+    c('lip-pink-glitter', 'Pink glitter', '#f06aa8', GLOSS(0.45, { shimmer: 1 })),
+    c('lip-red-glitter', 'Red glitter', '#d81b4a', GLOSS(0.45, { shimmer: 1 })),
     // everyday shades beyond the basics (moved from the base, owner decision, 19 October 2026)
     c('lip-mauve', 'Mauve', '#a9686f'),
     c('lip-coral', 'Coral', '#e86a58'),

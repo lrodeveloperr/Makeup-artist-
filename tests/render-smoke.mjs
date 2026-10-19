@@ -1,6 +1,6 @@
 // Browser smoke test: renders faces in Chromium (WebGL2) and fails on shader/page errors or a blank canvas, and
 // applies every makeup tool to a face with scripted strokes, the mouse and touch (see paintCheck, nearCheck,
-// touchCheck).
+// lipOrderCheck, touchCheck).
 // With --gallery it renders one face of every heritage (each profile and each named blend, plus a second East
 // Asian face to fill the grid) and writes docs/face-gallery.jpg, labelled with the heritage.
 // Usage: node tools/build-preview.mjs && node tests/render-smoke.mjs [--gallery]
@@ -121,7 +121,7 @@ async function nearCheck(page, errors) {
         for (let k = 0; k <= 80; k++) a.move(g, x0 + ((x1 - x0) * k) / 80, y0 + ((y1 - y0) * k) / 80 + 6 * Math.sin(k / 4));
         a.end(g);
       }
-      return [read(PL.colour), read(PL.finish)];
+      return [read(PL.colour), read(PL.finish), read(PL.coat)];
     };
     const near = paint(), reach = PL.reach, rect = reach.rect.bind(reach);
     reach.rect = (...args) => { rect(...args); reach.near.set(reach.index); reach.count = reach.index.length; return [0, 0, PL.colour.width, PL.colour.height]; };
@@ -129,12 +129,57 @@ async function nearCheck(page, errors) {
     reach.rect = rect;
     a.restore(JSON.parse(saved));
     let painted = 0, differ = 0;
-    for (let l = 0; l < 2; l++) for (let i = 0; i < near[l].length; i++) { if (whole[l][i]) painted++; if (near[l][i] !== whole[l][i]) differ++; }
+    for (let l = 0; l < 3; l++) for (let i = 0; i < near[l].length; i++) { if (whole[l][i]) painted++; if (near[l][i] !== whole[l][i]) differ++; }
     return { painted, differ };
   });
   if (r.painted < 10000) errors.push(`paint reach: only ${r.painted} values painted`);
   if (r.differ) errors.push(`paint reach: ${r.differ} paint values differ from drawing the whole head`);
   console.log(`paint reach: ${r.painted} paint values, ${r.differ} differ from drawing the whole head`);
+}
+
+// Lipstick and gloss mix the same whichever goes on first (owner, 19 October 2026): a gloss is a coat over the
+// lipstick, so gloss then lipstick leaves exactly the paint, and the face, of lipstick then gloss (clear, tinted and
+// glitter glosses).
+async function lipOrderCheck(page, errors) {
+  const r = await page.evaluate(() => {
+    const v = window.view, a = v.makeup, P = a.picker, gl = v.renderer.gl, PL = a.paint, c = v.renderer.domElement;
+    const read = (rt) => {
+      const t = v.renderer.target(rt), px = rt.halfFloat ? new Float32Array(rt.width * rt.height * 4) : new Uint8Array(rt.width * rt.height * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
+      gl.readPixels(0, 0, rt.width, rt.height, gl.RGBA, rt.halfFloat ? gl.FLOAT : gl.UNSIGNED_BYTE, px);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return px;
+    };
+    const shot = () => { v.render(); const g = Object.assign(document.createElement('canvas'), { width: c.width, height: c.height }).getContext('2d'); g.drawImage(c, 0, 0); return g.getImageData(0, 0, c.width, c.height).data; };
+    const saved = JSON.stringify(a.makeup);
+    v.garment.mesh.visible = false; // its anti-aliased neckline varies between frames in software WebGL (paintCheck)
+    // three strokes across the lips with each product
+    const rows = [-0.56, -0.58, -0.6].map((y) => [P.project([-0.17, y, 0.5]), P.project([0.17, y, 0.5])]);
+    const apply = (colour) => { for (const [[x0, y0], [x1, y1]] of rows) { const g = a.begin('lip', colour); for (let k = 0; k <= 40; k++) a.move(g, x0 + ((x1 - x0) * k) / 40, y0 + ((y1 - y0) * k) / 40); a.end(g); } };
+    const look = (order) => { a.reset(window.face); order.forEach(apply); return { paint: [PL.colour, PL.coat, PL.finish].map(read), face: shot() }; };
+    const out = [];
+    for (const [lipstick, gloss] of [['lip-red', 'lip-clear-gloss'], ['lip-red', 'lip-pink-gloss'], ['lip-nude', 'lip-red-glitter']]) {
+      const first = look([lipstick, gloss]), second = look([gloss, lipstick]), bare = look([lipstick]);
+      let differ = 0, glossed = 0, pixels = 0;
+      for (let l = 0; l < 3; l++) for (let i = 0; i < first.paint[l].length; i++) if (first.paint[l][i] !== second.paint[l][i]) differ++;
+      let most = 0;
+      for (let i = 0; i < first.face.length; i++) if (first.face[i] !== second.face[i]) { pixels++; most = Math.max(most, Math.abs(first.face[i] - second.face[i])); }
+      for (let i = 3; i < first.paint[1].length; i += 4) if (first.paint[1][i] > 0.5) glossed++;
+      // the gloss changes the face over the lipstick alone (its shine)
+      let shows = 0;
+      for (let i = 0; i < first.face.length; i += 4) if (Math.abs(first.face[i] - bare.face[i]) + Math.abs(first.face[i + 1] - bare.face[i + 1]) + Math.abs(first.face[i + 2] - bare.face[i + 2]) > 12) shows++;
+      out.push({ pair: `${lipstick} + ${gloss}`, differ, pixels, most, glossed, shows });
+    }
+    a.restore(JSON.parse(saved));
+    v.garment.mesh.visible = true;
+    v.render();
+    return out;
+  });
+  for (const x of r) {
+    if (x.differ || x.pixels) errors.push(`lip order: ${x.pair} differs by order (${x.differ} paint values, ${x.pixels} pixels)`);
+    if (x.glossed < 500 || x.shows < 50) errors.push(`lip order: ${x.pair}: the gloss hardly shows (${x.glossed} texels, ${x.shows} pixels)`);
+  }
+  console.log(`lip order: ${r.map((x) => `${x.pair}: ${x.differ} paint values and ${x.pixels} pixels differ (max ${x.most})`).join('; ')}`);
 }
 
 // Touch: one finger paints; a second finger during the stroke adds nothing; a lens and a gem apply on a tap, not a
@@ -205,6 +250,7 @@ try {
   console.log(`first face on screen ${Date.now() - t0} ms after navigation (local server, ${process.env.CI ? 'CI' : 'software'} WebGL)`);
   await paintCheck(first, errors);
   await nearCheck(first, errors);
+  await lipOrderCheck(first, errors);
   await first.close();
   await touchCheck(browser, errors);
   await page.goto(gallery

@@ -56,6 +56,7 @@ export class FaceView {
       this.makeup = new Applicator(this);
       this.skin.uniforms.uPaint.value = this.makeup.paint.colour;
       this.skin.uniforms.uFinish.value = this.makeup.paint.finish;
+      this.skin.uniforms.uCoat.value = this.makeup.paint.coat;
       this.skin.uniforms.uPaintOn.value = 1;
     }
     this.updateViewport();

@@ -144,7 +144,7 @@ test('one pass leaves the tool\'s pass opacity; passes build up but never exceed
   }
   // a sheer colour builds more slowly
   const w = new DabWalker('lip'), dabs = line([-1, 0, 0], [1, 0, 0], 100).flatMap((p) => w.add(p));
-  assert.ok(coverage('lip', dabs, [0, 0, 0], colourById('lip-clear-gloss').sheer) < 0.5 * TOOLS.lip.pass);
+  assert.ok(coverage('lip', dabs, [0, 0, 0], colourById('brush-pearl').sheer) < 0.5 * TOOLS.lip.pass);
 });
 
 test('stroke painter: live painting and replay of the saved stroke place the same dabs', () => {

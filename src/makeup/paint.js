@@ -1,8 +1,15 @@
-// Painted makeup on the skin. Dabs are drawn into two textures laid out like the head's UV map: colour
-// (premultiplied, read by the skin shader as uPaint) and finish (gloss, shimmer, glow; uFinish). Each dab is rendered
-// by drawing the head in texture space and measuring every texel's distance to the dab in the reference-head
-// frame, so a dab is round on the face and continues across UV seams. Each new dab is laid "over" what is
-// there, so application order matters and repeated passes build towards the full colour without exceeding it.
+// Painted makeup on the skin. Dabs are drawn into three textures laid out like the head's UV map:
+//   colour  the pigment layer (lipstick, blush, pencil, liner, highlighter): premultiplied colour (uPaint)
+//   coat    the gloss coat over it: its tint, premultiplied (rgb), and how much of the lips it covers (a: its shine)
+//   finish  r: how strongly the coat tints what is under it; g: the pigment's shimmer; b: highlighter glow;
+//           a: the coat's glitter (uFinish)
+// A gloss is a clear, lightly tinted film: it only ever draws into the coat (and the coat's channels of finish), and
+// lipstick only into the pigment layer, and the skin shader always lays the coat over the pigment. So gloss then
+// lipstick looks exactly like lipstick then gloss (the lipstick's colour under the gloss's shine and tint), as on
+// real lips. Each dab is rendered by drawing the head in texture space and measuring every texel's distance to the
+// dab in the reference-head frame, so a dab is round on the face and continues across UV seams. Within a layer each
+// new dab is laid "over" what is there, so the order of lipsticks (or of glosses) matters, and repeated passes build
+// towards the full colour without exceeding it.
 import * as GL from '../gl/mini.js';
 import { TOOLS, FALLOFF_GLSL, walkerFor, dabRate } from './tools.js';
 import { colourById } from './palette.js';
@@ -22,10 +29,9 @@ void main() {
 const fragmentShader = /* glsl */ `
 ${FALLOFF_GLSL}
 uniform vec4 uDabs[${BATCH}];  // xyz: centre; w: size (a factor of the radius)
-uniform int uCount, uLayer;   // layer 0: colour, 1: finish
+uniform int uCount;
 uniform float uRadius, uEdge, uRate;
-uniform vec3 uColour;
-uniform vec3 uFinish;         // gloss, shimmer, glow
+uniform vec4 uOut;            // what a full dab lays (rgb; a: how much it covers), each scaled by the dab's coverage
 varying vec3 vRef;
 void main() {
   // the dabs of one batch share a colour, so their combined coverage does not depend on their order
@@ -36,7 +42,7 @@ void main() {
   }
   float a = 1.0 - keep;
   if (a <= 0.0) discard;
-  gl_FragColor = uLayer == 0 ? vec4(uColour * a, a) : vec4(uFinish * a, a);
+  gl_FragColor = uOut * a;
 }`;
 
 // Where a batch of dabs can paint. A dab only changes texels within its radius on the face, so a draw covers just the
@@ -118,13 +124,13 @@ export class PaintLayer {
     // stroke in bigger batches gives the same result as painting it live (8-bit rounds every draw)
     this.colour = new GL.RenderTarget(size, size, { float: true });
     this.finish = new GL.RenderTarget(size, size, { float: true });
+    this.coat = new GL.RenderTarget(size, size, { float: true });
     this.dabs = Array.from({ length: BATCH }, () => new GL.Vector4());
     this.material = new GL.ShaderMaterial({
       vertexShader, fragmentShader,
       uniforms: {
-        uDabs: { value: this.dabs }, uCount: { value: 0 }, uLayer: { value: 0 },
-        uRadius: { value: 1 }, uEdge: { value: 0 }, uRate: { value: 0 },
-        uColour: { value: new GL.Vector3() }, uFinish: { value: new GL.Vector3() },
+        uDabs: { value: this.dabs }, uCount: { value: 0 },
+        uRadius: { value: 1 }, uEdge: { value: 0 }, uRate: { value: 0 }, uOut: { value: new GL.Vector4() },
       },
     });
     this.reach = new Reach(headGeometry.geometry, size);
@@ -139,17 +145,25 @@ export class PaintLayer {
   clear() {
     this.renderer.drawToTarget(this.colour, null, { clear: true });
     this.renderer.drawToTarget(this.finish, null, { clear: true });
+    this.renderer.drawToTarget(this.coat, null, { clear: true });
   }
 
   // dabs: [[x, y, z, size?], ...] in the reference-head frame, all with one tool and colour
   draw(tool, colourId, dabs) {
     if (!dabs.length) return;
-    const t = TOOLS[tool], col = colourById(colourId), u = this.material.uniforms;
-    // a sheer product (clear gloss, highlighter) is light in pigment but not in shine
-    const rate = [dabRate(tool, col.sheer ?? 1), dabRate(tool)];
+    const t = TOOLS[tool], col = colourById(colourId), u = this.material.uniforms, rgb = hexToLinear(col.hex);
+    // the passes each batch draws: [target, rate, what a full dab lays, channels written]
+    const passes = col.gloss
+      // a gloss: its tint, up to how strongly it tints (`tint`), and its shine over the lips it covers; how strongly
+      // the coat tints; its glitter (taken together with the glitter already there, so a later clear gloss keeps it)
+      ? [[this.coat, dabRate(tool), [...rgb.map((c) => c * col.tint), 1], null],
+        [this.finish, dabRate(tool), [col.tint, 0, 0, 1], [true, false, false, false]],
+        [this.finish, dabRate(tool) * (col.shimmer || 0), [0, 0, 0, 1], [false, false, false, true]]]
+      // a pigment: its colour (a sheer one, like highlighter, builds slowly), and its shimmer and glow, which build
+      // like a full one
+      : [[this.colour, dabRate(tool, col.sheer ?? 1), [...rgb, 1], null],
+        [this.finish, dabRate(tool), [0, col.shimmer || 0, col.glow || 0, 1], [false, true, true, false]]];
     u.uRadius.value = t.radius; u.uEdge.value = t.edge;
-    u.uColour.value.set(...hexToLinear(col.hex));
-    u.uFinish.value.set(col.gloss || 0, col.shimmer || 0, col.glow || 0);
     for (let i = 0; i < dabs.length; i += BATCH) {
       const n = Math.min(BATCH, dabs.length - i);
       for (let k = 0; k < n; k++) this.dabs[k].set(dabs[i + k][0], dabs[i + k][1], dabs[i + k][2], dabs[i + k][3] ?? 1);
@@ -158,8 +172,10 @@ export class PaintLayer {
       const index = this.mesh.geometry.index;
       index.array = this.reach.near.subarray(0, this.reach.count); index.needsUpdate = true;
       u.uCount.value = n;
-      u.uLayer.value = 0; u.uRate.value = rate[0]; this.renderer.drawToTarget(this.colour, this.mesh, { scissor });
-      u.uLayer.value = 1; u.uRate.value = rate[1]; this.renderer.drawToTarget(this.finish, this.mesh, { scissor });
+      for (const [target, rate, lay, mask] of passes) {
+        u.uRate.value = rate; u.uOut.value.set(...lay);
+        this.renderer.drawToTarget(target, this.mesh, { scissor, mask });
+      }
     }
   }
 }

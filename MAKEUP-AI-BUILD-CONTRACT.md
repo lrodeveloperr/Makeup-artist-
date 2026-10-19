@@ -98,7 +98,7 @@ The reusable Haircut structure reduces navigation and integration work. The diff
 | Soft brush | Broad face colour, blush, eyeshadow and shading on the face surface | The actual path determines coverage; repeated passes build the effect |
 | Detail pencil | Brows, eyeliner and freely placed fine marks / face art | Not restricted to a preset eyebrow or eyeliner template |
 | Mascara wand | Apply selected colour to lashes actually touched | Left/right lash state remains independent; untouched lashes stay unchanged |
-| Lip applicator | Apply lip colour with the shared lipstick/gloss interaction | Same tool, colour choices; no separate lipstick/gloss tool or mandatory finish panel |
+| Lip applicator | Apply lip colour with the shared lipstick/gloss interaction | Same tool, colour choices; no separate lipstick/gloss tool or mandatory finish panel. Lipstick and gloss mix the same whichever goes on first: lipstick is the colour, a gloss a clear tinted coat over it (owner, 19 October 2026) |
 | Highlighter | A sheer glow on the high points (cheekbones, nose, brow bone, cupid's bow) | The path determines where the light catches; passes build the glow |
 | Liquid liner | Crisp, opaque lines, wings and flicks that taper to a point at both ends | Not restricted to a preset wing or eyeliner template |
 | Face gems | Stick one gem (stone, drop, heart, star, flower or pearl) where the player taps the skin | One tap, one gem, wherever the player taps; no preset positions or patterns |
