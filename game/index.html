@@ -96,8 +96,16 @@
     background: linear-gradient(#fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: 0 -10px 18px -10px #6a3a3a55; }
   /* the selected colour rises 4 px, grows 12 % and wears a 6 px ring, about 13 px above its box: the row starts low
      enough that all of it stays clear below the counter's top edge, the line between her and the tools */
-  #swatches { display: flex; gap: 8px; overflow-x: auto; padding: 17px 10px 10px; justify-content: safe center; scrollbar-width: none; }
-  #swatches button { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
+  /* in portrait the colours are one row that scrolls sideways (a finger swipes it, a mouse wheels or drags it),
+     as wide as a whole number of colours (main.js sets its width) and always coming to rest on a whole colour, so
+     none is cut at its ends; its ends fade a little where more colours wait (main.js sets --fs and --fe) */
+  #colours { display: contents; }
+  .pg { display: none; }
+  #swatches { --fs: 0px; --fe: 0px; display: flex; gap: 10px; overflow-x: auto; padding: 17px 10px 10px; margin: 0 auto; justify-content: safe center; scrollbar-width: none;
+    scroll-snap-type: x mandatory; scroll-padding: 0 10px;
+    -webkit-mask-image: linear-gradient(90deg, #0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); mask-image: linear-gradient(90deg, #0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); }
+  #swatches::-webkit-scrollbar { display: none; }
+  #swatches button { scroll-snap-align: start; position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
   #swatches button[aria-checked="true"] { transform: translateY(-4px) scale(1.12); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
   #swatches .star { position: absolute; right: -7px; top: -7px; width: 20px; height: 20px; }
   #toolbar { display: grid; grid-template-columns: repeat(8, 43px); justify-content: center; gap: 4px; padding-top: 4px; }
@@ -109,9 +117,11 @@
   .two #toolbar .ctl { width: 52px; height: 52px; }
   .two #toolbar .ctl svg { width: 26px; height: 26px; }
   /* a tall counter (tall, narrow screens; main.js sets html.tall): bigger tools in two rows of four, the colours in
-     wrapping rows of bigger swatches, spread over the counter; in review, Retry stands above the Next row */
+     wrapping rows of bigger swatches that scroll up and down, three whole rows at a time (197 px: 17 + 3 × 48 +
+     2 × 12 + 12), spread over the counter; in review, Retry stands above the Next row */
   .tall #create { display: flex; flex-direction: column; justify-content: space-evenly; }
-  .tall #swatches { flex-wrap: wrap; gap: 12px 10px; max-height: 210px; overflow: hidden auto; padding: 17px 6px 12px; }
+  .tall #swatches { flex-wrap: wrap; gap: 12px 10px; max-height: 197px; box-sizing: border-box; overflow: hidden auto; padding: 17px 6px 12px; scroll-snap-type: y mandatory; scroll-padding: 17px 0 12px;
+    -webkit-mask-image: linear-gradient(#0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); mask-image: linear-gradient(#0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); }
   .tall #swatches button { width: 48px; height: 48px; }
   .tall #toolbar { grid-template-columns: repeat(4, 62px); gap: 14px 10px; padding: 0; }
   .tall #toolbar .ctl { width: 62px; height: 62px; }
@@ -238,7 +248,19 @@
   .land #create { display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 8px; }
   .land #toolbar { grid-template-columns: repeat(2, 44px); padding: 0; gap: 8px; }
   .land #toolbar .ctl { width: 44px; height: 44px; }
-  .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); gap: 9px; align-content: center; max-height: 100%; box-sizing: border-box; overflow: hidden auto; padding: 10px 8px; }
+  /* at the side the colours turn page by page (owner, 19 October 2026): main.js fits as many whole rows as the
+     column holds, and the arrows above and below (or a swipe, a drag or the wheel) turn the page; nothing scrolls,
+     so no colour is ever cut in half and the picked colour's ring has room on every side */
+  .land #colours { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; align-self: stretch; touch-action: none; }
+  .land #colours * { touch-action: none; }
+  .land #colours.paged .pg { display: grid; }
+  .land #colours.paged #swatches { align-content: start; box-sizing: border-box; }
+  .land .pg { flex: none; width: 52px; height: 44px; border-radius: 22px; }
+  .land .pg svg { width: 22px; height: 22px; }
+  .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); gap: 9px; align-content: center; overflow: visible; padding: 14px 10px 10px; -webkit-mask-image: none; mask-image: none; }
+  .land #swatches.turn { animation: turn .22s ease-out; }
+  @keyframes turn { from { opacity: 0; transform: translateY(calc(var(--dir, 1) * 14px)); } }
+  @media (prefers-reduced-motion: reduce) { .land #swatches.turn { animation: none; } }
   .land #review { align-items: flex-end; justify-content: flex-end; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) 14px; }
 </style>
 </head>
@@ -251,7 +273,7 @@
     <button id="done" class="ctl" aria-label="Done"></button>
   </header>
   <main id="stage"><div id="fx" aria-hidden="true"></div><div id="notice" role="status" aria-label="Not saved yet. Retrying." hidden></div></main>
-  <footer id="create"><div id="swatches" role="radiogroup" aria-label="Colours"></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
+  <footer id="create"><div id="colours"><button id="prev" class="ctl pg" aria-label="Previous colours"></button><div id="swatches" role="radiogroup" aria-label="Colours"></div><button id="more" class="ctl pg" aria-label="More colours"></button></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
   <footer id="review" hidden>
     <button id="redo" class="ctl round" aria-label="Do this face again: watch a video" hidden></button>
     <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="hint"></span><span class="go"></span></button>

@@ -2,12 +2,15 @@
 // shapes, in portrait and landscape. One page is resized through every size, so orientation changes are tested
 // live. In each state (making a look, the colour of the day open, review) every control must be on screen, at a
 // tappable size, apart from the others and off the face (her eyes and mouth stay clear); the face must fit its
-// canvas, centred in the salon mirror. Writes a contact sheet per state to tests/out/.
+// canvas, centred in the salon mirror. Then, with every colour earned, the colours at the side must show whole
+// pages (no colour cut off, the picked one's ring included, the arrows tappable) and the row at the bottom must
+// keep the picked colour whole and clear of its fades. Writes a contact sheet per state to tests/out/.
 // Usage: node tools/build-game.mjs && node tests/layout.mjs
 import fs from 'node:fs';
 import { chromium } from 'playwright';
 import { serve } from '../tools/serve.mjs';
 import * as G from '../src/game/game.js';
+import { DAILY } from '../src/makeup/palette.js';
 
 export const VIEWPORTS = [
   [390, 844], [225, 400], [320, 568], [360, 640], [375, 667], [412, 915], [430, 932], [568, 320], [640, 360], [844, 390],
@@ -21,7 +24,7 @@ const executablePath = process.env.CHROME || (process.env.CI ? undefined : '/opt
 const server = await serve('build/game', 8180);
 const browser = await chromium.launch({ executablePath });
 const errors = [];
-const shots = { create: [], daily: [], review: [] };
+const shots = { create: [], daily: [], review: [], many: [] };
 const canvases = {}; // the canvas while making a look, per screen
 try {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -90,6 +93,56 @@ try {
       shots[state].push([file, W, H, m.scale.trim()]);
     }
   }
+
+  // every colour earned: the most colours a tool can show (the lipstick has the most)
+  const all = Object.values(DAILY).flat().map((c) => c.id);
+  const many = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await many.route('https://www.youtube.com/game_api/v1', (r) => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync('tools/fake-ytgame.js', 'utf8') }));
+  await many.addInitScript((save) => { localStorage.setItem('fake-ytgame-save', save); }, G.serialise({ ...G.newGame(77), owned: all }));
+  const p2 = await many.newPage();
+  p2.on('pageerror', (e) => errors.push(e.message));
+  await p2.goto('http://localhost:8180/index.html');
+  await p2.waitForFunction('window.game', null, { timeout: 120000 });
+  await p2.click('#toolbar [data-tool="lip"]');
+  for (const [W, H] of VIEWPORTS) {
+    await p2.setViewportSize({ width: W, height: H });
+    await p2.waitForTimeout(250);
+    await p2.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const where = `${W}x${H} many colours`;
+    const m = await p2.evaluate(() => {
+      const r = (el) => { const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; };
+      const sw = document.getElementById('swatches'), paged = document.getElementById('colours').classList.contains('paged');
+      const shown = [...sw.children].filter((b) => !b.hidden).map((b) => ({ ...r(b), picked: b.getAttribute('aria-checked') === 'true' }));
+      const arrows = paged ? ['prev', 'more'].map((id) => ({ id, ...r(document.getElementById(id)) })) : [];
+      const tools = [...document.querySelectorAll('#toolbar .ctl')].map((b) => ({ id: b.dataset.tool, ...r(b) }));
+      return { land: document.documentElement.classList.contains('land'), paged, shown, arrows, tools, box: r(sw), foot: r(document.getElementById('create')), total: sw.children.length };
+    });
+    const ring = (b) => (b.picked ? (8 * b.w) / 47 : 0); // the picked colour's ring and lift, beyond its button
+    const whole = (b, box) => b.x - ring(b) >= box.x - 0.5 && b.y - ring(b) >= box.y - 0.5 && b.x + b.w + ring(b) <= box.x + box.w + 0.5 && b.y + b.h + ring(b) <= box.y + box.h + 0.5;
+    if (!m.shown.length) errors.push(`${where}: no colours on screen`);
+    if (m.land) {
+      // whole pages: every colour shown is whole, inside the counter and the screen; the arrows are tappable, apart
+      for (const b of m.shown) if (!whole(b, m.foot) || !inside(b, W, H)) errors.push(`${where}: a colour is cut off (${JSON.stringify(b)})`);
+      if (m.paged !== m.shown.length < m.total) errors.push(`${where}: ${m.shown.length} of ${m.total} colours shown, ${m.paged ? '' : 'no '}arrows`);
+      for (const a of m.arrows) {
+        if (!inside(a, W, H)) errors.push(`${where}: the ${a.id} arrow is off screen`);
+        if (a.w < MIN_TAP || a.h < MIN_TAP) errors.push(`${where}: the ${a.id} arrow is ${Math.round(a.w)}x${Math.round(a.h)}, under ${MIN_TAP}`);
+        for (const o of [...m.shown, ...m.tools]) if (overlap(a, o)) errors.push(`${where}: the ${a.id} arrow overlaps a ${o.id ? 'tool' : 'colour'}`);
+      }
+    } else {
+      // the row (or a tall counter's rows), at rest: each colour whole inside it or scrolled wholly out of it; the
+      // picked one in view
+      const away = (b) => b.x + b.w <= m.box.x + 1 || b.x >= m.box.x + m.box.w - 1 || b.y + b.h <= m.box.y + 1 || b.y >= m.box.y + m.box.h - 1; // (within a pixel: a scaled row rests on fractions of one)
+      for (const b of m.shown) if (!whole(b, m.box) && !away(b)) errors.push(`${where}: a colour is cut off (${JSON.stringify(b)}, the row ${JSON.stringify(m.box)})`);
+      const p = m.shown.find((b) => b.picked);
+      if (!p || away(p)) errors.push(`${where}: the picked colour is out of view`);
+      if (!inside(m.box, W, H)) errors.push(`${where}: the colours are off screen`);
+    }
+    const file = `tests/out/layout-many-${W}x${H}.png`;
+    await p2.screenshot({ path: file, timeout: 120000 });
+    shots.many.push([file, W, H, '']);
+  }
+  await many.close();
   fs.writeFileSync('tests/out/layout.json', JSON.stringify(shots));
 } catch (e) {
   errors.push(e.stack || String(e));
@@ -98,4 +151,4 @@ try {
   server.close();
 }
 if (errors.length) { console.log(`FAIL\n${errors.join('\n')}`); process.exit(1); }
-console.log(`PASS: ${VIEWPORTS.length} screens × 3 states laid out cleanly (screenshots in tests/out/)`);
+console.log(`PASS: ${VIEWPORTS.length} screens × 3 states laid out cleanly, and with every colour earned (screenshots in tests/out/)`);

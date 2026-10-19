@@ -62,6 +62,17 @@ on each screen.
   doesn't move.
 - **Landscape** (wider than 1.15 × tall): the counter becomes a column at the side, with the tools in two columns
   beside a grid of colours, and review stacked. The top buttons sit over the scene's corners.
+- **Many colours (owner, 19 October 2026: no colour may be cut off on any screen).** At the side the colours turn
+  page by page: each page holds as many whole rows of three as the column fits, with an up and a down arrow (shown
+  only when there is more than one page). A mouse wheel flick, a drag or a finger swipe up or down also turns one
+  page, and a drag never picks a colour. Every page keeps a full page's height, so the arrows stay put; switching
+  tools opens the page holding that tool's picked colour. At the bottom the colours scroll: a finger swipes the row,
+  a mouse wheel steps it a whole colour at a time, and a mouse drags it. The row is exactly as wide as a whole
+  number of colours and always comes to rest on one, so no colour is ever cut at its ends. Its ends fade a little
+  where more colours wait, and the picked colour is scrolled to the middle. On a tall counter the colours wrap in
+  rows that scroll up and down, three whole rows at a time. `tests/layout.mjs` checks all of this on all 30 screens
+  with every colour earned (85 lipsticks and glosses), and `tests/game-smoke.mjs` turns the pages and scrolls the
+  row with arrows, wheel, drag and swipe.
 - **Narrow, tall screens** (such as 225 × 800 and 320 × 1120): as on phones, her face fills the space above the
   counter. The canvas can be as narrow as 0.4 × its height, a close-up where her face fills the width and her hair
   runs off the sides. Only on screens taller still does the spare height go to the counter, which then holds

@@ -292,7 +292,7 @@ export function tap(kind, colour, at) {
   s.start(at ?? c.currentTime + 0.005);
 }
 
-// The controls: picking up a tool, tapping a colour, the daily card opening, the next customer sitting down, a
+// The controls: picking up a tool, tapping a colour, turning the colours' page, the daily card opening, the next customer sitting down, a
 // reward, a refusal.
 export function ui(kind, at) {
   const c = live();
@@ -303,6 +303,7 @@ export function ui(kind, at) {
 function uiSound(c, kind, at) {
   const t = at ?? c.currentTime + 0.005;
   if (kind === 'tool') { grain(c, t, { f: 1900, q: 1.2, dur: 0.016, gain: 0.2 }); glide(c, t, 170, 95, 0.12, 0.05); }
+  else if (kind === 'page') grain(c, t, { f: 2200, q: 1.5, dur: 0.012, gain: 0.1 }); // the colours' page turning
   else if (kind === 'colour') { grain(c, t, { f: 2600, q: 2, dur: 0.009, gain: 0.12 }); ping(c, t, 1320, 0.025, 0.06); }
   else if (kind === 'panel') { glide(c, t, 320, 640, 0.07, 0.07); grain(c, t, { f: 1500, q: 1, dur: 0.01, gain: 0.08 }); }
   else if (kind === 'next') {
