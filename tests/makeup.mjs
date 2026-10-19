@@ -36,7 +36,7 @@ test('palette: stable unique ids, valid colours, every tool and the lenses have 
   const ids = Object.values(PALETTE).flat().map((c) => c.id);
   assert.equal(new Set(ids).size, ids.length);
   for (const [target, list] of Object.entries(PALETTE)) {
-    assert.ok(list.length >= 6, target);
+    assert.ok(list.length >= 3, target);
     for (const c of list) {
       assert.match(c.hex, /^#[0-9a-f]{6}$/);
       assert.ok(c.id.startsWith(target + '-'), c.id);

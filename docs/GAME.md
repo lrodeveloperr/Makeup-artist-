@@ -15,15 +15,16 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 
 | State | What the player sees and can do |
 | --- | --- |
-| Create | The face. Four tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right), and the daily button (top left). |
-| Review | The finished look. **Before** (hold to see the clean starting face; read-only), **Redo** (watch a video to make up the same face again from clean), **Next** (the next customer, always free). |
-| Colour of the day | A panel over the screen showing today's colour, its tool, a countdown ring to midnight, and **Watch a video to get it**. Once earned it shows **Yours! Use it now**, and the colour is already selected. |
+| Create | The face. Four tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right, the size of the daily button), and the daily button (top left). |
+| The finish | A look that changed the face: the Done seal pops, Haircut's bell chime plays (if the host allows sound), and sparkles burst from the face. Review then rises onto the counter. An untouched Done goes straight to review with a soft tone. |
+| Review | As Haircut's completion. The top buttons give way to the **eye** (hold to see the clean starting face; read-only). On the counter: **Retry** (breathing, with the video badge: the same face again, clean) and **Next**, with a picture of the next customer docked against the arrow (always free). |
+| Colour of the day | Minimal: the **tool drawn in today's colour**, one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
 | Loading / Retry | A loading cover until the face is on screen. A missing SDK, a failed load, or a save that isn't this game's stops at **Retry**, and the save is never overwritten. |
 
 **Look: Blush Studio, textless (owner's choice, 19 October 2026).** The controls are Haircut's, recoloured:
 - round "sticker" buttons with an ink outline and a hard shadow that presses down
 - a yellow video badge on everything that plays a video
-- a green rosette seal for Done
+- a green rosette seal for Done, the size of the other top buttons
 - a rose accent for the active tool and for Next
 
 The customer sits behind a vanity counter that carries the controls, in front of a blush salon wall with a lit
@@ -31,8 +32,9 @@ vanity mirror (the 3D canvas is transparent). Create and review keep the same co
 moves.
 
 Nothing on screen is a word:
-- The colour of the day shows its swatch in the countdown ring, the tool it's for, "∞" (yours for good), a
-  video button (a tick once earned), and the time left in numbers.
+- The colour of the day shows the tool in that colour (`game/art.js`: a compact and brush, a lipstick, a pencil,
+  a mascara, an eye wearing the lens; gloss adds a highlight, shimmer adds sparkles), a video button (a tick once
+  earned), and the time left in numbers.
 - An unsaved state is a cloud icon.
 - The error screen is a warning icon and a Retry arrow, with a small diagnostic code.
 
@@ -75,12 +77,13 @@ Done/Next is allowed, but counts nothing.
 This follows the pattern of Haircut's daily pick (`src/game/daily.js`):
 - **Offer:** one special colour for one tool (or the lenses) per local calendar day. It's the same for every
   player who doesn't own it yet, and never one the player owns.
-- **Catalogue:** 34 colours outside the base catalogue (`DAILY` in `src/makeup/palette.js`):
-  - 10 brush: neon, metallic and opal shades
-  - 6 pencil
-  - 4 mascara
-  - 8 lip, including holographic and gold glosses
-  - 6 lens
+- **Catalogue:** 52 special colours outside the base catalogue (`DAILY` in `src/makeup/palette.js`). The base
+  keeps the everyday shades only (owner decision, 19 October 2026). The specials are:
+  - 16 brush: neon, metallic, opal, shimmer and fantasy shades
+  - 10 pencil
+  - 7 mascara
+  - 11 lip: every gloss, plus holographic and gold
+  - 8 lens: aqua, violet and other fantasy colours
 - **Rotation:** the tool families take turns day by day.
 - **Timing:** a countdown runs to local midnight, when the next colour replaces the offer. A red dot on the
   daily button shows once a day while today's colour is waiting.
@@ -169,7 +172,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
   interstitial (agreed in principle).
 - **Localisation:** the contract asks for the host language, and the final locale list is still to be decided.
   English only for now.
-- **Sound and a first-use hint.**
+- **More sound and a first-use hint:** only the finish chime exists so far.
 - **Score reporting:** `engagement.sendScore` with acknowledged completions.
 - **Real-host and device checks:** YouTube's Playables test suite, permitted test inventory, physical phones,
   and other browsers.

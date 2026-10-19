@@ -45,6 +45,8 @@ async function stroke(page) {
 }
 // the screen is textless (owner, 19 October 2026): nothing visible but icons, pictures and numbers
 const words = (page) => page.evaluate(() => document.body.innerText.replace(/[\d:\s]/g, ''));
+// Done, then review (a finished look celebrates for a moment first)
+const done = async (page) => { await page.click('#done'); await page.waitForFunction(() => game.session.state.attempt.phase === 'review'); };
 const making = (page) => page.evaluate(() => { for (let i = 0; i < 61; i++) game.session.tick(1000); }); // a minute of making
 const idle = (page) => page.waitForFunction(() => !game.session.busy);
 
@@ -59,7 +61,7 @@ try {
     const nextSeed = s.next;
     // look 1: a stroke, Done, hold Before, Next (no ad yet)
     await stroke(page);
-    await page.click('#done');
+    await done(page);
     s = await state(page);
     assert.deepEqual([s.phase, s.strokes, s.completions], ['review', 1, 1]);
     assert.equal(await words(page), '', 'no words in review');
@@ -73,11 +75,11 @@ try {
     assert.equal(s.seed, nextSeed, 'the previewed customer came next');
     assert.ok(!s.sdk.includes('interstitial'));
     // an untouched look: Done, Next, nothing counted
-    await page.click('#done'); await page.click('#next'); await idle(page);
+    await done(page); await page.click('#next'); await idle(page);
     assert.equal((await state(page)).completions, 1);
     // look 2 after a minute of making: one interstitial at Next
     await making(page); await stroke(page);
-    await page.click('#done'); await page.click('#next'); await idle(page);
+    await done(page); await page.click('#next'); await idle(page);
     s = await state(page);
     assert.equal(s.sdk.filter((x) => x === 'interstitial').length, 1);
     assert.equal(s.cadence.qualified, 0);
@@ -101,7 +103,7 @@ try {
     assert.equal(tool, s.selection.tool);
     assert.ok(await page.isHidden('#daily .dot'));
     // Redo for a video: the same face, clean, a new attempt; the rewarded video stands in for the next break
-    await stroke(page); await page.click('#done');
+    await stroke(page); await done(page);
     const face = (await state(page)).seed, attempt = (await state(page)).id;
     await page.click('#redo'); await idle(page);
     s = await state(page);
@@ -139,7 +141,7 @@ try {
     const { ctx, page } = await open({ sdk: 'none', path: 'game-dev/index.html' });
     await ready(page);
     assert.ok(await page.isHidden('#daily'));
-    await page.click('#done');
+    await done(page);
     assert.ok(await page.isHidden('#redo'));
     assert.ok(await page.isVisible('#next'));
     await page.evaluate(() => game.session.flush());

@@ -8,8 +8,10 @@
 // property of the colour, not a setting.
 const c = (id, name, hex, extra = {}) => ({ id, name, hex, ...extra });
 
+// The base colours: everyday shades, all available from the start (owner decision, 19 October 2026: basic colours
+// here; shimmers, glosses and fantasy shades are colours of the day, below).
 export const PALETTE = {
-  // blush, bronzer and contour, eyeshadow, highlighter and face colour
+  // blush, bronzer and contour, eyeshadow and face colour
   brush: [
     c('brush-rose', 'Rose', '#e48a98'),
     c('brush-peach', 'Peach', '#f2a07b'),
@@ -17,14 +19,8 @@ export const PALETTE = {
     c('brush-berry', 'Berry', '#b0476b'),
     c('brush-bronze', 'Bronze', '#a86a45'),
     c('brush-taupe', 'Taupe', '#8d7466'),
-    c('brush-champagne', 'Champagne', '#ecd3a8', { shimmer: 0.8, sheer: 0.6 }),
-    c('brush-gold', 'Gold', '#d2a14a', { shimmer: 0.9 }),
     c('brush-plum', 'Plum', '#6f3a63'),
-    c('brush-lilac', 'Lilac', '#b496d6'),
-    c('brush-sky', 'Sky', '#79b3e3'),
-    c('brush-emerald', 'Emerald', '#2e8a63'),
     c('brush-charcoal', 'Charcoal', '#3a3538'),
-    c('brush-pearl', 'Pearl', '#f6efe6', { shimmer: 0.9, sheer: 0.4 }),
   ],
   // brows, eyeliner, fine marks and face art
   pencil: [
@@ -34,19 +30,12 @@ export const PALETTE = {
     c('pencil-taupe', 'Taupe', '#8a7468'),
     c('pencil-auburn', 'Auburn', '#7a3b25'),
     c('pencil-blonde', 'Blonde', '#b08a5a'),
-    c('pencil-navy', 'Navy', '#1f2f66'),
-    c('pencil-emerald', 'Emerald', '#145c46'),
-    c('pencil-plum', 'Plum', '#5a2752'),
     c('pencil-white', 'White', '#f4f1ec'),
-    c('pencil-gold', 'Gold', '#c9a043', { shimmer: 0.8 }),
   ],
   mascara: [
     c('mascara-black', 'Black', '#0d0c0e'),
     c('mascara-brown-black', 'Brown black', '#2a1d18'),
     c('mascara-brown', 'Brown', '#4a3226'),
-    c('mascara-navy', 'Navy', '#1c2c62'),
-    c('mascara-plum', 'Plum', '#4d1f4a'),
-    c('mascara-emerald', 'Emerald', '#134d3a'),
   ],
   // lipsticks and glosses share the applicator (no separate gloss tool)
   lip: [
@@ -59,9 +48,6 @@ export const PALETTE = {
     c('lip-berry', 'Berry', '#8c2346'),
     c('lip-plum', 'Plum', '#5e2443'),
     c('lip-brown', 'Brown', '#7a4436'),
-    c('lip-clear-gloss', 'Clear gloss', '#f3d4cf', { gloss: 1, sheer: 0.25 }),
-    c('lip-pink-gloss', 'Pink gloss', '#ef8fab', { gloss: 1 }),
-    c('lip-red-gloss', 'Red gloss', '#c42a3a', { gloss: 1 }),
   ],
   // contact lenses: four iris stops from the pupil edge to the limbal ring (as IRIS in face/colors.js)
   lens: [
@@ -70,9 +56,7 @@ export const PALETTE = {
     c('lens-honey', 'Honey', '#c99a3c', { iris: ['#e0b65a', '#c99a3c', '#8a6020', '#4a300c'] }),
     c('lens-green', 'Green', '#6f8e55', { iris: ['#b5c49a', '#6f8e55', '#4d6b3a', '#2c3f22'] }),
     c('lens-blue', 'Blue', '#5d90b3', { iris: ['#a8c4d6', '#5d90b3', '#34688d', '#1d3c55'] }),
-    c('lens-aqua', 'Aqua', '#3fb0b8', { iris: ['#a9e4e6', '#3fb0b8', '#227d86', '#114448'] }),
     c('lens-grey', 'Grey', '#8b9aa3', { iris: ['#c4cdd2', '#8b9aa3', '#5f6e78', '#36424a'] }),
-    c('lens-violet', 'Violet', '#8a6cc0', { iris: ['#c8b6e6', '#8a6cc0', '#5c4390', '#33244f'] }),
   ],
 };
 
@@ -91,6 +75,12 @@ export const DAILY = {
     c('brush-turquoise', 'Turquoise', '#19b8c8', { shimmer: 0.6 }),
     c('brush-silver', 'Silver', '#c9ccd4', { shimmer: 1 }),
     c('brush-cherry', 'Cherry', '#d0244a'),
+    c('brush-champagne', 'Champagne', '#ecd3a8', { shimmer: 0.8, sheer: 0.6 }),
+    c('brush-gold', 'Gold', '#d2a14a', { shimmer: 0.9 }),
+    c('brush-lilac', 'Lilac', '#b496d6'),
+    c('brush-sky', 'Sky', '#79b3e3'),
+    c('brush-emerald', 'Emerald', '#2e8a63'),
+    c('brush-pearl', 'Pearl', '#f6efe6', { shimmer: 0.9, sheer: 0.4 }),
   ],
   pencil: [
     c('pencil-electric-blue', 'Electric blue', '#1f6bff'),
@@ -99,12 +89,19 @@ export const DAILY = {
     c('pencil-rose-gold', 'Rose gold', '#d29a84', { shimmer: 0.8 }),
     c('pencil-burgundy', 'Burgundy', '#6e1a2e'),
     c('pencil-teal', 'Teal', '#0f7f84'),
+    c('pencil-navy', 'Navy', '#1f2f66'),
+    c('pencil-emerald', 'Emerald', '#145c46'),
+    c('pencil-plum', 'Plum', '#5a2752'),
+    c('pencil-gold', 'Gold', '#c9a043', { shimmer: 0.8 }),
   ],
   mascara: [
     c('mascara-electric-blue', 'Electric blue', '#1f4fd8'),
     c('mascara-violet', 'Violet', '#5b2a9a'),
     c('mascara-burgundy', 'Burgundy', '#5a1726'),
     c('mascara-teal', 'Teal', '#0d5f63'),
+    c('mascara-navy', 'Navy', '#1c2c62'),
+    c('mascara-plum', 'Plum', '#4d1f4a'),
+    c('mascara-emerald', 'Emerald', '#134d3a'),
   ],
   lip: [
     c('lip-black-cherry', 'Black cherry', '#4a0f1f'),
@@ -115,6 +112,9 @@ export const DAILY = {
     c('lip-berry-gloss', 'Berry gloss', '#9c1f4f', { gloss: 1 }),
     c('lip-violet', 'Violet', '#6b2a8a'),
     c('lip-gold-gloss', 'Gold gloss', '#d8a64a', { gloss: 1, shimmer: 0.9 }),
+    c('lip-clear-gloss', 'Clear gloss', '#f3d4cf', { gloss: 1, sheer: 0.25 }),
+    c('lip-pink-gloss', 'Pink gloss', '#ef8fab', { gloss: 1 }),
+    c('lip-red-gloss', 'Red gloss', '#c42a3a', { gloss: 1 }),
   ],
   lens: [
     lens('lens-ice', 'Ice blue', ['#e4f2fb', '#a9d3ee', '#6aa6cf', '#2d5e80']),
@@ -123,6 +123,8 @@ export const DAILY = {
     lens('lens-gold', 'Gold', ['#f7e08a', '#d9a62b', '#a3741a', '#5a3d0a']),
     lens('lens-rose', 'Rose', ['#f7c6d4', '#e07a9a', '#b04a6e', '#5e2038']),
     lens('lens-sea', 'Sea green', ['#c8eee0', '#58b89a', '#2e8068', '#154536']),
+    c('lens-aqua', 'Aqua', '#3fb0b8', { iris: ['#a9e4e6', '#3fb0b8', '#227d86', '#114448'] }),
+    c('lens-violet', 'Violet', '#8a6cc0', { iris: ['#c8b6e6', '#8a6cc0', '#5c4390', '#33244f'] }),
   ],
 };
 

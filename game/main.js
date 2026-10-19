@@ -1,9 +1,13 @@
-// The game: one screen. Create (four tools and the lenses, their colours, Done) → review (hold for the before,
-// Redo for a video, Next) → the next customer. The colour of the day is behind the button at the top left.
+// The game: one screen. Create (four tools and the lenses, their colours, Done) → the finish (a chime and a burst
+// of sparkles) → review, as in Haircut (Retry for a video, the next customer pictured beside Next, the eye to
+// compare with the before) → the next customer. The colour of the day is behind the button at the top left.
 // Rules and saving are in src/game; this file is the screen.
 import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
+import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
+import { chime, hush } from './sound.js';
+import { toolArt } from './art.js';
 import { createHost } from '../src/game/youtube.js';
 import * as G from '../src/game/game.js';
 import { Session } from '../src/game/session.js';
@@ -24,7 +28,6 @@ const ICON = {
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
   clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2', ' stroke-width="2.6"'),
   close: svg('M6.5 6.5l11 11M17.5 6.5l-11 11', ' stroke-width="3.2"'),
-  forever: svg('M8.5 8.6a3.4 3.4 0 1 0 0 6.8c2.9 0 4.1-6.8 7-6.8a3.4 3.4 0 1 1 0 6.8c-2.9 0-4.1-6.8-7-6.8z', ' stroke-width="2.6"'),
   cloud: svg('M7 18.5h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.5 1.6A3.4 3.4 0 0 0 7 18.5zM4 4l16 16', ' stroke-width="2.4"'),
   oops: svg('M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M12 7.5v6M12 16.6v.4', ' stroke-width="2.8"'),
   gift: svg('M4 10.5h16V21H4zM2.8 7h18.4v3.5H2.8zM12 7v14M12 7c-1.6-4.2-6.2-3.6-5.2-.4M12 7c1.6-4.2 6.2-3.6 5.2-.4', ' stroke-width="2.3"'),
@@ -97,16 +100,19 @@ async function main() {
   const input = attachInput(canvas, view.makeup, {
     selection: () => {
       const s = session.state;
-      if (s.attempt.phase !== 'create' || panelOpen || paused || session.busy) return null;
+      if (s.attempt.phase !== 'create' || panelOpen || paused || session.busy || finishing) return null;
       return { tool: s.selection.tool, colour: s.selection.colour[s.selection.tool] };
     },
     onChange: redraw,
     onCommit: () => session.applied(view.makeup.makeup),
   });
   host.onPause = () => { input.interrupt(); session.flush().catch(() => {}); }; // the final-save window
+  let audio = false;
   host.onState((st) => {
     paused = st.paused;
+    audio = st.audio;
     if (paused) input.interrupt();
+    hush(!audio);
     $('app').inert = paused;
     $('panel').inert = paused;
   });
@@ -140,14 +146,67 @@ async function main() {
     swatches.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
-  // ---- create and review ----
+  // ---- the next customer's picture (a small second view that only draws faces) ----
+  const thumbs = new Map();
+  let thumbView = null;
+  const thumb = (face) => {
+    if (thumbs.has(face.seed)) return thumbs.get(face.seed);
+    if (!thumbView) {
+      thumbView = new FaceView({ canvas: document.createElement('canvas'), width: 168, height: 168, transparent: true, makeup: false });
+      thumbView.init(view.head);
+      thumbView.zoom(1.75, 0.08); // the head
+    }
+    thumbView.setFace(face);
+    thumbView.render();
+    const url = thumbView.renderer.domElement.toDataURL('image/png');
+    thumbs.set(face.seed, url);
+    if (thumbs.size > 4) thumbs.delete(thumbs.keys().next().value);
+    return url;
+  };
+  // drawn while the player works on the current face, so review shows it at once
+  const prepareThumb = () => {
+    const face = session.state.next;
+    (globalThis.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => { if (session.state.next === face) thumb(face); });
+  };
+
+  // ---- create, the finish, and review ----
   $('done').innerHTML = `${SEAL}${ICON.check}`;
-  $('next').innerHTML = ICON.next;
+  $('next').querySelector('.go').innerHTML = ICON.next;
   $('redo').innerHTML = `${ICON.redo}${BADGE}`;
   $('before').innerHTML = ICON.eye;
-  $('done').onclick = () => { input.interrupt(); session.finish(); };
+  // sparkles burst from the face (positions in the stage, in pixels)
+  const burst = () => {
+    const fx = $('fx'), w = stage.clientWidth, h = stage.clientHeight;
+    const colours = ['#ff7aa8', '#ffd166', '#fff6e6', '#7ce3cf', '#c39bff', '#ffb627'];
+    const star = 'polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%)';
+    const bits = [];
+    for (let k = 0; k < 34; k++) {
+      const a = (k / 34) * 2 * Math.PI + Math.random() * 0.3, d = (0.28 + Math.random() * 0.32) * Math.min(w, h);
+      const i = document.createElement('i'), s = 10 + Math.random() * 14, kind = k % 3;
+      i.style.cssText = `--x:${w / 2}px;--y:${h * 0.42}px;--s:${s}px;--c:${colours[k % colours.length]};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d + 40}px;` +
+        `--rot:${Math.random() * 540 - 270}deg;--t:${0.9 + Math.random() * 0.5}s;--r:${kind === 1 ? '50%' : '3px'};${kind === 0 ? `--clip:${star};border:0;` : ''}`;
+      bits.push(i);
+    }
+    const glow = document.createElement('div');
+    glow.className = 'glow';
+    fx.replaceChildren(glow, ...bits);
+    setTimeout(() => fx.replaceChildren(), 1600);
+  };
+  let finishing = false;
+  $('done').onclick = () => {
+    if (finishing || session.busy) return;
+    input.interrupt();
+    const s = session.state, changed = isChanged(s.attempt.makeup, s.face.eyes.iris);
+    if (audio) chime(changed);
+    if (!changed) { session.finish(); return; } // an untouched look: straight to review, quietly
+    // a finished look: the seal pops, a chime, sparkles; then review rises onto the counter
+    finishing = true;
+    $('done').classList.add('pop');
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) burst();
+    setTimeout(() => { finishing = false; $('done').classList.remove('pop'); session.finish(); }, 380);
+  };
   // a request marks the session busy straight away, so the buttons are disabled while it runs
-  $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); };
+  $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); prepareThumb(); };
   $('redo').onclick = async () => {
     const p = session.reward('replay');
     render();
@@ -170,18 +229,15 @@ async function main() {
   daily.hidden = !host.rewardedSupported; // no rewarded videos here: nothing to offer
   card.querySelector('.x').innerHTML = ICON.close;
   let panelTimer = 0;
-  const RING = 2 * Math.PI * 79;
-  // textless: the swatch inside the countdown ring, the tool it is for and "for good", then the video button
+  // minimal: the tool, drawn in today's colour; one button (a video, or a tick once it is yours); the time left
   const renderPanel = () => {
     const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = !!c && s.owned.includes(c.id);
-    const t = timeLeft(), gem = card.querySelector('.gem'), get = card.querySelector('.get'), time = card.querySelector('.time');
-    gem.innerHTML = c ? `<svg viewBox="0 0 170 170" aria-hidden="true"><circle cx="85" cy="85" r="79" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-width="9"/>
-      <circle cx="85" cy="85" r="79" fill="none" stroke="${t.ms < 2 * 3600e3 ? '#ff3b30' : t.ms < 6 * 3600e3 ? '#ff9f1c' : '#2fa35a'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(RING * t.frac).toFixed(1)} ${RING.toFixed(1)}"/></svg>
-      <div class="sw" style="background:${swatchBackground(c)}"></div>${owned ? `<div class="tick">${ICON.check}</div>` : ''}`
-      : `<div class="full">${ICON.check}</div>`; // every colour of the day is already the player's
-    gem.setAttribute('role', 'img');
-    gem.setAttribute('aria-label', c ? `${c.name}, for the ${TOOL_NAME[c.target].toLowerCase()}` : 'You have every colour');
-    card.querySelector('.chips').innerHTML = c ? `<span class="chip" role="img" aria-label="${TOOL_NAME[c.target]}">${ICON[c.target]}</span><span class="chip" role="img" aria-label="Yours for good">${ICON.forever}</span>` : '';
+    const t = timeLeft(), art = card.querySelector('.art'), get = card.querySelector('.get'), time = card.querySelector('.time');
+    if (art.dataset.colour !== `${c?.id}:${owned}`) {
+      art.dataset.colour = `${c?.id}:${owned}`;
+      art.innerHTML = c ? `${toolArt(c)}${owned ? `<span class="tick">${ICON.check}</span>` : ''}` : `<span class="tick">${ICON.check}</span>`;
+    }
+    art.setAttribute('aria-label', c ? `${TOOL_NAME[c.target]} in ${c.name}` : 'You have every colour');
     get.hidden = !c;
     get.disabled = session.busy; // once owned it is a tick that closes the panel (the colour is already selected)
     get.classList.toggle('owned', owned);
@@ -217,9 +273,10 @@ async function main() {
   // ---- the screen follows the state ----
   function render() {
     const s = session.state, review = s.attempt.phase === 'review';
+    document.body.classList.toggle('review', review);
     $('create').hidden = review;
     $('review').hidden = !review;
-    $('done').hidden = review;
+    if (review) { const img = $('next').querySelector('img'), url = thumb(s.next); if (img.getAttribute('src') !== url) img.src = url; }
     $('redo').hidden = !host.rewardedSupported;
     for (const b of [$('next'), $('redo'), $('done')]) b.disabled = session.busy;
     for (const b of toolbar.children) b.setAttribute('aria-pressed', String(b.dataset.tool === s.selection.tool));
@@ -257,6 +314,7 @@ async function main() {
   render();
   view.render();
   $('cover').hidden = true;
+  prepareThumb();
   await host.gameReady();
   Object.assign(globalThis, { game: { session, view, host, input } }); // for tests and debugging
 }

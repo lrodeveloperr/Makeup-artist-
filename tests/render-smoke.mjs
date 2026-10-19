@@ -118,13 +118,13 @@ async function touchCheck(browser, errors) {
   const two = await state();
   const leftCheek = (s) => s.segments.flat().every((v, i) => i % 3 !== 0 || v > 0); // the face's left is +x
   await page.getByRole('button', { name: 'Lenses', exact: true }).tap();
-  await page.getByRole('radio', { name: 'Aqua', exact: true }).tap();
+  await page.getByRole('radio', { name: 'Grey', exact: true }).tap();
   await touch('touchStart', [[...irisR, 3]]); await touch('touchEnd', []);
   await touch('touchStart', [[...irisL, 4]]); await touch('touchMove', [[irisL[0] + 30, irisL[1], 4]]); await touch('touchEnd', []);
   const lens = await state(), scroll = await page.evaluate(() => [scrollX, scrollY, visualViewport.scale]);
   if (one.n !== 1 || one.last.tool !== 'brush') errors.push(`touch: a one-finger drag did not paint (${one.n} strokes)`);
   if (two.n !== 2 || !leftCheek(two.last)) errors.push('touch: a second finger added marks');
-  if (lens.lenses.right !== 'lens-aqua' || lens.lenses.left !== null) errors.push(`touch: lens tap/drag wrong (${JSON.stringify(lens.lenses)})`);
+  if (lens.lenses.right !== 'lens-grey' || lens.lenses.left !== null) errors.push(`touch: lens tap/drag wrong (${JSON.stringify(lens.lenses)})`);
   if (scroll.join() !== '0,0,1') errors.push(`touch: the page scrolled or zoomed (${scroll})`);
   console.log(`touch: one finger paints, a second finger is ignored, lens on tap only: ${errors.length ? 'see errors' : 'ok'}`);
   await ctx.close();

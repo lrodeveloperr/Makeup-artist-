@@ -25,7 +25,9 @@ export function createHost({ sdk = globalThis.ytgame, dev = false } = {}) {
   const store = hosted ? null : localStore('worksbien-makeup-offplatform-v1');
   const reasons = new Set(), listeners = new Set(), cleanup = [];
   let adPending = false, lastRequest = -Infinity, framed = false, ready = false, disposed = false;
-  const state = () => ({ paused: reasons.size > 0, hostPaused: reasons.has('host'), ad: reasons.has('ad') });
+  let audio = (() => { try { return sdk.system.isAudioEnabled?.() !== false; } catch { return true; } })();
+  // audio: the host allows sound and nothing pauses the game
+  const state = () => ({ paused: reasons.size > 0, hostPaused: reasons.has('host'), ad: reasons.has('ad'), audio: audio && reasons.size === 0 });
   const publish = () => { for (const cb of [...listeners]) cb(state()); };
   const pause = (reason, on) => { if (on) reasons.add(reason); else reasons.delete(reason); publish(); };
   const report = () => { try { sdk.health?.logWarning?.(); } catch { /* reporting is best effort */ } };
@@ -87,12 +89,13 @@ export function createHost({ sdk = globalThis.ytgame, dev = false } = {}) {
   // registered before anything asynchronous, so an early pause is not missed
   cleanup.push(sdk.system.onPause(() => { pause('host', true); host.onPause?.(); }));
   cleanup.push(sdk.system.onResume(() => pause('host', false)));
+  cleanup.push(sdk.system.onAudioEnabledChange?.((on) => { audio = on !== false; publish(); }));
   return host;
 }
 
 function devHost() {
   const store = localStore('worksbien-makeup-dev-v1');
-  const state = () => ({ paused: false, hostPaused: false, ad: false });
+  const state = () => ({ paused: false, hostPaused: false, ad: false, audio: true });
   return {
     environment: 'dev', rewardedSupported: false, interstitialSupported: false, onPause: null, state,
     whenResumed: () => Promise.resolve(),

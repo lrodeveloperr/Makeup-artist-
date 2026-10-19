@@ -45,11 +45,13 @@
   .vbadge { position: absolute; right: -6px; bottom: -5px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
     background: var(--badge); border: 2.5px solid var(--ink); box-shadow: 0 2px 0 var(--ink); }
   .vbadge svg { width: 15px !important; height: 15px !important; }
-  /* Done: the rosette seal (top right) */
-  #done { width: 78px; height: 78px; border: 0; background: none; box-shadow: none; }
+  /* Done: the rosette seal (top right), the size of the daily button */
+  #done { width: 56px; height: 56px; border: 0; background: none; box-shadow: none; }
   #done .seal { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 4px 0 var(--ink)); }
   #done .seal polygon { fill: var(--seal); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
-  #done > svg:not(.seal) { position: relative; width: 34px; height: 34px; }
+  #done > svg:not(.seal) { position: relative; width: 26px; height: 26px; }
+  #done.pop { animation: pop .35s ease-out; }
+  @keyframes pop { 40% { transform: scale(1.35) rotate(12deg); } 100% { transform: scale(1); } }
   #done:not(:disabled):active { transform: translateY(3px); }
   #done:not(:disabled):active .seal { filter: drop-shadow(0 1px 0 var(--ink)); }
   /* the controls sit on the vanity counter in front of the customer (it hides where the body ends); create and review
@@ -63,40 +65,55 @@
   #toolbar { display: flex; justify-content: center; gap: 10px; padding-top: 4px; }
   #toolbar .ctl { width: 56px; height: 56px; border-radius: 50%; }
   #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
-  #review { display: flex; gap: 18px; justify-content: center; align-items: center; }
-  #review .round { width: 64px; height: 64px; }
-  #review .round svg { width: 30px; height: 30px; }
-  #next { width: 88px !important; height: 88px !important; background: var(--accent); }
-  #next svg { width: 40px !important; height: 40px !important; }
+  /* review, as Haircut's completion: the top buttons give way (the eye for the before takes the corner); on the
+     counter, Retry for a video and the next customer, pictured, docked against the Next arrow */
+  body.review #daily, body.review #done { display: none; }
+  #before { display: none; }
+  body.review #before { display: grid; }
   #before[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+  #review { display: flex; gap: 22px; justify-content: center; align-items: center; }
+  #review > * { animation: rise .45s .25s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(26px); } }
+  #redo { width: 72px; height: 72px; animation: rise .45s .25s ease-out both, breathe 1.3s .7s ease-in-out infinite; }
+  #redo > svg { width: 34px; height: 34px; }
+  #redo .vbadge { width: 32px; height: 32px; right: -8px; bottom: -6px; }
+  #redo .vbadge svg { width: 19px !important; height: 19px !important; }
+  @keyframes breathe { 50% { transform: scale(1.06); } }
+  #next { display: flex; align-items: center; gap: 10px; height: 96px; padding: 0 10px 0 6px; border-radius: 26px; }
+  #next img { width: 84px; height: 84px; border-radius: 20px; border: 2.5px solid var(--ink); background: radial-gradient(circle at 50% 35%, #fff6e6, #ecd2c4); object-fit: cover; }
+  #next .go { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); border: var(--outline); box-shadow: 0 3px 0 var(--ink); }
+  #next .go svg { width: 30px; height: 30px; }
+  /* the finish: sparkles burst from the face */
+  #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #fx i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); background: var(--c); border: 2px solid var(--ink); border-radius: var(--r);
+    clip-path: var(--clip, none); animation: burst var(--t) cubic-bezier(.2, .7, .3, 1) forwards; }
+  @keyframes burst { 0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
+    70% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(1); opacity: 0; } }
+  #fx .glow { position: absolute; left: 50%; top: 42%; width: 70%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff9 0, #fff0 65%); animation: glow .9s ease-out forwards; }
+  @keyframes glow { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 30% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -50%) scale(1.3); } }
   #notice { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
     background: var(--panel); border: var(--outline); box-shadow: 0 3px 0 var(--ink); }
   #notice svg { width: 22px; height: 22px; animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .35; } }
 
-  /* ---- the colour of the day ---- */
+  /* ---- the colour of the day: the tool in the new colour, one button, the time left ---- */
   #panel { position: fixed; inset: 0; background: #2a1d1566; display: grid; place-items: center; padding: 16px; }
-  #panel .card { position: relative; width: min(300px, 100%); box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 26px;
-    box-shadow: 0 6px 0 var(--ink); padding: 24px 18px 20px; text-align: center; }
-  #panel .x { position: absolute; right: -12px; top: -12px; width: 46px; height: 46px; }
+  #panel .card { position: relative; width: min(270px, 100%); box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 28px;
+    box-shadow: 0 6px 0 var(--ink); padding: 22px 20px 18px; text-align: center; }
+  #panel .x { position: absolute; right: -14px; top: -14px; width: 48px; height: 48px; }
   #panel .x svg { width: 22px; height: 22px; }
-  .gem { position: relative; width: 170px; height: 170px; margin: 0 auto 12px; }
-  .gem > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-  .gem .sw { position: absolute; inset: 22px; border-radius: 50%; border: var(--outline); box-shadow: 0 4px 0 var(--ink), inset 0 -10px 18px #0002; }
-  .gem .tick { position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
-  .gem .tick svg { width: 24px; height: 24px; }
-  .gem .full { position: absolute; inset: 22px; display: grid; place-items: center; }
-  .gem .full svg { width: 80px; height: 80px; }
-  /* what it is: the tool it is for, and "for good" */
-  #panel .chips { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
-  #panel .chip { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: var(--outline); background: #fff; box-shadow: 0 3px 0 var(--ink); }
-  #panel .chip svg { width: 26px; height: 26px; }
-  #panel .get { width: 100%; height: 62px; border-radius: 31px; background: var(--accent); display: flex; gap: 10px; align-items: center; justify-content: center; }
-  #panel .get .vb { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--badge); border: var(--outline); }
-  #panel .get .vb svg { width: 24px; height: 24px; }
-  #panel .get > svg { width: 34px; height: 34px; }
+  #panel .art { position: relative; width: 180px; height: 180px; margin: 0 auto 16px; border-radius: 50%; background: radial-gradient(circle, #fff 0, #fff 45%, #fde3e3 70%, #fde3e300 71%); }
+  #panel .art svg { width: 100%; height: 100%; animation: float 2.4s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-5px) rotate(-2deg); } }
+  #panel .art .tick { position: absolute; right: 6px; bottom: 6px; width: 48px; height: 48px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
+  #panel .art .tick svg { width: 26px; height: 26px; animation: none; }
+  #panel .get { width: 100%; height: 70px; border-radius: 35px; background: var(--accent); }
+  #panel .get .vb { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--badge); border: var(--outline); }
+  #panel .get .vb svg { width: 28px; height: 28px; }
+  #panel .get > svg { width: 38px; height: 38px; }
   #panel .get.owned { background: var(--seal); }
-  #panel .time { display: inline-flex; margin-top: 14px; gap: 6px; align-items: center; padding: 5px 12px; border-radius: 16px; border: 2.5px solid var(--ink); background: #fff8;
+  #panel .time { display: inline-flex; margin-top: 14px; gap: 6px; align-items: center; padding: 4px 12px; border-radius: 16px; border: 2.5px solid var(--ink); background: #fff8;
     font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; }
   #panel .time svg { width: 18px; height: 18px; }
   .nope { animation: nope .4s; }
@@ -111,10 +128,10 @@
   #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
   #retry svg { width: 40px; height: 40px; }
   #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
-  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg { animation: none; } .ctl, #swatches button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #panel .art svg, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
   @media (max-height: 560px) { #top { min-height: 64px; } footer { height: calc(118px + env(safe-area-inset-bottom)); } #swatches { padding-bottom: 4px; }
-    .round { width: 46px; height: 46px; } #toolbar .ctl { width: 48px; height: 48px; } #done { width: 64px; height: 64px; }
-    #review .round { width: 54px; height: 54px; } #next { width: 70px !important; height: 70px !important; } }
+    .round { width: 46px; height: 46px; } #toolbar .ctl { width: 48px; height: 48px; } #done { width: 50px; height: 50px; }
+    #redo { width: 60px; height: 60px; } #next { height: 78px; } #next img { width: 66px; height: 66px; } #next .go { width: 48px; height: 48px; } }
 </style>
 </head>
 <body>
@@ -122,22 +139,21 @@
   <div id="backdrop" aria-hidden="true"><div class="mirror"></div><i class="bulbs l"></i><i class="bulbs r"></i><i class="bulbs t"></i></div>
   <header id="top">
     <button id="daily" class="ctl round" aria-label="Colour of the day" hidden></button>
+    <button id="before" class="ctl round" aria-pressed="false" aria-label="Hold to see before"></button>
     <span></span>
     <button id="done" class="ctl" aria-label="Done"></button>
   </header>
-  <main id="stage"><div id="notice" role="status" aria-label="Not saved yet. Retrying." hidden></div></main>
+  <main id="stage"><div id="fx" aria-hidden="true"></div><div id="notice" role="status" aria-label="Not saved yet. Retrying." hidden></div></main>
   <footer id="create"><div id="swatches" role="radiogroup" aria-label="Colours"></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
   <footer id="review" hidden>
-    <button id="before" class="ctl round" aria-pressed="false" aria-label="Hold to see before"></button>
-    <button id="next" class="ctl round" aria-label="Next customer"></button>
-    <button id="redo" class="ctl round" aria-label="Redo this face: watch a video" hidden></button>
+    <button id="redo" class="ctl round" aria-label="Do this face again: watch a video" hidden></button>
+    <button id="next" class="ctl" aria-label="Next customer"><img alt=""><span class="go"></span></button>
   </footer>
 </div>
 <div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>
   <div class="card">
     <button class="x ctl round" aria-label="Close"></button>
-    <div class="gem"></div>
-    <div class="chips"></div>
+    <div class="art" role="img"></div>
     <button class="get ctl"></button>
     <div class="time" role="timer"></div>
   </div>

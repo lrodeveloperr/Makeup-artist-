@@ -20,7 +20,7 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Eye colour | Add contact lenses as a simple selector | O | Independent iris colours possible; G05 |
 | Camera | Front-facing and already close enough; no 360 or precision zoom control | O | Functional accuracy at ordinary framing; G06, UI01 |
 | Application controls | Player strokes and repeated passes determine the result; no size/intensity sliders | O | No settings work before creating; G01–G04, UI01 |
-| Finish | Review the actual result, with before/after | O | Payoff precedes Next/ad; FLOW01 |
+| Finish | Review the actual result, with before/after. Done is a seal the size of the other top buttons; a finished look plays Haircut's chime and a sparkle burst, then review shows Retry (video) and Next with the next customer pictured, as Haircut's completion | O, 19 Oct 2026 | Payoff precedes Next/ad; FLOW01 |
 | Replay | Remains rewarded: one earned video restarts the same clean face | O/I | Optional correction/retry; R01 |
 | Daily unlock | One colour of the day for one specified tool (or the lenses); one earned video adds it to that tool's colours for good. The offer runs to the player's local midnight with a countdown, in a daily section like Haircut's daily pick | O, 19 Oct 2026 (replaces the 24-hour entitlement) | Replaces all-tool sets and two-video proposal; `src/game/daily.js`; R02–R06 |
 | Lens reward | A lens colour can occupy that same single daily slot | Accepted scope from the lens discussion; D scheduling | No additional placement; R02 |
@@ -160,7 +160,7 @@ All four tools, the lens selector, base colours and ordinary generated faces are
 
 The daily offer previews **one exact colour for one exact target**: brush, pencil, mascara, lip applicator or lens selector. The player sees the target, swatch, one-ad cost and that the colour is kept for good before opting in. The reward is not random after viewing and does not supply the colour to every tool.
 
-**Scheduling (owner, 19 October 2026: as Haircut's daily pick):** One offered pair per local calendar day, the same for every player who does not own it yet and never one the player owns, with a countdown to local midnight. The schedule is deterministic and bundled (no live-operations backend): 34 special colours outside the base catalogue, and the target families take turns day by day (`src/game/daily.js`, tested in `tests/game.mjs`).
+**Scheduling (owner, 19 October 2026: as Haircut's daily pick):** One offered pair per local calendar day, the same for every player who does not own it yet and never one the player owns, with a countdown to local midnight. The schedule is deterministic and bundled (no live-operations backend): 52 special colours outside the base catalogue, and the target families take turns day by day. The base catalogue keeps the everyday shades; shimmers, glosses and fantasy shades are colours of the day (owner, 19 October 2026). The offer shows the tool drawn in the colour (`src/game/daily.js`, tested in `tests/game.mjs`).
 
 **One earned video:** Adds that pair to its tool's colours for good, on every face. No daily 0/2 or partial-credit counter. One successful claim per colour; an owned colour is never offered again.
 
