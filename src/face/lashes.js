@@ -108,6 +108,14 @@ export class Lashes {
     this.update(hg, eyeCentres);
   }
 
+  // the lashes' current coats, and back to them (review's before/after)
+  snapshot() { return this.lashes.map((l) => ({ colour: l.colour.slice(), lengthMul: l.lengthMul, widthMul: l.widthMul })); }
+  restore(coats) {
+    if (coats?.length !== this.lashes.length) return;
+    this.lashes.forEach((l, i) => { l.colour = coats[i].colour.slice(); l.lengthMul = coats[i].lengthMul; l.widthMul = coats[i].widthMul; });
+    this.update(this.hg, this.eyeCentres);
+  }
+
   // back to the natural lashes (before replaying saved mascara strokes)
   resetCoats() {
     this.lashes.forEach((l, i) => { const n = this.natural[i]; l.colour = n.colour.slice(); l.lengthMul = n.lengthMul; l.widthMul = n.widthMul; });

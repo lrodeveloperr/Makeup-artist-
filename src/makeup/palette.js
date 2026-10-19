@@ -76,9 +76,65 @@ export const PALETTE = {
   ],
 };
 
+// Colours of the day (owner decision, 19 October 2026): special shades that are not in the base catalogue. One
+// is offered each day (src/game/daily.js); one rewarded video adds it to its tool's colours for good.
+const lens = (id, name, iris) => c(id, name, iris[1], { iris });
+export const DAILY = {
+  brush: [
+    c('brush-neon-pink', 'Neon pink', '#ff3d9a'),
+    c('brush-rose-gold', 'Rose gold', '#d9967f', { shimmer: 0.9 }),
+    c('brush-opal', 'Opal', '#f3dff0', { shimmer: 1, sheer: 0.5 }),
+    c('brush-electric-violet', 'Electric violet', '#8b3dff'),
+    c('brush-sunset', 'Sunset', '#ff7a3d'),
+    c('brush-mint', 'Mint', '#7fe0c0'),
+    c('brush-copper', 'Copper', '#c06a3a', { shimmer: 0.9 }),
+    c('brush-turquoise', 'Turquoise', '#19b8c8', { shimmer: 0.6 }),
+    c('brush-silver', 'Silver', '#c9ccd4', { shimmer: 1 }),
+    c('brush-cherry', 'Cherry', '#d0244a'),
+  ],
+  pencil: [
+    c('pencil-electric-blue', 'Electric blue', '#1f6bff'),
+    c('pencil-neon-green', 'Neon green', '#35d46a'),
+    c('pencil-silver', 'Silver', '#c4c8d0', { shimmer: 0.9 }),
+    c('pencil-rose-gold', 'Rose gold', '#d29a84', { shimmer: 0.8 }),
+    c('pencil-burgundy', 'Burgundy', '#6e1a2e'),
+    c('pencil-teal', 'Teal', '#0f7f84'),
+  ],
+  mascara: [
+    c('mascara-electric-blue', 'Electric blue', '#1f4fd8'),
+    c('mascara-violet', 'Violet', '#5b2a9a'),
+    c('mascara-burgundy', 'Burgundy', '#5a1726'),
+    c('mascara-teal', 'Teal', '#0d5f63'),
+  ],
+  lip: [
+    c('lip-black-cherry', 'Black cherry', '#4a0f1f'),
+    c('lip-fuchsia', 'Fuchsia', '#d6247a'),
+    c('lip-orange', 'Orange', '#f2552c'),
+    c('lip-holo-gloss', 'Holographic gloss', '#f2d6f0', { gloss: 1, shimmer: 1, sheer: 0.4 }),
+    c('lip-nude-gloss', 'Nude gloss', '#d9a08e', { gloss: 1 }),
+    c('lip-berry-gloss', 'Berry gloss', '#9c1f4f', { gloss: 1 }),
+    c('lip-violet', 'Violet', '#6b2a8a'),
+    c('lip-gold-gloss', 'Gold gloss', '#d8a64a', { gloss: 1, shimmer: 0.9 }),
+  ],
+  lens: [
+    lens('lens-ice', 'Ice blue', ['#e4f2fb', '#a9d3ee', '#6aa6cf', '#2d5e80']),
+    lens('lens-amethyst', 'Amethyst', ['#e0c4f2', '#a76fd6', '#7440a8', '#3d1f5c']),
+    lens('lens-emerald', 'Emerald', ['#a8e6b8', '#2fa35a', '#1d7340', '#0d3d22']),
+    lens('lens-gold', 'Gold', ['#f7e08a', '#d9a62b', '#a3741a', '#5a3d0a']),
+    lens('lens-rose', 'Rose', ['#f7c6d4', '#e07a9a', '#b04a6e', '#5e2038']),
+    lens('lens-sea', 'Sea green', ['#c8eee0', '#58b89a', '#2e8068', '#154536']),
+  ],
+};
+
 export const TOOL_IDS = ['brush', 'pencil', 'mascara', 'lip'];
-const BY_ID = new Map(Object.entries(PALETTE).flatMap(([target, list]) => list.map((e) => [e.id, { ...e, target }])));
-// a catalogue colour by id (undefined if unknown); `target` is the tool (or 'lens') it belongs to
+const BY_ID = new Map([
+  ...Object.entries(PALETTE).flatMap(([target, list]) => list.map((e) => [e.id, { ...e, target }])),
+  ...Object.entries(DAILY).flatMap(([target, list]) => list.map((e) => [e.id, { ...e, target, daily: true }])),
+]);
+// a catalogue colour by id (undefined if unknown); `target` is the tool (or 'lens') it belongs to; `daily` marks a
+// colour of the day (usable once the player has earned it)
 export const colourById = (id) => BY_ID.get(id);
+// the colours a tool offers: the player's colours of the day (newest first), then the base catalogue
+export const coloursFor = (tool, owned = []) => [...[...owned].reverse().map(colourById).filter((x) => x?.target === tool), ...PALETTE[tool]];
 // the colour a new save starts with (contract §3: soft brush and an available base colour)
 export const DEFAULT_SELECTION = { tool: 'brush', colour: { brush: 'brush-rose', pencil: 'pencil-espresso', mascara: 'mascara-black', lip: 'lip-rose', lens: 'lens-blue' } };

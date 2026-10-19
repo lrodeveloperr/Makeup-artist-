@@ -2,8 +2,8 @@
 
 Status: **prototype, locally verified.** The four tools and the lens selector work on every generated face, by
 mouse and by touch, in the developer preview (`preview/`). The look is stored as compact, validated data and
-rebuilds exactly from a save. Not built yet: Finish/review with before/after, the save adapter and checkpoints,
-rewards and the daily colour, and the game's own screens. The preview's toolbar is a test harness, not the game UI.
+rebuilds exactly from a save. The game around the tools (review, saves, ads, the colour of the day) is in
+[GAME.md](GAME.md). The preview's toolbar (`preview/`) is a test harness; the game screen is `game/`.
 
 Contract sections: §2 (tools, lenses, input), §3 (completion predicate), §4 (colour catalogue), §8 (save
 representation and limits).
@@ -55,6 +55,8 @@ part of every face at any screen size.
 ### Colours (base catalogue, all available from the start)
 
 Brush 14, pencil 11, mascara 6, lip 12, lenses 8 (`src/makeup/palette.js`). The swatches show gloss and shimmer.
+There are also 34 colours of the day (`DAILY`), one offered each day and kept for good once earned
+([GAME.md](GAME.md)); a tool lists the player's earned ones first.
 The selected colour of each tool is remembered while switching tools. A new save starts with the soft brush in
 Rose (contract §3).
 

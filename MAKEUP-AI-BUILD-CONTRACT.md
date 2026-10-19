@@ -4,7 +4,7 @@ WorksBien Studios · version 1.0 · 18 October 2026
 
 Repository: https://github.com/lrodeveloperr/Makeup-artist-
 
-**Status:** settled owner product decisions plus explicitly identified engineering defaults and verification requirements. Prototypes of the face system ([docs/FACES.md](docs/FACES.md)) and the makeup painting tools ([docs/MAKEUP.md](docs/MAKEUP.md)) are built and locally verified; no game flow, passed acceptance suite, upload archive or certification is represented as complete.
+**Status:** settled owner product decisions plus explicitly identified engineering defaults and verification requirements. Prototypes of the face system ([docs/FACES.md](docs/FACES.md)), the makeup painting tools ([docs/MAKEUP.md](docs/MAKEUP.md)) and the single-screen game with saves and ads through the YouTube SDK ([docs/GAME.md](docs/GAME.md)) are built and locally verified against a test stand-in for the SDK; no passed acceptance suite on the real host, upload archive or certification is represented as complete.
 
 **Graphics: owner-selected on 18 October 2026** (decision rows below; implementation and evidence in [docs/FACES.md](docs/FACES.md)). Art palette, final hair/garment art and effects beyond that decision remain open. Camera proximity, face orientation and stroke accuracy below are functional requirements.
 
@@ -22,10 +22,10 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Application controls | Player strokes and repeated passes determine the result; no size/intensity sliders | O | No settings work before creating; G01–G04, UI01 |
 | Finish | Review the actual result, with before/after | O | Payoff precedes Next/ad; FLOW01 |
 | Replay | Remains rewarded: one earned video restarts the same clean face | O/I | Optional correction/retry; R01 |
-| Daily unlock | One earned video, one colour, one specified tool; 24 hours | O | Replaces all-tool sets and two-video proposal; R02–R06 |
+| Daily unlock | One colour of the day for one specified tool (or the lenses); one earned video adds it to that tool's colours for good. The offer runs to the player's local midnight with a countdown, in a daily section like Haircut's daily pick | O, 19 Oct 2026 (replaces the 24-hour entitlement) | Replaces all-tool sets and two-video proposal; `src/game/daily.js`; R02–R06 |
 | Lens reward | A lens colour can occupy that same single daily slot | Accepted scope from the lens discussion; D scheduling | No additional placement; R02 |
 | Ordinary Next | Available regardless of rewarded-ad availability | O/I | Continued base play; FLOW02, AD07 |
-| Interstitials | Inherit selected Haircut two-completion / 60-active-second natural-break control | O/I | Exact rules in §7; AD01–AD03 |
+| Interstitials | Systematic: at Next after every second finished look, with the inherited Haircut guards (60 s active creation, 60 s between requests, 60 s after a rewarded video). A rewarded video also stands in for the next interstitial | O/I, 19 Oct 2026 | Exact rules in §7; `src/game/cadence.js`; AD01–AD03 |
 | Reuse | Screen structure, customer queue, Next, rewards and platform foundation | O | Rebuild only domain-specific behavior; architecture below |
 | Graphics engine | WebGL2; one 3D head shown by a fixed front camera; procedural skin/hair/cloth shading, no photo textures | O, 18 Oct 2026 | No Unity/Godot web build; [docs/FACES.md](docs/FACES.md) |
 | Renderer library | Own minimal WebGL2 renderer instead of Three.js | D under the owner's load-time priority (18 Oct 2026) | Same shaders; bundle 558 KB → 95 KB |
@@ -58,7 +58,7 @@ Its recorded ZIP/expanded sizes are 410,921 / 1,089,471 bytes, for Haircut only.
 | --- | --- | --- |
 | Single-screen creation → Finish → next customer | Makeup application and result review | Keep familiar flow; no extra home-screen round trip |
 | Persisted customer queue / deterministic generation | Inclusive face profiles and makeup-relevant feature variation | No Haircut demographic gates or hair geometry |
-| Reward section, pending lock and earned callbacks | One daily tool–colour entitlement; same-clean-face replay | No wardrobe, permanent item unlocks or two-video credits |
+| Reward section, pending lock and earned callbacks | One colour of the day, kept for good (owner, 19 Oct 2026); same-clean-face replay | No wardrobe items or two-video credits |
 | Completion/ad cadence coordinator | Changed-face completion predicate | No clipper stroke fields or score target |
 | Protected shared cloud load, merged writes and acknowledgement | New schema, compact application state and lens colours | Never reuse Haircut data keys/envelope identity |
 | Official YouTube client, startup, pause/mute and recovery pattern | Bind makeup domain operations and truthful progress | No Playgama/Android SDK in direct YouTube target |
@@ -156,19 +156,19 @@ Colour catalogues use stable IDs, valid per-tool availability and stable saved a
 
 ## 5. Ownership, daily variety and time
 
-All four tools, the lens selector, base colours and ordinary generated faces are available from the start. Completion totals measure activity; there is no launch currency, shop, XP gate, forced challenge, streak penalty, collection economy or wardrobe.
+All four tools, the lens selector, base colours and ordinary generated faces are available from the start. Completion totals measure activity; there is no launch currency, shop, XP gate, forced challenge, streak penalty or wardrobe. Colours of the day the player earns stay in their tool's colours (owner decision, 19 October 2026).
 
-The daily offer previews **one exact colour for one exact target**: brush, pencil, mascara, lip applicator or lens selector. The player sees the target, swatch, one-ad cost and 24-hour duration before opting in. The reward is not random after viewing and does not supply the colour to every tool.
+The daily offer previews **one exact colour for one exact target**: brush, pencil, mascara, lip applicator or lens selector. The player sees the target, swatch, one-ad cost and that the colour is kept for good before opting in. The reward is not random after viewing and does not supply the colour to every tool.
 
-**D scheduling:** One offered pair per UTC calendar day, with a countdown making turnover understandable in the player's locale. Use a deterministic bundled schedule so there is no live-operations backend. Rotate target families and avoid adjacent offers with negligible practical colour difference; record and test the finite rotation period. Offer turnover and entitlement expiry are independent.
+**Scheduling (owner, 19 October 2026: as Haircut's daily pick):** One offered pair per local calendar day, the same for every player who does not own it yet and never one the player owns, with a countdown to local midnight. The schedule is deterministic and bundled (no live-operations backend): 34 special colours outside the base catalogue, and the target families take turns day by day (`src/game/daily.js`, tested in `tests/game.mjs`).
 
-**One earned video:** Grant unlimited use of that pair on unlimited faces for `86,400,000` ms from confirmed grant. No daily 0/2 or partial-credit counter. One successful claim per offer identity; do not offer a second ad to extend the same day's entitlement. The next day's different offer can be claimed while yesterday's 24-hour reward is still active. Keep every still-active entitlement rather than replacing it with the new offer.
+**One earned video:** Adds that pair to its tool's colours for good, on every face. No daily 0/2 or partial-credit counter. One successful claim per colour; an owned colour is never offered again.
 
-Freeze the advertised offer identity when a request begins. If UTC midnight passes during that request, success grants the pair actually advertised, with its full 24 hours. Do not silently grant the newly rotated pair instead. A declined, failed or unavailable request does not consume the daily claim.
+Freeze the advertised offer identity when a request begins. If midnight passes during that request, success grants the pair actually advertised. Do not silently grant the newly rotated pair instead. A declined, failed or unavailable request does not consume the daily claim.
 
-At expiry, previously applied makeup and lenses remain exactly as applied. An in-flight gesture begun while entitled can finish using its captured colour; new applications require current availability. If an expired colour is selected, select an available base colour for future application without modifying the face or unexpectedly opening an ad. Review and return loading must retain old applied colours even if they are no longer selectable.
+Earned colours do not expire. Applied makeup and lenses always keep their colours. If a catalogue colour is ever retired, applied work keeps it, and a selected colour that is no longer usable falls back to an available base colour without modifying the face or opening an ad.
 
-Use a host-provided trusted clock only if one is actually supported. Otherwise persist grant/expiry times and a nondecreasing observed-time floor; document device-clock limitations. Do not claim tamper-proof timing or add a backend/account to enforce it. Clock rollback cannot create duplicate claim IDs. Protect existing work if time is invalid; recover the daily panel without blocking the base game.
+The day comes from the device clock (no trusted host clock is used). Changing the clock can show another day's offer; each colour still costs one video and can never be granted twice. Do not claim tamper-proof timing or add a backend/account to enforce it. Protect existing work if time is invalid; recover the daily panel without blocking the base game.
 
 Retain current work and the current/most-recent review result, not an unbounded look gallery. No external sharing flow is part of launch.
 
@@ -202,7 +202,7 @@ These are game-specific inherited values, **not Google-mandated or empirically o
 | Later opportunities | Same thresholds, accumulating since the last accepted interstitial request |
 | Natural transition | Explicit Next from review, after the player can see the finished result |
 | Adapter attempt cooldown | At least 60,000 ms since the previous actual interstitial SDK invocation, even if it rejects |
-| Recent-reward suppression | Skip interstitial request while fewer than 60,000 ms have elapsed since a rewarded success is delivered |
+| Recent-reward suppression | Skip interstitial request while fewer than 60,000 ms have elapsed since a rewarded success is delivered. A rewarded video earned since the last break also stands in for the next interstitial: that opportunity is skipped and counting restarts (owner, 19 Oct 2026) |
 | Cadence reset | Successful/accepted interstitial request clears qualified count and active-time accumulation; not proof of a served impression |
 | Failed/suppressed opportunity | Keep cadence progress; advance normally; no immediate retry or deferred popup |
 | Ordinary/replayed attempt | Each genuinely changed Finish can qualify once |
@@ -219,7 +219,7 @@ An untouched current attempt must not be used as the Next trigger for accumulate
 | Purpose | Stable placement ID default | Videos | Grant scope | Entry |
 | --- | --- | --- | --- | --- |
 | Replay this face | `makeup-replay-face` | 1 confirmed earned result | Same clean face, new attempt; preserve queue/entitlements | Explicit review action |
-| Daily extra colour | `makeup-daily-colour` | 1 confirmed earned result | Exactly the advertised target–colour pair, 24 hours, unlimited applications/faces | Explicit daily-offer action |
+| Daily extra colour | `makeup-daily-colour` | 1 confirmed earned result | Exactly the advertised target–colour pair, kept for good, on every face | Explicit daily-offer action |
 
 IDs are makeup-specific engineering defaults. If publisher configuration requires different strings, record a one-to-one mapping without adding placements or putting user data in IDs. The content/offer ID belongs in the grant record; do not create a different SDK reward type for every player/date.
 
@@ -245,12 +245,12 @@ Use one makeup-owned versioned envelope through the host adapter, with separate 
 | --- | --- |
 | Identity | Envelope/domain/generator/catalogue version; revision; game identity |
 | Current attempt | Stable attempt ID, face identity/seed/resolved profile, CREATE or REVIEW, original baseline |
-| Makeup | Ordered/bounded applied state, lashes, independent iris colours; applied values remain resolvable after colour expiry |
+| Makeup | Ordered/bounded applied state, lashes, independent iris colours; applied values remain resolvable if a colour is retired |
 | Selection | Tool and available selected colour; no zoom, size or intensity setting |
 | Review | Exact final and matching before state; completion-committed flag / idempotency record |
 | Upcoming content | Fixed next face, seed/deck cursor and bounded recent profile signatures |
 | Progress | Safe-integer meaningful completion total; current cadence qualified/active values |
-| Daily | Schedule version, offer identity, claimed day/offer, live target–colour entitlements with grant/expiry times and observed-time floor |
+| Daily | Today's offer (day, colour), the colours of the day the player has earned (permanent), the day the daily section was last opened |
 | Reward transaction | Bounded known outcome/nonce/consumed state needed for idempotent retries; no fake receipt |
 | Preferences | First-use hint state; declared local settings only; host language/audio are not overridden by cloud preferences |
 
@@ -294,7 +294,7 @@ Every audio path follows initial and changed host audio enablement plus device/s
 
 ## 12. Language, access and platform boundaries
 
-Use mostly direct, nonverbal manipulation. English is required; essential notices include one-ad cost, exact reward target, 24-hour duration, unavailable inventory, unsaved/retry state and the distinction between Next and same-face Replay. Localize all essential labels/messages in every declared locale, including accessible tool/colour/action labels.
+Use mostly direct, nonverbal manipulation. English is required; essential notices include one-ad cost, exact reward target, that the colour is kept, unavailable inventory, unsaved/retry state and the distinction between Next and same-face Replay. Localize all essential labels/messages in every declared locale, including accessible tool/colour/action labels.
 
 Use the host language API with a documented mapping/fallback to English. Do not use browser language APIs or restore a cloud language that overrides the current host. The final declared locale list remains a pre-release deliverable; do not claim 27 languages because Haircut contains them.
 
@@ -370,10 +370,10 @@ Every case below starts **NOT RUN**. Implement named procedures or executable te
 | CONTENT02 | Reload with current/next and recent schedule state | Exact profiles/queue retained; no demographic/tool gates | Domain + save |
 | R01 | Replay true vs false/error; repeat same completed attempt | True clears same face only; queue preserved; each new changed replay qualifies once | Domain + injected SDK |
 | R02 | Daily claim for each target family | One ad, one exact target–colour pair; no tool/all-palette unlock | Domain + injected SDK |
-| R03 | Claim near midnight / offer rotates while request pending | Advertised pair gets full 24h; next-day offer independent | Controlled clock + SDK |
-| R04 | Expire selected/applied colour while creating/reviewing/reloading | Applied work persists; captured stroke finishes; future selection valid | Clock + browser |
+| R03 | Claim near midnight / offer rotates while request pending | The advertised pair is granted; next-day offer independent | Controlled clock + SDK |
+| R04 | Retire a selected/applied colour while creating/reviewing/reloading | Applied work persists; captured stroke finishes; future selection valid | Catalogue + browser |
 | R05 | Claim twice/double tap/duplicate completion callback | One request and grant; no duplicate extension or 1/2 counter | Domain + delayed SDK |
-| R06 | Overlapping daily entitlements, clock rollback, maximum payload | Live grants retained; no duplicate claim; documented clock limit | Clock + save tests |
+| R06 | Colours earned over many days, clock changes, maximum payload | Every earned colour retained; no duplicate claim; documented clock limit | Clock + save tests |
 | AD01 | 1 vs 2 completions; 59,999 vs 60,000 active ms; threshold cross in review | AND thresholds; only changed-review Next invokes | Controlled clock/domain |
 | AD02 | Attempt at 59,999/60,000 ms; reward suppression boundary; full reload | Correct cooldown/anchor/runtime reset; durable cadence; no popup retry | Clock + browser |
 | AD03 | Accepted vs rejected interstitial; suppressed opportunity | Accepted resets pacing, rejection/suppression retains; Next continues | Injected SDK + domain |

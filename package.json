@@ -8,9 +8,12 @@
     "build:preview": "node tools/build-preview.mjs --minify",
     "serve": "node tools/serve.mjs build/preview",
     "audit": "node tests/face-audit.mjs 2000 300",
-    "test": "node tests/unit.mjs && node tests/makeup.mjs && node tests/face-audit.mjs 2000 300 && node tests/size-budget.mjs",
+    "test": "node tests/unit.mjs && node tests/makeup.mjs && node tests/game.mjs && node tests/face-audit.mjs 2000 300 && node tests/size-budget.mjs",
     "test:render": "node tools/build-preview.mjs && node tests/render-smoke.mjs",
-    "size": "node tests/size-budget.mjs"
+    "size": "node tests/size-budget.mjs",
+    "build:game": "node tools/build-game.mjs --minify",
+    "serve:game": "node tools/build-game.mjs && node tools/serve.mjs build/game-dev",
+    "test:game": "node tools/build-game.mjs && node tests/game-smoke.mjs"
   },
   "repository": {
     "type": "git",

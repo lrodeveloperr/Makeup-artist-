@@ -82,7 +82,7 @@ export const toQ = (v) => Math.round(v * Q) || 0; // never -0, which a save woul
 export const fromQ = (v) => v / Q;
 
 // ---- saved form ----
-// JSON: { "v": version, "l": [left lens, right lens], "s": ["<colour id>:<points>", ...] }. The tool is the
+// { "v": version, "l": [left lens, right lens], "s": ["<colour id>:<points>", ...] }. The tool is the
 // colour's own tool. <points> is a run of zigzag varints written five bits per URL-safe base64 character
 // (bit 5 = more): the segment count, then per segment its point count, the first point and the differences
 // between successive points. Neighbouring points are a tool step apart, so a coordinate usually takes one
@@ -133,14 +133,18 @@ function unpackStroke(tool, text) {
   return { tool, colour: null, segments };
 }
 
-export function encodeMakeup(m) {
-  return JSON.stringify({ v: m.version, l: [m.lenses.left, m.lenses.right], s: m.strokes.map((s) => `${s.colour}:${packStroke(s)}`) });
+// the saved form as a plain object (for embedding in a larger save) and as JSON text
+export function packMakeup(m) {
+  return { v: m.version, l: [m.lenses.left, m.lenses.right], s: m.strokes.map((s) => `${s.colour}:${packStroke(s)}`) };
 }
+export const encodeMakeup = (m) => JSON.stringify(packMakeup(m));
 
 // the makeup state from its saved form, or null if it is not a valid save of this version
 export function decodeMakeup(text) {
+  try { return unpackMakeup(JSON.parse(text)); } catch { return null; }
+}
+export function unpackMakeup(d) {
   try {
-    const d = JSON.parse(text);
     if (!d || d.v !== MAKEUP_VERSION || !Array.isArray(d.l) || d.l.length !== 2 || !Array.isArray(d.s) || d.s.length > LIMITS.strokes) return null;
     const strokes = d.s.map((entry) => {
       const cut = typeof entry === 'string' ? entry.indexOf(':') : -1;

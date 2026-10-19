@@ -21,10 +21,12 @@ export class Applicator {
     this.paint = new PaintLayer(view.renderer, view.headGeometry);
     this.picker = new Picker();
     this.makeup = createMakeup();
+    this.allowed = () => true; // the game sets which colours the player may use (colours of the day once earned)
   }
 
   // a new face (or the same face's clean start): no makeup, natural lashes and irises
   reset(profile) {
+    this.showBefore(false);
     this.profile = profile;
     this.makeup = createMakeup();
     this.paint.clear();
@@ -36,6 +38,7 @@ export class Applicator {
   // rebuild the look from a saved makeup state for the current face; false if the state is invalid
   restore(makeup) {
     if (!validMakeup(makeup)) return false;
+    this.showBefore(false);
     this.makeup = makeup;
     this.paint.clear();
     this.view.lashes.resetCoats();
@@ -56,6 +59,23 @@ export class Applicator {
     this.picker.update(v.headGeometry, v.eyes, v.camera, size[0], size[1]);
   }
 
+  // Review's before/after (read-only): true shows the clean starting face, false the finished look again.
+  showBefore(on) {
+    const v = this.view;
+    if (!!on === !!this.before) return;
+    v.skin.uniforms.uPaintOn.value = on ? 0 : 1;
+    if (on) {
+      this.before = v.lashes.snapshot();
+      v.lashes.resetCoats();
+      const natural = IRIS[this.profile.eyes.iris];
+      v.eyes.setIris(natural, natural, this.profile.eyes.seed);
+    } else {
+      v.lashes.restore(this.before);
+      this.before = null;
+      this.applyLenses();
+    }
+  }
+
   applyLenses() {
     const natural = IRIS[this.profile.eyes.iris];
     const stops = (eye) => colourById(this.makeup.lenses[eye])?.iris || natural;
@@ -64,7 +84,7 @@ export class Applicator {
 
   // ---- gestures ----
   begin(tool, colour) {
-    if (colourById(colour)?.target !== tool) return null;
+    if (colourById(colour)?.target !== tool || !this.allowed(colour)) return null;
     const room = Math.min(LIMITS.pointsPerStroke, LIMITS.points - pointCount(this.makeup));
     if (room <= 0 || this.makeup.strokes.length >= LIMITS.strokes) return null; // the state is full
     return {
@@ -143,6 +163,7 @@ export class Applicator {
 
   // contact lenses: a tap on an iris sets that eye; anything else does nothing
   tapLens(x, y, colour) {
+    if (!this.allowed(colour)) return false;
     const hit = this.picker.pick(x, y);
     if (hit?.kind !== 'eye' || !hit.iris) return false;
     const next = setLens(this.makeup, hit.eye, colour);

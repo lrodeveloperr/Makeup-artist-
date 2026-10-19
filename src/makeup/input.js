@@ -6,7 +6,8 @@
 // - the lens selector applies on a tap (press and release without dragging), not on a drag
 const TAP_SLOP = 10; // CSS pixels a lens tap may move
 
-// canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses);
+// canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses), or null
+// while the face takes no input (review, an open panel, a pause);
 // onChange(): the face changed and needs a redraw; onCommit(change): a stroke or lens change was stored
 export function attachInput(canvas, applicator, { selection, onChange, onCommit }) {
   let active = null;
@@ -29,6 +30,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
     if (!e.isPrimary || e.button !== 0 || active) return;
     e.preventDefault();
     const sel = selection();
+    if (!sel) return;
     const [x, y] = local(e);
     canvas.setPointerCapture(e.pointerId);
     if (sel.tool === 'lens') { active = { id: e.pointerId, lens: sel.colour, x, y, moved: false }; return; }

@@ -173,6 +173,7 @@ function fakeApplicator() {
   a.paint = recorder();
   a.view = { lashes: { zPlane: 0.5, coat: (wand, colour, t, touched) => { touched.add(0); return true; } } };
   a.makeup = createMakeup();
+  a.allowed = () => true;
   return a;
 }
 // a wandering pointer path of `length` decimetres, reported every few pixels
@@ -211,6 +212,11 @@ test('applicator: leaving the face lifts the pen; coming back starts a new segme
   assert.ok(Math.abs(s.segments[0][s.segments[0].length - 3] - edge) <= px, 'the first segment runs to the face edge');
   assert.ok(Math.abs(s.segments[1][0] - edge) <= px, 'the second starts where the pointer came back');
   assert.equal(a.end(a.begin('brush', 'brush-rose')), null, 'a gesture that never touched the face stores nothing');
+  // a colour the player may not use yet (a colour of the day not earned) does not apply
+  a.allowed = (id) => id !== 'brush-neon-pink';
+  assert.equal(a.begin('brush', 'brush-neon-pink'), null);
+  assert.ok(a.begin('brush', 'brush-rose'));
+  a.allowed = () => true;
   // a mascara wand that coats no lash is no work
   a.view.lashes.coat = () => false;
   const w = a.begin('mascara', 'mascara-black');

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Makeup</title>
+<link rel="icon" href="data:,">
+<!--HOST-->
+<style>
+  :root { --ink: #2b2522; --cream: #f6efe9; --card: #fffaf6; --pink: #e0527a; --line: #0002; }
+  html, body { margin: 0; height: 100%; background: #d9cfc7; color: var(--ink); font: 14px system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:disabled { cursor: default; opacity: .5; }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  #top { display: flex; align-items: center; gap: 8px; padding: max(8px, env(safe-area-inset-top)) 12px 8px; background: var(--cream); }
+  #top .grow { flex: 1; }
+  #stage { flex: 1; min-height: 0; display: flex; justify-content: center; overflow: hidden; position: relative; }
+  canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .round { position: relative; width: 48px; height: 48px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 1px 0 var(--line), 0 0 0 1px var(--line); display: grid; place-items: center; padding: 0; }
+  .round svg { width: 26px; height: 26px; }
+  .dot { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; background: #ff3b30; border: 2px solid #fff; }
+  .pill { min-height: 48px; padding: 0 18px; border-radius: 24px; border: 0; background: var(--ink); color: #fff; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; justify-content: center; }
+  .pill svg { width: 22px; height: 22px; }
+  .pill.light { background: #fff; color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+  .badge { display: inline-grid; place-items: center; width: 26px; height: 20px; border-radius: 5px; background: #fff3; }
+  .pill.light .badge { background: #0000000d; }
+  .badge svg { width: 18px; height: 18px; }
+  footer { background: var(--cream); padding: 8px 8px max(10px, env(safe-area-inset-bottom)); }
+  #toolbar { display: flex; justify-content: center; gap: 6px; }
+  #toolbar button { width: 64px; min-height: 52px; border: 2px solid transparent; border-radius: 14px; background: #fff; font: 600 11px system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; }
+  #toolbar button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+  #toolbar svg { width: 24px; height: 24px; }
+  #swatches { display: flex; gap: 6px; overflow-x: auto; padding: 8px 4px 2px; justify-content: safe center; scrollbar-width: none; }
+  #swatches button { position: relative; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--line); padding: 0; }
+  #swatches button[aria-checked="true"] { box-shadow: 0 0 0 3px var(--ink); }
+  #swatches .star { position: absolute; right: -6px; top: -6px; width: 18px; height: 18px; }
+  #review { display: flex; gap: 8px; justify-content: center; align-items: center; padding-top: 12px; }
+  #review .pill { flex: 0 1 auto; }
+  #next { flex: 1 1 auto !important; max-width: 220px; font-size: 17px; }
+  #before { touch-action: none; user-select: none; -webkit-user-select: none; }
+  #before[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  #notice { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); background: #fff; border-radius: 16px; padding: 6px 12px; box-shadow: 0 0 0 1px var(--line); font-size: 12px; }
+  [hidden] { display: none !important; }
+  /* the colour of the day */
+  #panel { position: fixed; inset: 0; background: #0006; display: grid; place-items: center; padding: 16px; }
+  #panel .card { position: relative; width: min(340px, 100%); background: var(--card); border-radius: 24px; padding: 20px 20px 22px; text-align: center; box-shadow: 0 10px 40px #0004; }
+  #panel h2 { margin: 2px 0 14px; font-size: 18px; }
+  #panel .x { position: absolute; right: 10px; top: 10px; width: 40px; height: 40px; }
+  .gem { position: relative; width: 150px; height: 150px; margin: 0 auto 12px; }
+  .gem > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gem .tick svg { width: 24px; height: 24px; }
+  .gem .sw { position: absolute; inset: 18px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 1px var(--line), inset 0 -8px 16px #0002; }
+  .gem .tick { position: absolute; right: 6px; bottom: 6px; width: 40px; height: 40px; border-radius: 50%; background: #2fa35a; color: #fff; display: grid; place-items: center; }
+  #panel .name { font-weight: 700; font-size: 16px; display: flex; gap: 6px; align-items: center; justify-content: center; }
+  #panel .name svg { width: 20px; height: 20px; }
+  #panel .what { margin: 4px 0 16px; color: #6d625c; }
+  #panel .pill { width: 100%; }
+  #panel .time { margin-top: 12px; display: flex; gap: 6px; align-items: center; justify-content: center; color: #6d625c; font-variant-numeric: tabular-nums; }
+  #panel .time svg { width: 18px; height: 18px; }
+  .nope { animation: nope .4s; }
+  @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+  /* loading and recovery */
+  #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 14px; background: var(--cream); text-align: center; padding: 24px; }
+  .spin { width: 40px; height: 40px; border-radius: 50%; border: 4px solid #0001; border-top-color: var(--pink); animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error small { color: #6d625c; }
+  @media (prefers-reduced-motion: reduce) { .spin, .nope { animation: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <button id="daily" class="round" aria-label="Colour of the day" hidden></button>
+    <div class="grow"></div>
+    <button id="done" class="pill">Done</button>
+  </header>
+  <main id="stage"><div id="notice" role="status" hidden>Not saved yet. Retrying…</div></main>
+  <footer id="create"><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div><div id="swatches" role="radiogroup" aria-label="Colours"></div></footer>
+  <footer id="review" hidden>
+    <button id="before" class="pill light" aria-pressed="false" aria-label="Hold to see before"></button>
+    <button id="redo" class="pill light" aria-label="Redo this face: watch a video" hidden></button>
+    <button id="next" class="pill" aria-label="Next customer"></button>
+  </footer>
+</div>
+<div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>
+  <div class="card">
+    <button class="x round" aria-label="Close"></button>
+    <h2>Colour of the day</h2>
+    <div class="gem"></div>
+    <div class="name"></div>
+    <div class="what"></div>
+    <button class="pill get"></button>
+    <div class="time"></div>
+  </div>
+</div>
+<div id="cover"><div class="spin"></div><div>Loading…</div></div>
+<div id="error" hidden><strong>Something went wrong.</strong><div id="error-text">Your saved looks are safe.</div><button id="retry" class="pill">Retry</button><small id="error-code"></small></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
