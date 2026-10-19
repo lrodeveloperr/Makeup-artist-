@@ -57,6 +57,9 @@ async function paintCheck(page, errors) {
       stroke('lip', 'lip-red-gloss', line(pr([-0.15, -0.58, 0.5]), pr([0.15, -0.58, 0.5]), 30)),
       stroke('mascara', 'mascara-navy', line(pr([R[0] - 0.15, R[1] + 0.1, R[2] + 0.2]), pr([R[0] + 0.15, R[1] + 0.1, R[2] + 0.2]))),
       a.tapLens(...pr([L[0], L[1], L[2] + v.eyes.meshes[0].scale[0]]), 'lens-violet'),
+      stroke('glow', 'glow-gold', line(pr([R[0] + 0.02, R[1] - 0.3, R[2] - 0.02]), pr([R[0] - 0.18, R[1] - 0.22, R[2] - 0.08]))),
+      stroke('liner', 'liner-black', line(pr([L[0] - 0.1, L[1] + 0.02, L[2] + 0.14]), pr([L[0] + 0.18, L[1] + 0.1, L[2] + 0.08]), 30)),
+      !!a.tapGem(...pr([R[0] - 0.05, R[1] - 0.45, R[2] - 0.05]), 'gem-crystal'),
     ];
     const live = shot();
     const saved = JSON.stringify(a.makeup);
@@ -71,7 +74,7 @@ async function paintCheck(page, errors) {
     v.render();
     return { ok, strokes: a.makeup.strokes.length, painted: diff(clean, live), reset: diff(clean, reset), restored: diff(live, restored), cornersSame };
   });
-  if (!r.ok.every(Boolean) || r.strokes !== 5) errors.push(`paint: a scripted tool did nothing (${JSON.stringify(r.ok)})`);
+  if (!r.ok.every(Boolean) || r.strokes !== 8) errors.push(`paint: a scripted tool did nothing (${JSON.stringify(r.ok)})`);
   if (r.painted.n < 1000) errors.push(`paint: only ${r.painted.n} pixels changed`);
   if (!r.cornersSame) errors.push('paint: pixels away from the face changed');
   if (r.reset.n) errors.push(`paint: reset left ${r.reset.n} pixels different from the clean face`);
@@ -84,11 +87,12 @@ async function paintCheck(page, errors) {
   await page.mouse.move(box.x + p1[0], box.y + p1[1], { steps: 6 });
   await page.mouse.up();
   const after = await page.evaluate(() => window.view.makeup.makeup.strokes.map((s) => s.tool + '/' + s.colour).pop() + ' ' + window.view.makeup.makeup.strokes.length);
-  if (after !== 'brush/brush-rose 6') errors.push(`paint: the mouse drag did not add a brush stroke (${after})`);
-  console.log(`paint: ${r.painted.n} pixels painted by 5 strokes and a lens; restore differs in ${r.restored.n} pixels (max ${r.restored.max}); reset is clean: ${!r.reset.n}`);
+  if (after !== 'brush/brush-rose 9') errors.push(`paint: the mouse drag did not add a brush stroke (${after})`);
+  console.log(`paint: ${r.painted.n} pixels painted by 7 strokes, a gem and a lens; restore differs in ${r.restored.n} pixels (max ${r.restored.max}); reset is clean: ${!r.reset.n}`);
 }
 
-// Touch: one finger paints; a second finger during the stroke adds nothing; a lens applies on a tap, not a drag.
+// Touch: one finger paints; a second finger during the stroke adds nothing; a lens and a gem apply on a tap, not a
+// drag.
 async function touchCheck(browser, errors) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
@@ -121,12 +125,18 @@ async function touchCheck(browser, errors) {
   await page.getByRole('radio', { name: 'Grey', exact: true }).tap();
   await touch('touchStart', [[...irisR, 3]]); await touch('touchEnd', []);
   await touch('touchStart', [[...irisL, 4]]); await touch('touchMove', [[irisL[0] + 30, irisL[1], 4]]); await touch('touchEnd', []);
-  const lens = await state(), scroll = await page.evaluate(() => [scrollX, scrollY, visualViewport.scale]);
+  const lens = await state();
+  await page.getByRole('button', { name: 'Gems', exact: true }).tap();
+  await page.getByRole('radio', { name: 'Pearl', exact: true }).tap();
+  await touch('touchStart', [[...b, 5]]); await touch('touchEnd', []);
+  await touch('touchStart', [[...a, 6]]); for (let k = 1; k <= 8; k++) await touch('touchMove', [[...lerp(a, a1, k / 8), 6]]); await touch('touchEnd', []);
+  const gem = await state(), scroll = await page.evaluate(() => [scrollX, scrollY, visualViewport.scale, visualViewport.offsetLeft, visualViewport.offsetTop]);
   if (one.n !== 1 || one.last.tool !== 'brush') errors.push(`touch: a one-finger drag did not paint (${one.n} strokes)`);
   if (two.n !== 2 || !leftCheek(two.last)) errors.push('touch: a second finger added marks');
   if (lens.lenses.right !== 'lens-grey' || lens.lenses.left !== null) errors.push(`touch: lens tap/drag wrong (${JSON.stringify(lens.lenses)})`);
-  if (scroll.join() !== '0,0,1') errors.push(`touch: the page scrolled or zoomed (${scroll})`);
-  console.log(`touch: one finger paints, a second finger is ignored, lens on tap only: ${errors.length ? 'see errors' : 'ok'}`);
+  if (gem.n !== 3 || gem.last.tool !== 'gem' || gem.last.colour !== 'gem-pearl') errors.push(`touch: gem tap/drag wrong (${gem.n} strokes)`);
+  if (scroll.join() !== '0,0,1,0,0') errors.push(`touch: the page scrolled, panned or zoomed (${scroll})`);
+  console.log(`touch: one finger paints, a second finger is ignored, lens and gem on tap only: ${errors.length ? 'see errors' : 'ok'}`);
   await ctx.close();
 }
 

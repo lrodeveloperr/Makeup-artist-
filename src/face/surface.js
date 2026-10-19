@@ -25,8 +25,9 @@ export class SurfaceSampler {
   cx(x) { return Math.floor((x - this.minX) / this.cell); }
   cy(y) { return Math.floor((y - this.minY) / this.cell); }
 
-  // -> { i: [3 vertex indices], w: [3 weights] } for the front-most surface point at (x, y), or null
-  locate(x, y) {
+  // -> { i: [3 vertex indices], w: [3 weights] } for the front-most surface point at (x, y) (or, given z, the one
+  // nearest that depth), or null
+  locate(x, y, z) {
     const gx = this.cx(x), gy = this.cy(y);
     if (gx < 0 || gy < 0 || gx >= this.nx || gy >= this.ny) return null;
     const P = this.ref;
@@ -41,8 +42,8 @@ export class SurfaceSampler {
         const w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (y - c[1])) / det;
         const w2 = 1 - w0 - w1;
         if (w0 < -1e-6 || w1 < -1e-6 || w2 < -1e-6) continue;
-        const z = w0 * a[2] + w1 * b[2] + w2 * c[2];
-        if (z > bestZ) { bestZ = z; best = { i: tri, w: [w0, w1, w2] }; }
+        const pz = w0 * a[2] + w1 * b[2] + w2 * c[2], score = z === undefined ? pz : -Math.abs(pz - z);
+        if (score > bestZ) { bestZ = score; best = { i: tri, w: [w0, w1, w2] }; }
       }
     }
     return best;

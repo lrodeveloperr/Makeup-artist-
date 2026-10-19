@@ -1,7 +1,8 @@
 // The picture that sells the colour of the day (owner's choice, 19 October 2026: the product shot): the product
-// itself in that colour, drawn to look real: a lipstick, an open compact with its brush, a sharpened pencil with
-// the line it draws, a mascara and its wand, an eye wearing the lens. Gloss adds a wet highlight, shimmer adds
-// sparkle. Textless. Colours are palette entries with their target.
+// itself in that colour, drawn to look real: a lipstick, an open compact with its brush, a baked highlighter with
+// its fan brush and a swatch, a sharpened pencil with the line it draws, a liquid liner and its wing, a mascara and
+// its wand, a face gem, an eye wearing the lens. Gloss adds a wet highlight, shimmer adds sparkle. Textless.
+// Colours are palette entries with their target.
 
 const INK = '#2a1d15';
 const hexToRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -19,7 +20,75 @@ const cyl = (id, hex, dir = 'x') => `<linearGradient id="${id}" x1="0" y1="0" x2
 const metal = (id, a = '#f6e3a6', b = '#b8882a') => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${b}"/><stop offset=".3" stop-color="${a}"/><stop offset=".5" stop-color="#fff6d6"/><stop offset=".7" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
 const black = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0a0a0a"/><stop offset=".3" stop-color="#2b2b2b"/><stop offset=".42" stop-color="#5a5a5a"/><stop offset=".6" stop-color="#262626"/><stop offset="1" stop-color="#050505"/></linearGradient>`;
 
+// a four-pointed glint
+const glint = (x, y, r, o = 1) => `<path d="M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}z" fill="#fff" opacity="${o}"/>`;
+// gem outlines (as the swatches) and their facets, in a 24-unit box
+const GEM = {
+  stone: 'M12 2.5l6.7 2.8 2.8 6.7-2.8 6.7-6.7 2.8-6.7-2.8L2.5 12l2.8-6.7z',
+  drop: 'M12 2C9.2 6.6 6 10.3 6 14.4a6 6 0 0 0 12 0C18 10.3 14.8 6.6 12 2z',
+  heart: 'M12 21s-8.5-5-8.5-11A4.6 4.6 0 0 1 12 7.2 4.6 4.6 0 0 1 20.5 10c0 6-8.5 11-8.5 11z',
+  star: 'M12 1.5l3 7.3 7.5.6-5.7 5 1.8 7.6L12 18l-6.6 4 1.8-7.6-5.7-5 7.5-.6z',
+};
+
 const PRODUCT = {
+  glow(c, u) {
+    // a baked highlighter in a slim compact, swirled and sparkling, its fan brush, and a swatch of the glow
+    const swirl = Array.from({ length: 5 }, (_, k) => `<path d="M${62 + k * 9} ${112 + k * 3}q${30 - k * 3} -${22 - k * 2} ${58 - k * 5} 0" fill="none" stroke="${k % 2 ? '#fff' : light(c.hex, 0.35)}" stroke-width="${3 - k * 0.3}" opacity="${0.55 - k * 0.06}"/>`).join('');
+    return `<defs>${metal(`m${u}`)}<radialGradient id="p${u}" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="${light(c.hex, 0.35)}"/><stop offset=".75" stop-color="${c.hex}"/><stop offset="1" stop-color="${dark(c.hex, 0.2)}"/></radialGradient>
+      <linearGradient id="s${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c.hex}" stop-opacity="0"/><stop offset=".25" stop-color="${light(c.hex, 0.25)}" stop-opacity=".9"/><stop offset=".6" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="${c.hex}" stop-opacity="0"/></linearGradient>
+      <linearGradient id="w${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a1d15"/><stop offset=".45" stop-color="#5a4232"/><stop offset="1" stop-color="#1a120c"/></linearGradient></defs>
+      ${shadow(104, 186, 78, 9)}
+      <path d="M40 196q70 18 140-6" fill="none" stroke="url(#s${u})" stroke-width="16" stroke-linecap="round"/>
+      ${sparkles({ shimmer: 1 }, [52, 186, 120, 14], 18, 11)}
+      <circle cx="104" cy="118" r="66" fill="#1f1512"/>
+      <circle cx="104" cy="114" r="66" fill="url(#m${u})"/>
+      <circle cx="104" cy="114" r="54" fill="url(#p${u})"/>
+      ${swirl}
+      ${sparkles({ shimmer: 1 }, [62, 72, 84, 84], 34, 13)}
+      ${glint(84, 90, 9)}${glint(132, 134, 6, 0.8)}
+      <g transform="translate(-16 22) rotate(32 196 104)">
+        <rect x="190" y="104" width="12" height="98" rx="5" fill="url(#w${u})"/>
+        <rect x="188" y="88" width="16" height="20" rx="2" fill="url(#m${u})"/>
+        <path d="M196 92L168 46A46 46 0 0 1 224 46z" fill="#f1e2c8"/>
+        <path d="M168 46A46 46 0 0 1 224 46" fill="none" stroke="${light(c.hex, 0.2)}" stroke-width="5"/>
+        ${Array.from({ length: 9 }, (_, k) => `<path d="M196 92L${172 + k * 6} ${44 - Math.sin((k / 8) * Math.PI) * 6}" stroke="#bfa47e" stroke-width=".7" opacity=".7"/>`).join('')}
+      </g>`;
+  },
+  liner(c, u) {
+    // a liquid liner pen and the winged line it draws
+    // the line along the lashes thickens towards the outer corner, then flicks up to a point
+    const wing = 'M26 168Q94 186 150 168L218 116L170 178Q100 206 26 172z';
+    return `<defs>${cyl(`b${u}`, c.hex, 'y')}${metal(`m${u}`)}${black(`k${u}`)}</defs>
+      ${shadow(126, 140, 90, 8)}
+      <path d="${wing}" fill="${c.hex}"/>
+      <path d="M44 174q56 14 112-4" fill="none" stroke="#fff" stroke-width="2" opacity="${c.shimmer ? 0.5 : 0.18}"/>
+      ${sparkles(c, [40, 160, 150, 26], 28, 15)}
+      <g transform="translate(-6 -18) rotate(-38 126 92)">
+        <rect x="30" y="80" width="150" height="24" rx="11" fill="url(#k${u})"/>
+        <rect x="40" y="84" width="128" height="4" rx="2" fill="#fff" opacity=".25"/>
+        <rect x="150" y="80" width="10" height="24" fill="url(#m${u})"/>
+        <rect x="160" y="82" width="34" height="20" rx="3" fill="url(#b${u})"/>
+        <path d="M194 84l26 8-26 8z" fill="${dark(c.hex, 0.2)}"/>
+        <path d="M206 89l14 3-14 3z" fill="${c.hex}"/>
+      </g>`;
+  },
+  gem(c, u) {
+    // the gem, big, on a soft card
+    const look = c.look, fire = look === 'iris' ? '<stop offset=".35" stop-color="#ffd2f2"/><stop offset=".55" stop-color="#c8f4ff"/><stop offset=".75" stop-color="#fff3c4"/>' : '';
+    const grad = `<radialGradient id="g${u}" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#fff"/>${fire}<stop offset="${look === 'pearl' ? '.5' : '.3'}" stop-color="${light(c.hex, look === 'metal' ? 0.3 : 0.15)}"/><stop offset=".75" stop-color="${c.hex}"/><stop offset="1" stop-color="${dark(c.hex, look === 'metal' ? 0.45 : 0.3)}"/></radialGradient>`;
+    const t = 'translate(36 30) scale(7)', petals = Array.from({ length: 5 }, (_, k) => { const a = (k / 5) * 2 * Math.PI - Math.PI / 2; return [12 + 5.4 * Math.cos(a), 12.4 + 5.4 * Math.sin(a)]; });
+    const ink = `fill="url(#g${u})" stroke="${INK}" stroke-width=".5" stroke-linejoin="round"`;
+    const body = c.shape === 'pearl' ? `<circle cx="12" cy="12" r="9" ${ink}/>`
+      : c.shape === 'flower' ? `${petals.map(([x, y]) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="4.4" ${ink}/>`).join('')}<circle cx="12" cy="12.4" r="3.4" ${ink}/>`
+      : `<path d="${GEM[c.shape]}" ${ink}/>`;
+    // facets: lines from the outline's corners to an inner table
+    const facets = c.shape === 'stone' ? '<path d="M8.6 8.6h6.8v6.8H8.6zM12 2.5l-3.4 6.1M12 2.5l3.4 6.1M21.5 12l-6.1-3.4M21.5 12l-6.1 3.4M12 21.5l3.4-6.1M12 21.5l-3.4-6.1M2.5 12l6.1 3.4M2.5 12l6.1-3.4" fill="none" stroke="#fff" stroke-width=".35" opacity=".8"/>'
+      : c.shape === 'pearl' ? '' : `<path d="${GEM[c.shape] || ''}" transform="translate(12 12) scale(.5) translate(-12 -12)" fill="#fff" opacity=".22"/>`;
+    return `<defs>${grad}</defs>
+      ${shadow(120, 206, 70, 9)}
+      <g transform="${t}">${body}${facets}<ellipse cx="8.6" cy="7.6" rx="2.2" ry="1.3" fill="#fff" opacity=".85" transform="rotate(-30 8.6 7.6)"/></g>
+      ${glint(178, 52, 14)}${glint(58, 176, 9, 0.85)}${glint(196, 160, 6, 0.7)}`;
+  },
   lip(c, u) {
     const g = c.gloss;
     return `<defs>${cyl(`b${u}`, c.hex)}${metal(`m${u}`)}${black(`k${u}`)}</defs>

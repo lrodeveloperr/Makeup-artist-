@@ -5,7 +5,7 @@
 // stroke: { tool, colour, segments: [[x0, y0, z0, x1, y1, z1, ...], ...] }
 //   Points are integers: decimetres x Q in the reference-head frame (skin tools), or x Q in the face's screen
 //   plane for the mascara wand (x, y pairs), spaced by the tool's step. A new segment starts where the pointer
-//   re-entered the face.
+//   re-entered the face. A face gem is a stroke of one point (where it sits, in the reference-head frame).
 // Functions never mutate their input; invalid input leaves the state unchanged. encodeMakeup/decodeMakeup give
 // the compact saved form (docs/MAKEUP.md).
 import { colourById, TOOL_IDS } from './palette.js';
@@ -17,7 +17,8 @@ export const Q = 1024; // integer steps per decimetre (0.1 mm, a fifth of a scre
 // Bounds on stored work. docs/MAKEUP.md measures a maximum-work session (about 9,400 points, 40 KB saved) against
 // the 64 KiB save target; `points` allows ten times that and keeps any save under the platform's recommended
 // 500 KiB. Within the bounds a stroke is never dropped or simplified; past them new strokes are refused.
-export const LIMITS = { strokes: 4000, points: 100000, pointsPerStroke: 16384, segments: 512, coord: 8 * Q };
+// `gems` caps the gems on one face (each is drawn as a small 3D piece).
+export const LIMITS = { strokes: 4000, points: 100000, pointsPerStroke: 16384, segments: 512, coord: 8 * Q, gems: 200 };
 
 export function createMakeup() {
   return { version: MAKEUP_VERSION, strokes: [], lenses: { left: null, right: null } };
@@ -27,11 +28,13 @@ const dims = (tool) => (tool === 'mascara' ? 2 : 3);
 const strokePoints = (s) => s.segments.reduce((n, seg) => n + seg.length / dims(s.tool), 0);
 // stored points in the whole state
 export const pointCount = (m) => m.strokes.reduce((n, s) => n + strokePoints(s), 0);
+export const gemCount = (m) => m.strokes.reduce((n, s) => n + (s.tool === 'gem'), 0);
 export function validStroke(s) {
   if (!s || typeof s !== 'object' || !Array.isArray(s.segments)) return false;
   const colour = colourById(s.colour);
-  if (!colour || colour.target !== s.tool || !(SURFACE_TOOLS.has(s.tool) || s.tool === 'mascara')) return false;
+  if (!colour || colour.target !== s.tool || !(SURFACE_TOOLS.has(s.tool) || s.tool === 'mascara' || s.tool === 'gem')) return false;
   if (!s.segments.length || s.segments.length > LIMITS.segments) return false;
+  if (s.tool === 'gem' && (s.segments.length !== 1 || s.segments[0]?.length !== 3)) return false;
   const k = dims(s.tool);
   let points = 0;
   for (const seg of s.segments) {
@@ -46,6 +49,7 @@ export function validStroke(s) {
 // a copy of `m` with the stroke appended (or `m` itself if the stroke is invalid or the state is full)
 export function addStroke(m, s) {
   if (!validStroke(s) || m.strokes.length >= LIMITS.strokes || pointCount(m) + strokePoints(s) > LIMITS.points) return m;
+  if (s.tool === 'gem' && gemCount(m) >= LIMITS.gems) return m;
   const copy = { tool: s.tool, colour: s.colour, segments: s.segments.map((seg) => seg.slice()) };
   return { ...m, strokes: [...m.strokes, copy] };
 }
@@ -75,7 +79,7 @@ export function validMakeup(m) {
     const v = m.lenses[eye];
     if (v !== null && colourById(v)?.target !== 'lens') return false;
   }
-  return m.strokes.every(validStroke) && pointCount(m) <= LIMITS.points;
+  return m.strokes.every(validStroke) && pointCount(m) <= LIMITS.points && gemCount(m) <= LIMITS.gems;
 }
 
 export const toQ = (v) => Math.round(v * Q) || 0; // never -0, which a save would not keep

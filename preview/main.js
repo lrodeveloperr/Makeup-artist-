@@ -102,13 +102,16 @@ if (sheet) {
   document.getElementById('back').onclick = back;
   addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') next(); if (e.key === 'ArrowLeft') back(); });
 
-  // ---- makeup tools: four tools and the lens selector, each with its own colours ----
+  // ---- makeup tools: seven tools and the lens selector, each with its own colours ----
   const selection = { tool: DEFAULT_SELECTION.tool, colour: { ...DEFAULT_SELECTION.colour } };
   const TOOLS = [
     ['brush', 'Brush', 'M5 21c3 0 5-2 5-5l1-1 2 2-1 1c-3 0-5 2-7 3zM11 15l7-11 2 2-7 11'],
+    ['glow', 'Highlighter', 'M4.5 10A8 8 0 0 1 19.5 10L12 15.5zM12 15.5v6M12 15.5L8.6 4.8M12 15.5l3.4-10.7M20 1.5v3M18.5 3h3'],
     ['pencil', 'Pencil', 'M4 20l1-4L16 5l3 3L8 19zM14 7l3 3'],
+    ['liner', 'Liner', 'M2.5 15q8 3.5 16-2.5l3-4-6.5 2.5M16.5 2.5l2.5 2.5-7 7-3 .5.5-3z'],
     ['mascara', 'Mascara', 'M4 20L15 9M13 5l6 6M15 4l5 5M11 7l6 6M12 4l1 2M18 10l2 1'],
     ['lip', 'Lips', 'M9 21h6v-8H9zM10 13V7l4-3v9'],
+    ['gem', 'Gems', 'M6.5 4h11l4 5.5L12 21 2.5 9.5zM2.5 9.5h19M8 9.5l4 11.5 4-11.5M9 4l3 5.5L15 4'],
     ['lens', 'Lenses', 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6'],
   ];
   const bar = document.getElementById('toolbar'), swatches = document.getElementById('swatches');

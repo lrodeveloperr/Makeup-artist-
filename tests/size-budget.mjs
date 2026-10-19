@@ -1,6 +1,6 @@
 // Download-size budget (YouTube Playables loads every byte before the first face).
 // Builds the minified face preview and the minified game, and fails if a file or a total goes over budget:
-//   face preview (the face system and the painting tools)  ≤ 400 KB
+//   face preview (the face system and the makeup tools)    ≤ 420 KB
 //   the game page (build/game, what gets uploaded)          ≤ 1 MB
 // Usage: node tests/size-budget.mjs
 import fs from 'node:fs';
@@ -8,8 +8,9 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 // Studio targets (contract §14 allows 5 MB; the platform recommends files under 512 KiB). The whole game
-// should stay under 1 MB; the face system gets 400 KB of that.
-export const BUDGET = { faceRuntimeBytes: 400_000, gameBytes: 1_000_000, fileBytes: 512 * 1024 };
+// should stay under 1 MB; the face system gets 420 KB of that (raised from 400 KB when the highlighter, liquid
+// liner and face gems and their 79 colours joined the tools, about 12 KB).
+export const BUDGET = { faceRuntimeBytes: 420_000, gameBytes: 1_000_000, fileBytes: 512 * 1024 };
 
 execFileSync('node', ['tools/build-preview.mjs', '--minify'], { stdio: 'inherit' });
 execFileSync('node', ['tools/build-game.mjs', '--minify'], { stdio: 'inherit' });

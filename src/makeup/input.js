@@ -3,10 +3,10 @@
 // - the tool and colour are captured at pointer-down and kept for the whole gesture
 // - every sample (including coalesced ones) is applied; the applicator interpolates fast moves
 // - pointer-up commits; cancel, lost capture, host pause or resize end the gesture at its last valid sample
-// - the lens selector applies on a tap (press and release without dragging), not on a drag
-const TAP_SLOP = 10; // CSS pixels a lens tap may move
+// - the lens selector and face gems apply on a tap (press and release without dragging), not on a drag
+const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move
 
-// canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses), or null
+// canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses, 'gem' for gems), or null
 // while the face takes no input (review, an open panel, a pause);
 // onChange(): the face changed and needs a redraw; onCommit(change): a stroke or lens change was stored
 export function attachInput(canvas, applicator, { selection, onChange, onCommit }) {
@@ -18,8 +18,11 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
     const a = active;
     active = null;
     if (canvas.hasPointerCapture?.(a.id)) canvas.releasePointerCapture(a.id);
-    if (a.lens) {
-      if (commit && !a.moved && applicator.tapLens(a.x, a.y, a.lens)) { onChange(); onCommit({ lens: true }); }
+    if (a.tap) {
+      if (!commit || a.moved) return;
+      if (a.tap.tool === 'lens' && applicator.tapLens(a.x, a.y, a.tap.colour)) { onChange(); onCommit({ lens: true }); }
+      const stroke = a.tap.tool === 'gem' && applicator.tapGem(a.x, a.y, a.tap.colour);
+      if (stroke) { onChange(); onCommit({ stroke }); }
       return;
     }
     const stroke = applicator.end(a.g); // valid work up to the last applied sample is kept either way
@@ -33,7 +36,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
     if (!sel) return;
     const [x, y] = local(e);
     canvas.setPointerCapture(e.pointerId);
-    if (sel.tool === 'lens') { active = { id: e.pointerId, lens: sel.colour, x, y, moved: false }; return; }
+    if (sel.tool === 'lens' || sel.tool === 'gem') { active = { id: e.pointerId, tap: sel, x, y, moved: false }; return; }
     const g = applicator.begin(sel.tool, sel.colour);
     if (!g) return;
     active = { id: e.pointerId, g };
@@ -45,7 +48,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit 
     let changed = false;
     for (const ev of events) {
       const [x, y] = local(ev);
-      if (active.lens) { if (Math.hypot(x - active.x, y - active.y) > TAP_SLOP) active.moved = true; continue; }
+      if (active.tap) { if (Math.hypot(x - active.x, y - active.y) > TAP_SLOP) active.moved = true; continue; }
       changed = applicator.move(active.g, x, y) || changed;
     }
     if (changed) onChange();

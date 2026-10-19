@@ -5,7 +5,7 @@
 import { DAILY } from '../makeup/palette.js';
 
 // the tools take turns, so the offer changes kind every day
-export const DAILY_ORDER = ['brush', 'lip', 'pencil', 'lens', 'mascara'];
+export const DAILY_ORDER = ['brush', 'gem', 'lip', 'liner', 'glow', 'lens', 'pencil', 'mascara'];
 
 const two = (n) => String(n).padStart(2, '0');
 // the player's local calendar day, 'YYYY-MM-DD'

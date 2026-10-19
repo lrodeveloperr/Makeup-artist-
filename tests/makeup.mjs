@@ -11,9 +11,9 @@ import { Eyes } from '../src/face/eyes.js';
 import { Lashes } from '../src/face/lashes.js';
 import { IRIS, hexToLinear } from '../src/face/colors.js';
 import { CAMERA } from '../src/face/face-view.js';
-import { TOOLS, SURFACE_TOOLS, falloff, dabRate, DabWalker } from '../src/makeup/tools.js';
+import { TOOLS, SURFACE_TOOLS, falloff, dabRate, DabWalker, TaperWalker } from '../src/makeup/tools.js';
 import { PALETTE, DAILY, TOOL_IDS, colourById, DEFAULT_SELECTION } from '../src/makeup/palette.js';
-import { createMakeup, addStroke, setLens, isChanged, validStroke, validMakeup, encodeMakeup, decodeMakeup, pointCount, LIMITS, Q, toQ } from '../src/makeup/makeup.js';
+import { createMakeup, addStroke, setLens, isChanged, validStroke, validMakeup, encodeMakeup, decodeMakeup, pointCount, gemCount, LIMITS, Q, toQ } from '../src/makeup/makeup.js';
 import { StrokePainter } from '../src/makeup/paint.js';
 import { Picker } from '../src/makeup/picker.js';
 import { Applicator } from '../src/makeup/applicator.js';
@@ -28,7 +28,7 @@ const recorder = () => ({ dabs: [], draw(tool, colour, dabs) { this.dabs.push(..
 // coverage left at point p by dabs of one tool (the paint shader's formula)
 const coverage = (tool, dabs, p, sheer = 1) => {
   const t = TOOLS[tool], rate = dabRate(tool, sheer);
-  return 1 - dabs.reduce((keep, d) => keep * (1 - rate * falloff(t.edge, Math.hypot(p[0] - d[0], p[1] - d[1], p[2] - d[2]) / t.radius)), 1);
+  return 1 - dabs.reduce((keep, d) => keep * (1 - rate * falloff(t.edge, Math.hypot(p[0] - d[0], p[1] - d[1], p[2] - d[2]) / (t.radius * (d[3] ?? 1)))), 1);
 };
 const line = (a, b, k) => Array.from({ length: k + 1 }, (_, i) => a.map((v, c) => v + ((b[c] - v) * i) / k));
 
@@ -44,7 +44,7 @@ test('palette: stable unique ids, valid colours, every tool and the lenses have 
       if (target === 'lens') assert.ok(c.iris.length === 4 && c.iris.every((h) => /^#[0-9a-f]{6}$/.test(h)));
     }
   }
-  assert.deepEqual(TOOL_IDS, ['brush', 'pencil', 'mascara', 'lip']);
+  assert.deepEqual(TOOL_IDS, ['brush', 'glow', 'pencil', 'liner', 'mascara', 'lip', 'gem']);
   for (const [tool, id] of Object.entries(DEFAULT_SELECTION.colour)) assert.equal(colourById(id).target, tool);
 });
 
@@ -58,7 +58,7 @@ function lab(hex) {
 const deltaE = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
 
 test('colours of the day: every colour of a tool is tellable apart from every other, base included', () => {
-  const finish = (c) => `${c.gloss ? 'g' : ''}${c.shimmer ? 's' : ''}`;
+  const finish = (c) => `${c.gloss ? 'g' : ''}${c.shimmer ? 's' : ''}${c.look || ''}`;
   const colour = (c) => (c.iris ? c.iris[1] : c.hex);
   const bad = [];
   let total = 0;
@@ -67,6 +67,7 @@ test('colours of the day: every colour of a tool is tellable apart from every ot
     total += DAILY[tool].length;
     for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
       const a = all[i], b = all[j], d = deltaE(colour(a), colour(b));
+      if (a.shape !== b.shape) continue; // gems of different shapes are told apart by their shape
       // the same finish needs a clear colour difference; a different finish (matte vs gloss vs shimmer) a smaller one
       const need = finish(a) === finish(b) ? 8 : 4;
       if (d < need) bad.push(`${a.id} vs ${b.id}: ${d.toFixed(1)} < ${need}`);
@@ -78,11 +79,14 @@ test('colours of the day: every colour of a tool is tellable apart from every ot
 });
 
 test('tools: fixed constants, no size or strength settings', () => {
-  assert.deepEqual(Object.keys(TOOLS).sort(), ['brush', 'lip', 'mascara', 'pencil']);
-  assert.deepEqual([...SURFACE_TOOLS].sort(), ['brush', 'lip', 'pencil']);
+  assert.deepEqual(Object.keys(TOOLS).sort(), ['brush', 'glow', 'liner', 'lip', 'mascara', 'pencil']);
+  assert.deepEqual([...SURFACE_TOOLS].sort(), ['brush', 'glow', 'liner', 'lip', 'pencil']);
   for (const t of SURFACE_TOOLS) assert.ok(falloff(TOOLS[t].edge, 0) > 0.99 && falloff(TOOLS[t].edge, 1) === 0);
-  // the brush is the widest, the pencil the finest
-  assert.ok(TOOLS.brush.radius > TOOLS.lip.radius && TOOLS.lip.radius > TOOLS.pencil.radius);
+  // the brush is the widest, then the highlighter; the pencil and the liner are the finest, the liner crisper
+  assert.ok(TOOLS.brush.radius > TOOLS.glow.radius && TOOLS.glow.radius > TOOLS.lip.radius && TOOLS.lip.radius > TOOLS.liner.radius && TOOLS.liner.radius > TOOLS.pencil.radius);
+  assert.ok(TOOLS.liner.edge > TOOLS.pencil.edge && TOOLS.liner.pass > TOOLS.pencil.pass);
+  // every highlighter is sheer and glows
+  for (const c of [...PALETTE.glow, ...DAILY.glow]) assert.ok(c.glow > 0 && c.sheer < 1, c.id);
 });
 
 test('dab walker: even spacing that does not depend on how the path is sampled', () => {
@@ -102,6 +106,27 @@ test('dab walker: a lifted pen starts a new segment with its own dab', () => {
   assert.equal(w.add([0, 0, 0]).length, 1);
   w.lift();
   assert.deepEqual(w.add([1, 0, 0]), [[1, 0, 0]]);
+});
+
+test('liner: the line thins to a point at both ends of a segment, however the path is sampled', () => {
+  const { min, start, end } = TOOLS.liner.taper, step = TOOLS.liner.radius * TOOLS.liner.spacing;
+  const a = [0.1, -0.3, 0.6], b = [0.4, -0.25, 0.58];
+  const run = (pts) => { const w = new TaperWalker('liner'), out = pts.flatMap((p) => w.add(p)); out.push(...w.lift()); return out; };
+  const coarse = run([a, b]), fine = run(line(a, b, 211));
+  assert.equal(coarse.length, fine.length);
+  coarse.forEach((d, i) => d.forEach((v, c) => close(v, fine[i][c], 1e-9, `dab ${i}`)));
+  const size = fine.map((d) => d[3]), k = size.length;
+  close(size[0], min, 1e-9, 'the start'); close(size[k - 1], min, 1e-9, 'the tip');
+  assert.ok(size.slice(Math.ceil(start / step) + 1, k - Math.ceil(end / step) - 1).every((s) => s === 1), 'full width between');
+  for (let i = 1; i < Math.ceil(start / step); i++) assert.ok(size[i] >= size[i - 1], 'widens from the start');
+  for (let i = k - Math.ceil(end / step); i < k; i++) assert.ok(size[i] <= size[i - 1], 'thins to the tip');
+  // the dabs near the pen wait for the line to go on: nothing within the end taper is drawn before the lift
+  const w = new TaperWalker('liner'), drawn = line(a, b, 211).flatMap((p) => w.add(p));
+  assert.equal(drawn.length, k - Math.ceil(end / step));
+  // a lift ends a segment; the next starts thin again
+  const two = new TaperWalker('liner');
+  two.add(a); two.add(b); two.lift();
+  close(two.add(b).concat(two.lift())[0][3], min, 1e-9, 'a new segment starts thin');
 });
 
 test('one pass leaves the tool\'s pass opacity; passes build up but never exceed the colour', () => {
@@ -124,13 +149,13 @@ test('one pass leaves the tool\'s pass opacity; passes build up but never exceed
 
 test('stroke painter: live painting and replay of the saved stroke place the same dabs', () => {
   for (const tool of SURFACE_TOOLS) {
-    const colour = PALETTE[tool][2].id;
+    const colour = PALETTE[tool].at(-1).id;
     const segs = [line([0.2, -0.4, 0.55], [0.45, -0.5, 0.5], 37), line([-0.3, -0.4, 0.55], [-0.2, -0.6, 0.6], 11)]
       .map((pts) => pts.flatMap((p) => p.map(toQ)));
     const live = recorder(), painter = new StrokePainter(live, tool, colour);
     for (const seg of segs) {
-      painter.lift();
       for (let i = 0; i < seg.length; i += 3) painter.add(seg.slice(i, i + 3));
+      painter.lift();
     }
     const replay = recorder();
     StrokePainter.replay(replay, { tool, colour, segments: segs });
@@ -200,6 +225,7 @@ function fakeApplicator() {
     onPlane: (x, y) => (x < 0 ? null : at(x, y)),
   };
   a.paint = recorder();
+  a.gems = { list: [], mesh: {}, set(list) { this.list = list; }, locate: (ref) => (ref[0] > 1 ? null : {}) };
   a.view = { lashes: { zPlane: 0.5, coat: (wand, colour, t, touched) => { touched.add(0); return true; } } };
   a.makeup = createMakeup();
   a.allowed = () => true;
@@ -261,10 +287,11 @@ test('applicator: leaving the face lifts the pen; coming back starts a new segme
 
 test('saved form: compact, lossless, and malformed saves are refused', () => {
   const rng = createRng(7), a = fakeApplicator();
-  const colours = Object.fromEntries(TOOL_IDS.map((t) => [t, PALETTE[t].map((c) => c.id)]));
+  const colours = Object.fromEntries(TOOL_IDS.map((t) => [t, PALETTE[t].map((c) => c.id)])), drawn = TOOL_IDS.filter((t) => t !== 'gem');
   for (let i = 0; i < 40; i++) {
-    const tool = TOOL_IDS[i % 4];
+    const tool = drawn[i % drawn.length];
     drag(a, tool, colours[tool][i % colours[tool].length], 0.1 + rng.next() * 0.5, rng, [200 + rng.gauss(30), 300 + rng.gauss(30)]);
+    if (i % 4 === 0) assert.ok(a.tapGem(200 + rng.gauss(40), 300 + rng.gauss(40), colours.gem[i % colours.gem.length]));
   }
   a.makeup = setLens(a.makeup, 'left', 'lens-honey');
   const text = encodeMakeup(a.makeup);
@@ -283,7 +310,7 @@ test('saved form: compact, lossless, and malformed saves are refused', () => {
 
 // A maximum-work session: 400 strokes and 140 dm of path (a full look several times over: blush, contour,
 // shadow, brows, liner, lips, mascara and face art), drawn through the real sampling code.
-export const MAX_SESSION = { brush: [160, 0.45], pencil: [140, 0.2], lip: [60, 0.5], mascara: [40, 0.25] };
+export const MAX_SESSION = { brush: [160, 0.45], glow: [40, 0.3], pencil: [140, 0.2], liner: [60, 0.2], lip: [60, 0.5], mascara: [40, 0.25] };
 test('a maximum-work session fits the 64 KiB save target', () => {
   const rng = createRng(2026), a = fakeApplicator();
   let path = 0;
@@ -294,11 +321,42 @@ test('a maximum-work session fits the 64 KiB save target', () => {
       path += length;
     }
   }
+  // and a face covered in gems
+  for (let i = 0; i < LIMITS.gems; i++) assert.ok(a.tapGem(120 + rng.next() * 160, 220 + rng.next() * 160, PALETTE.gem[i % PALETTE.gem.length].id));
   a.makeup = setLens(setLens(a.makeup, 'left', 'lens-violet'), 'right', 'lens-aqua');
   const bytes = Buffer.byteLength(encodeMakeup(a.makeup), 'utf8');
   const points = a.makeup.strokes.reduce((n, s) => n + s.segments.reduce((k, seg) => k + seg.length / (s.tool === 'mascara' ? 2 : 3), 0), 0);
   console.log(`  ${a.makeup.strokes.length} strokes, about ${Math.round(path)} dm, ${points} points: ${bytes} bytes saved`);
   assert.ok(bytes < 65536, `${bytes} bytes`);
+});
+
+test('face gems: a tap stores one point; off the skin, under the outfit or past the cap nothing is stored', () => {
+  const a = fakeApplicator();
+  const s = a.tapGem(210, 280, 'gem-crystal');
+  assert.deepEqual(s, { tool: 'gem', colour: 'gem-crystal', segments: [[toQ(10 / PX), toQ(20 / PX), toQ(0.5 - 0.3 * (10 / PX) ** 2)]] });
+  assert.equal(a.gems.list.length, 1);
+  assert.equal(a.gems.list[0].colour.shape, 'stone');
+  assert.ok(isChanged(a.makeup, 'brown'), 'a gem is a change');
+  assert.equal(a.tapGem(-5, 300, 'gem-crystal'), null, 'empty space');
+  assert.equal(a.tapGem(210, 280, 'brush-rose'), null, 'not a gem');
+  assert.equal(a.tapGem(200 + 1.5 * PX, 300, 'gem-crystal'), null, 'no surface to sit on there');
+  assert.equal(a.begin('gem', 'gem-crystal'), null, 'gems are tapped, not drawn');
+  a.allowed = (id) => id !== 'gem-sapphire';
+  assert.equal(a.tapGem(210, 280, 'gem-sapphire'), null, 'a colour of the day not earned');
+  a.allowed = () => true;
+  a.view.garment = { covers: (r) => r[1] < -0.3 };
+  assert.equal(a.tapGem(200, 300 + 0.4 * PX, 'gem-pearl'), null, 'under the outfit');
+  delete a.view.garment;
+  // one point per gem; anything else is not a gem
+  assert.equal(validStroke({ tool: 'gem', colour: 'gem-pearl', segments: [[1, 2, 3, 4, 5, 6]] }), false);
+  assert.equal(validStroke({ tool: 'gem', colour: 'gem-pearl', segments: [[1, 2, 3], [4, 5, 6]] }), false);
+  assert.equal(validStroke({ tool: 'gem', colour: 'brush-rose', segments: [[1, 2, 3]] }), false);
+  // the face holds LIMITS.gems; then taps are refused and the save stays valid
+  while (gemCount(a.makeup) < LIMITS.gems) assert.ok(a.tapGem(150 + (gemCount(a.makeup) % 100), 260 + (gemCount(a.makeup) % 7) * 9, 'gem-pink-heart'));
+  assert.equal(a.tapGem(210, 280, 'gem-crystal'), null);
+  const back = decodeMakeup(encodeMakeup(a.makeup));
+  assert.deepEqual(back, a.makeup);
+  assert.equal(validMakeup({ ...a.makeup, strokes: [...a.makeup.strokes, s] }), false, 'over the cap');
 });
 
 test('lenses and the completion predicate', () => {

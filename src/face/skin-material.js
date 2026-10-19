@@ -1,7 +1,7 @@
 // Skin shader for the head surface. Natural features (lips, flush, under-eye tone, freckles, beauty marks)
 // are evaluated per pixel in the reference-head coordinate frame, so every generated face
 // carries them in the same anatomical places. Applied makeup arrives through uPaint (premultiplied colour) and
-// uFinish (gloss, shimmer), both in UV space (see makeup/paint.js).
+// uFinish (gloss, shimmer, glow), both in UV space (see makeup/paint.js).
 import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 import { NECK_GLSL, neckUniforms } from './garment.js';
@@ -173,7 +173,7 @@ void main() {
   vec3 gn = normalize(n + 0.5 * (vec3(hash13(cell), hash13(cell + 7.0), hash13(cell + 13.0)) - 0.5));
   vec3 tint = paint.a > 0.0 ? paint.rgb / paint.a : vec3(1.0);
   tint = mix(vec3(1.0), tint / max(max(tint.r, max(tint.g, tint.b)), 1e-3), 0.6);
-  vec3 sparkle = vec3(0.0), sheen = vec3(0.0);
+  vec3 sparkle = vec3(0.0), sheen = vec3(0.0), lustre = vec3(0.0);
   vec3 diffuse = ambient(n) * ao;
   vec3 spec = vec3(0.0);
   for (int i = 0; i < 3; i++) {
@@ -194,12 +194,16 @@ void main() {
       spec += uLightCol[i] * s * F_Schlick(0.028, VoH) * nl * ao;
       sparkle += uLightCol[i] * glint * pow(max(dot(gn, h), 0.0), 40.0) * nl;
       sheen += uLightCol[i] * D_GGX(NoH, 0.16) * V_Smith(NoV, nl, 0.16) * nl;
+      lustre += uLightCol[i] * D_GGX(NoH, 0.3) * V_Smith(NoV, nl, 0.3) * nl;
     }
   }
   // skin under painted hair is matte: the hair layer above carries the shine
   // makeup dulls the skin's own sheen; gloss brings back a wet shine
   vec3 col = albedo * diffuse + 0.5 * spec * (1.0 - paint.a * 0.4 + 1.5 * finish.r) * (1.0 - uScalpAmount * smoothstep(0.0, 0.5, sc));
   col += finish.g * tint * (0.05 * sheen + 1.2 * sparkle);
+  // glow (highlighter): the high points catch the light in a broad pearly lustre of the product's tint, with fine
+  // glints; where the light does not reach them, little shows
+  col += finish.b * tint * (0.55 * lustre + 0.35 * sparkle);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

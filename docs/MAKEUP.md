@@ -1,6 +1,6 @@
 # Makeup painting tools
 
-Status: **prototype, locally verified.** The four tools and the lens selector work on every generated face, by
+Status: **prototype, locally verified.** The seven tools and the lens selector work on every generated face, by
 mouse and by touch, in the developer preview (`preview/`). The look is stored as compact, validated data and
 rebuilds exactly from a save. The game around the tools (review, saves, ads, the colour of the day) is in
 [GAME.md](GAME.md). The preview's toolbar (`preview/`) is a test harness; the game screen is `game/`.
@@ -12,15 +12,16 @@ representation and limits).
 
 | File | Role |
 | --- | --- |
-| `src/makeup/tools.js` | Fixed tool constants, the dab falloff (shared with the shader), per-dab rate, `DabWalker` |
+| `src/makeup/tools.js` | Fixed tool constants, the dab falloff (shared with the shader), per-dab rate, `DabWalker`, the liner's `TaperWalker` |
 | `src/makeup/palette.js` | Colour catalogue with stable ids, per tool and for the lenses; the new-save selection |
 | `src/makeup/makeup.js` | The makeup state: validation, immutable updates, limits, the completion predicate, the saved form |
 | `src/makeup/picker.js` | What the pointer touches: skin (with its reference-body point), eyeball and iris, the lash plane |
 | `src/makeup/paint.js` | Paint textures in the head's UV layout; draws dabs; live and replayed strokes |
-| `src/makeup/applicator.js` | Turns pointer samples into stored points, paints them, records strokes, restores a saved look |
-| `src/makeup/input.js` | Pointer events: one captured primary pointer, coalesced samples, commit and cancel, lens taps |
+| `src/makeup/applicator.js` | Turns pointer samples into stored points, paints them, records strokes, places gems, restores a saved look |
+| `src/makeup/gems.js` | Face gems: finds a gem's place on the current face and draws the gems as small faceted 3D pieces |
+| `src/makeup/input.js` | Pointer events: one captured primary pointer, coalesced samples, commit and cancel, lens and gem taps |
 | `src/face/lashes.js` | Mascara coats on the lashes (`coat`, `resetCoats`) |
-| `src/face/skin-material.js` | Shades the painted colour, gloss and shimmer on the skin (`uPaint`, `uFinish`) |
+| `src/face/skin-material.js` | Shades the painted colour, gloss, shimmer and glow on the skin (`uPaint`, `uFinish`) |
 
 ## The tools (fixed; no size, opacity, intensity or pressure settings)
 
@@ -29,12 +30,16 @@ part of every face at any screen size.
 
 | Tool | For | Footprint | Edge | One pass leaves | Passes 1 / 2 / 3 / 5 | Stored point step |
 | --- | --- | --- | --- | --- | --- | --- |
-| Soft brush | Blush, bronzer, contour, eyeshadow, highlighter, face colour | 9 mm radius | Gaussian, fully soft | 30 % | 30 / 51 / 66 / 83 % | 2 mm |
-| Detail pencil | Brows, eyeliner, fine lines, face art | 1.1 mm radius | Crisp (falloff from 70 % of the radius) | 85 % | 85 / 98 / 100 / 100 % | 0.7 mm |
+| Soft brush | Blush, bronzer, contour, eyeshadow, face colour | 9 mm radius | Gaussian, fully soft | 30 % | 30 / 51 / 66 / 83 % | 2 mm |
+| Highlighter | The high points: cheekbones, nose, brow bone, cupid's bow | 5.5 mm radius | Gaussian, fully soft | 35 % of its glow (its sheer colour builds at a fifth of that) | 35 / 58 / 73 / 88 % | 1.5 mm |
+| Detail pencil | Brows, soft eyeliner, fine lines, face art | 1.1 mm radius | Crisp (falloff from 70 % of the radius) | 85 % | 85 / 98 / 100 / 100 % | 0.7 mm |
+| Liquid liner | Crisp liner, wings and flicks, graphic lines | 1.2 mm radius, tapering to 30 % at both ends | Very crisp (from 88 %) | 95 % | 95 / 100 / 100 / 100 % | 0.6 mm |
 | Lip applicator | Lipstick and gloss (anywhere on the face; off-lip marks are allowed) | 3 mm radius | Medium (from 50 %) | 55 % | 55 / 80 / 91 / 98 % | 0.8 mm |
 | Mascara wand | Lashes | Touches lashes within 2.2 mm of its path | – | Each stroke adds one coat to each lash it touches: colour moves 55 % towards the mascara, length +8 % (up to 135 % of natural), thickness +25 % (up to 2×) | – | 1 mm |
+| Face gems | Rhinestones, drops, hearts, stars, flowers and pearls | One gem per tap, 8–13.5 mm across | – | – | – | One point per gem |
 
-- **Dabs.** A stroke places dabs every 20 % (brush), 30 % (pencil) or 25 % (lip) of the radius along its path.
+- **Dabs.** A stroke places dabs every 20 % (brush, highlighter), 30 % (pencil), 15 % (liner) or 25 % (lip) of
+  the radius along its path.
   Each dab's opacity is set so that one straight pass leaves the "one pass" value along the middle of the path
   (`dabRate`). The speed of a stroke doesn't change how much colour it leaves.
 - **Order matters and build-up is bounded.** Each dab is laid over what is there. Repeated passes approach the
@@ -42,13 +47,23 @@ part of every face at any screen size.
   recolours earlier marks.
 - **Finishes are properties of a colour, not settings.** Gloss (wet shine: lower roughness and a stronger
   highlight) on the glosses. Shimmer (a soft sheen in the product's colour plus fine glints fixed to the skin) on
-  champagne, gold and pearl (brush) and gold (pencil). Sheer products (clear gloss, champagne, pearl) build their
-  pigment more slowly, but their shine at full rate.
-- **Where paint goes.** The brush, pencil and lip applicator paint any visible skin of the face, ears, neck and
+  champagne, gold and pearl (brush) and gold (pencil). Glow (highlighter): the high points catch the light in a
+  broad, pearly lustre in the product's tint, with fine glints; where the light doesn't reach, little shows. Sheer
+  products (clear gloss, champagne, pearl, every highlighter) build their pigment more slowly, but their shine at
+  full rate.
+- **The liner tapers.** Every segment of a liner stroke thins to 30 % of its width over its first 2 mm and its
+  last 7 mm, so a flick ends in a sharp wing tip (`TaperWalker`). The end isn't known while the pen moves, so the
+  dabs within 7 mm of the pen wait (a few pixels behind it) until the line goes on, or until the pen lifts and
+  they're drawn thinning to the tip. Live painting and replay feed it the same points, so both draw the same dabs.
+- **Where paint goes.** The brush, highlighter, pencil, liner and lip applicator paint any visible skin of the face, ears, neck and
   chest. There are no "correct" regions, so asymmetric and off-lip marks are allowed. The eyeball, the skin under
   the outfit and empty space take no paint: the pen lifts there and puts down again when the pointer returns.
   Strokes pass under hair to the skin. The mascara wand works only on lashes. A wand stroke that touches no lash
   is not stored.
+- **Face gems.** Select a gem and tap the skin: the gem sticks there, facing out from the skin and upright to the
+  face, and catches the salon lights in its facets (glass, iridescent glass, pearl or metal). A drag, the eyes, the
+  outfit and empty space place nothing. Each tap is one gem; a face holds up to 200. The before/after comparison
+  hides them with the rest of the look.
 - **Contact lenses.** Select a lens colour and tap an iris. Each eye is independent. A tap anywhere else, or a
   drag, does nothing. A lens never changes the makeup.
 
@@ -57,22 +72,26 @@ part of every face at any screen size.
 The base catalogue is the basics only (owner decisions, 19 October 2026): a starter kit that suits every
 complexion and matches every natural hair and eye colour in the game (`src/makeup/palette.js`):
 - brush 6: rose, peach, berry, bronze, taupe, charcoal
+- highlighter 4: pearl, champagne, gold, bronze (a glow for every skin tone)
 - pencil 5: black, espresso, brown, auburn, blonde
+- liquid liner 2: black, brown
 - mascara 2: black, brown
 - lip 6: nude, rose, pink, red, berry, brown
+- face gems 4: crystal, pearl, gold star, pink heart
 - lenses 5: brown, hazel, green, blue, grey
 
-Every other coherent colour each tool can carry (coral, plum and mauve, a white pencil, honey lenses, and the
-shimmers, glosses, metallics, brights and fantasy shades) is one of the 163 colours of the day (`DAILY`). One is
+Every other coherent colour each tool can carry (coral, plum and mauve, a white pencil, honey lenses, coloured and
+glitter liners, pink to opal highlighters, stones, drops, hearts, stars, flowers and pearls, and the shimmers,
+glosses, metallics, brights and fantasy shades) is one of the 233 colours of the day (`DAILY`). One is
 offered each day and kept for good once earned ([GAME.md](GAME.md)), and a tool lists the player's earned ones
-first. The swatches show gloss and shimmer.
+first. The swatches show gloss and shimmer; a gem's swatch is the gem.
 The selected colour of each tool is remembered while switching tools. A new save starts with the soft brush in
 Rose (contract §3).
 
 ## How painting works
 
 - **Texture space, measured on the body.** Paint lives in two 1024 × 1024 textures laid out like the head's UV
-  map: colour (premultiplied) and finish (gloss, shimmer). Both are half-float where the device can render to them,
+  map: colour (premultiplied) and finish (gloss, shimmer, glow). Both are half-float where the device can render to them,
   with an 8-bit fallback. A dab is drawn by rendering the head mesh into the texture and measuring each texel's
   distance to the dab's centre on the reference body. Dabs are therefore round on the face, have the same size on
   every face, and continue across UV seams.
@@ -102,7 +121,8 @@ Rose (contract §3).
 State: `{ version, strokes: [{ tool, colour, segments: [[x, y, z, …], …] }], lenses: { left, right } }`, in
 application order. Points are integers in tenths of a millimetre (Q = 1,024 per decimetre, a fifth of a screen
 pixel at the game's framing). They are reference-body positions for skin tools and positions in the lashes' plane
-for the wand. Every update returns a new state, and invalid input (wrong tool for a colour, unknown ids,
+for the wand. A face gem is a stroke of one point (where it sits on the reference body). Every update returns a
+new state, and invalid input (wrong tool for a colour, unknown ids,
 non-integers, empty or oversized segments, out-of-range values) leaves the state unchanged. `decodeMakeup`
 rejects any save that is not exactly valid; it never repairs one.
 
@@ -111,15 +131,18 @@ the colour's own tool. The points are zigzag varints written five bits per URL-s
 then the differences between neighbouring points, which are a tool step apart and usually take one character per
 coordinate. An id keeps its colour and finish forever once released.
 
-**Measured maximum-work session** (`tests/makeup.mjs`). 400 strokes and about 140 dm of path, drawn through the
-real sampling code at the game's framing:
+**Measured maximum-work session** (`tests/makeup.mjs`). 500 strokes and about 164 dm of path, drawn through the
+real sampling code at the game's framing, and a face full of gems:
 - 160 brush strokes of 4.5 cm
+- 40 highlighter strokes of 3 cm
 - 140 pencil strokes of 2 cm
+- 60 liner strokes of 2 cm
 - 60 lip strokes of 5 cm
 - 40 mascara strokes of 2.5 cm
+- 200 gems
 - both lenses
 
-That is a full look several times over. It stores **9,381 points in 39,588 bytes**, below the contract's 64 KiB
+That is a full look several times over. It stores **11,768 points in 53,421 bytes**, below the contract's 64 KiB
 normal save target.
 
 **Limits** (`LIMITS` in `makeup.js`):
@@ -127,22 +150,24 @@ normal save target.
 - 100,000 points in total. That is about ten maximum-work sessions, and about 420 KB saved at the measured density
   (the platform recommends saves under 500 KiB and requires under 3 MiB).
 - 16,384 points and 512 segments per stroke.
+- 200 gems on a face.
 
 Within the limits nothing is dropped or simplified. Past them, new strokes are refused. Before release, a raster
 checkpoint could replace this refusal for players who go far beyond ordinary play.
 
 ## Completion predicate (contract §3)
 
-`isChanged(state, naturalIris)` is true when a stroke is stored, or when a lens differs from the face's natural
+`isChanged(state, naturalIris)` is true when a stroke or a gem is stored, or when a lens differs from the face's natural
 iris colour. Selecting a tool or colour, a stroke that touched nothing paintable, a wand that missed every lash,
 or a lens matching the natural iris does not count.
 
 ## Verification
 
-- `node tests/makeup.mjs` (in `npm test`), 15 checks:
+- `node tests/makeup.mjs` (in `npm test`), 17 checks:
   - catalogue ids, colours and default selection
-  - tool constants
+  - tool constants (every highlighter sheer and glowing)
   - even dab spacing independent of pointer sampling
+  - the liner thins to a point at both ends, however the path is sampled, and holds back only its tip
   - one pass leaves the stated opacity, passes build up but never exceed the colour, sheer builds more slowly
   - live dabs equal replayed dabs
   - stored-point spacing and pen-up/re-entry segments
@@ -150,18 +175,20 @@ or a lens matching the natural iris does not count.
   - validation and limits
   - lossless saved form, with 2,000 corrupted saves refused without exceptions
   - the maximum-work session under 64 KiB
+  - face gems: one point per tap; nothing off the skin, under the outfit, for a colour not earned or past 200
   - lenses and the completion predicate
   - mascara: one coat per stroke, caps, reset
   - picking on a real face (skin points pick themselves, iris vs white)
 - `node tools/build-preview.mjs && node tests/render-smoke.mjs`, in Chromium:
-  - Every tool and a lens change the face. Pixels away from the face don't change.
+  - Every tool, a gem and a lens change the face. Pixels away from the face don't change.
   - A reset gives back the clean face exactly.
-  - A restored save matches the live look pixel for pixel (max channel difference 1).
+  - A restored save matches the live look pixel for pixel (max channel difference 1), liner tips and gems
+    included.
   - A real mouse drag adds a stroke.
-  - By touch: one finger paints, a second finger adds nothing, a lens applies on a tap but not on a drag, and the
-    page never scrolls or zooms.
-- Download: the face system and the painting tools together are 385 KB (`tests/size-budget.mjs`; the face budget
-  alone is 400 KB). The painting code adds about 21 KB minified.
+  - By touch: one finger paints, a second finger adds nothing, a lens and a gem apply on a tap but not on a drag,
+    and the page never scrolls, pans or zooms.
+- Download: the face system and the makeup tools together are 405 KB (`tests/size-budget.mjs`; the face budget
+  is 420 KB, raised from 400 KB when the highlighter, liquid liner and gems and their colours added about 12 KB).
 
 ## Known limits
 

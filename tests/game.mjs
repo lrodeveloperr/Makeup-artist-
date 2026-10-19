@@ -23,7 +23,7 @@ test('colour of the day: same for everyone that day, never one already owned, to
     assert.ok(colourById(id).daily);
     if (i) assert.notEqual(colourById(id).target, colourById(offers[i - 1]).target, 'a different kind each day');
   });
-  assert.deepEqual(new Set(offers.slice(0, 5).map((id) => colourById(id).target)), new Set(DAILY_ORDER));
+  assert.deepEqual(new Set(offers.slice(0, DAILY_ORDER.length).map((id) => colourById(id).target)), new Set(DAILY_ORDER));
   // owning today's colour moves the offer to another colour, never an owned one
   const day = days[0], first = dailyOffer(day, new Set()), owned = new Set([first]);
   assert.notEqual(dailyOffer(day, owned), first);

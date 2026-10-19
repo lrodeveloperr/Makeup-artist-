@@ -5,7 +5,7 @@ plays end to end in the browser: make up a face, review it, move on to the next 
 YouTube Playables SDK and has the owner's ad rules. Not done yet:
 - checks on the real YouTube host and on phones
 - languages other than English
-- sound
+- more sound (only the finish chime exists)
 - a first-use hint
 - score reporting
 
@@ -15,7 +15,7 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 
 | State | What the player sees and can do |
 | --- | --- |
-| Create | The face. Four tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right, the size of the daily button), and the daily button (top left). |
+| Create | The face. Seven tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right, the size of the daily button), and the daily button (top left). |
 | The finish | A look that changed the face: the Done seal pops, Haircut's bell chime plays (if the host allows sound), and sparkles burst from the face. Review then rises onto the counter. An untouched Done goes straight to review with a soft tone. |
 | Review | As Haircut's completion. The top buttons give way to the **eye** (hold to see the clean starting face; read-only). On the counter: **Retry** (breathing, with the video badge: the same face again, clean) and **Next**, with a picture of the next customer docked against the arrow (always free). |
 | Colour of the day | Minimal: a **product shot** of today's colour (owner's choice, 19 October 2026), one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
@@ -35,8 +35,9 @@ height, so the face never moves.
 
 Nothing on screen is a word:
 - The colour of the day shows the product in that colour, drawn to look real (`game/reward.js`): a lipstick, an
-  open compact with its brush, a sharpened pencil with the line it draws, a mascara and its wand, or an eye
-  wearing the lens. Gloss adds a wet highlight, shimmer adds sparkle. Below it are a video button (a tick once
+  open compact with its brush, a baked highlighter with its fan brush and a swatch, a sharpened pencil with the
+  line it draws, a liquid liner and its wing, a mascara and its wand, the face gem itself, or an eye wearing the
+  lens. Gloss adds a wet highlight, shimmer adds sparkle. Below it are a video button (a tick once
   earned) and the time left in numbers.
 - The countdown is Haircut's daily-pick clock:
   - a ring around the picture that drains anticlockwise with the day, green, then orange from 6 hours left, then
@@ -54,8 +55,11 @@ on each screen.
 - **UI scale:** every control is drawn at one scale, taken from the screen's short side. It's 1 on phones, up to
   2.4 on big screens and down to 0.6 in tiny embeds. It's capped by the height (portrait: height / 700;
   landscape: height / 380), so the controls never crowd out the face.
-- **Landscape** (wider than 1.15 × tall): the counter becomes a column at the side, with tools beside a grid of
-  colours and review stacked. The top buttons sit over the scene's corners.
+- **Tools:** the eight tool buttons (seven tools and the lenses) sit in one row on phones from 320 px wide. In tiny
+  or narrow embeds they become two rows of four bigger buttons, and review's counter grows with them so the face
+  doesn't move.
+- **Landscape** (wider than 1.15 × tall): the counter becomes a column at the side, with the tools in two columns
+  beside a grid of colours, and review stacked. The top buttons sit over the scene's corners.
 - **Narrow, tall screens:** the canvas is never narrower than 0.56 × its height, so her head and hair always fit
   across. Spare height becomes salon wall above her head; the canvas stands on the counter.
 - **The daily pop-up** shrinks below the scale when the screen is too short for it.
@@ -104,12 +108,15 @@ Done/Next is allowed, but counts nothing.
 This follows the pattern of Haircut's daily pick (`src/game/daily.js`):
 - **Offer:** one special colour for one tool (or the lenses) per local calendar day. It's the same for every
   player who doesn't own it yet, and never one the player owns.
-- **Catalogue:** 163 colours of the day (`DAILY` in `src/makeup/palette.js`): every coherent colour each tool
-  can carry beyond the basic base (owner decisions, 19 October 2026). That's over five months of daily offers.
+- **Catalogue:** 233 colours of the day (`DAILY` in `src/makeup/palette.js`): every coherent colour each tool
+  can carry beyond the basic base (owner decisions, 19 October 2026). That's over seven months of daily offers.
   - 49 brush: pinks, reds, corals, purples, blues, greens, neutrals, and 16 shimmers and metallics
+  - 12 highlighter: rose gold, pink, peach, champagne pink, topaz, copper, lilac, amethyst, opal, icy blue, aqua, mint
   - 30 pencil
+  - 25 liquid liner: brights and darks, 4 metallics and 5 glitters
   - 22 mascara
   - 44 lip: brights, mauves and fantasy shades, 9 glosses, and metallics and glitters
+  - 33 face gems: coloured and iridescent stones, drops, hearts, stars, flowers and pearls
   - 18 lens
 
   `tests/makeup.mjs` checks that every pair of colours within a tool, base included, is tellable apart (CIELAB
@@ -194,12 +201,10 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - the dev page without ads
 - no visible words on any screen
 
-**Size:** the game page is 438 KB (`tests/size-budget.mjs`, game budget 1 MB).
+**Size:** the game page is 458 KB (`tests/size-budget.mjs`, game budget 1 MB).
 
 ## Not built yet
 
-- **Next-customer teaser:** a small preview of the next face in review, to keep players through the
-  interstitial (agreed in principle).
 - **Localisation:** the contract asks for the host language, and the final locale list is still to be decided.
   English only for now.
 - **More sound and a first-use hint:** only the finish chime exists so far.

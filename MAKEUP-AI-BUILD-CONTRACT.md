@@ -16,7 +16,7 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 
 | Decision | Governing value | Authority | Consequence / acceptance |
 | --- | --- | --- | --- |
-| Makeup tools | Four fixed tools, all available immediately | O | No progression/tool gate; G01–G04; fixed footprints/rates documented and tested in [docs/MAKEUP.md](docs/MAKEUP.md) |
+| Makeup tools | Seven fixed tools, all available immediately (owner, 19 October 2026: highlighter, liquid liner and face gems joined the original four) | O | No progression/tool gate; G01–G04; fixed footprints/rates documented and tested in [docs/MAKEUP.md](docs/MAKEUP.md) |
 | Eye colour | Add contact lenses as a simple selector | O | Independent iris colours possible; G05 |
 | Camera | Front-facing and already close enough; no 360 or precision zoom control | O | Functional accuracy at ordinary framing; G06, UI01 |
 | Application controls | Player strokes and repeated passes determine the result; no size/intensity sliders | O | No settings work before creating; G01–G04, UI01 |
@@ -89,7 +89,9 @@ The reusable Haircut structure reduces navigation and integration work. The diff
 
 ## 2. Exact mechanics and invariants
 
-### Four fixed makeup tools
+### Seven fixed makeup tools
+
+**Owner decision, 19 October 2026:** the highlighter, the liquid liner and face gems join the original four tools, to finish a look the way a makeup artist does (glow, a crisp wing, gems). Foundation, concealer, false lashes, primer and setting spray were considered and not added.
 
 | Tool | Actions and valid regions | Agency requirement |
 | --- | --- | --- |
@@ -97,10 +99,13 @@ The reusable Haircut structure reduces navigation and integration work. The diff
 | Detail pencil | Brows, eyeliner and freely placed fine marks / face art | Not restricted to a preset eyebrow or eyeliner template |
 | Mascara wand | Apply selected colour to lashes actually touched | Left/right lash state remains independent; untouched lashes stay unchanged |
 | Lip applicator | Apply lip colour with the shared lipstick/gloss interaction | Same tool, colour choices; no separate lipstick/gloss tool or mandatory finish panel |
+| Highlighter | A sheer glow on the high points (cheekbones, nose, brow bone, cupid's bow) | The path determines where the light catches; passes build the glow |
+| Liquid liner | Crisp, opaque lines, wings and flicks that taper to a point at both ends | Not restricted to a preset wing or eyeliner template |
+| Face gems | Stick one gem (stone, drop, heart, star, flower or pearl) where the player taps the skin | One tap, one gem, wherever the player taps; no preset positions or patterns |
 
 **O:** Each tool is always available. Select a colour, then apply. No size, opacity, intensity or pressure settings are required or exposed; use fixed, suitable tool behavior. Repeated passes and where/how the player moves determine the result. A basic touch device and mouse must both provide the full mechanic: pressure-sensitive hardware is not required.
 
-**D:** For brush, pencil and lip application, valid placement is on the face surface; do not enforce “correct” cheek/eye/lip regions. Allow intentional off-lip or asymmetric marks. Outside the face surface, the gesture has no domain effect. Mascara affects lashes; a miss is harmless and does not auto-complete all lashes. Do not paint the eyeball with a surface brush. The lens selector owns iris colour.
+**D:** For brush, highlighter, pencil, liner and lip application, and for gems, valid placement is on the face surface; do not enforce “correct” cheek/eye/lip regions. Allow intentional off-lip or asymmetric marks. Outside the face surface, the gesture has no domain effect. Mascara affects lashes; a miss is harmless and does not auto-complete all lashes. Do not paint the eyeball with a surface brush. The lens selector owns iris colour.
 
 Stroke order is consequential. Later application affects the touched area in a deterministic order; repeated application is bounded, finite and stable. Overlaying one colour does not recolour every prior mark from that tool. Saturated/no-op strokes do not create unbounded domain history or progress. Internally fixed footprints/rates must be documented and tested before the prototype is accepted, without adding sliders to expose them.
 
@@ -156,11 +161,11 @@ Colour catalogues use stable IDs, valid per-tool availability and stable saved a
 
 ## 5. Ownership, daily variety and time
 
-All four tools, the lens selector, base colours and ordinary generated faces are available from the start. Completion totals measure activity; there is no launch currency, shop, XP gate, forced challenge, streak penalty or wardrobe. Colours of the day the player earns stay in their tool's colours (owner decision, 19 October 2026).
+All seven tools, the lens selector, base colours and ordinary generated faces are available from the start. Completion totals measure activity; there is no launch currency, shop, XP gate, forced challenge, streak penalty or wardrobe. Colours of the day the player earns stay in their tool's colours (owner decision, 19 October 2026).
 
-The daily offer previews **one exact colour for one exact target**: brush, pencil, mascara, lip applicator or lens selector. The player sees the target, swatch, one-ad cost and that the colour is kept for good before opting in. The reward is not random after viewing and does not supply the colour to every tool.
+The daily offer previews **one exact colour for one exact target**: brush, highlighter, pencil, liquid liner, mascara, lip applicator, face gems or lens selector. The player sees the target, swatch, one-ad cost and that the colour is kept for good before opting in. The reward is not random after viewing and does not supply the colour to every tool.
 
-**Scheduling (owner, 19 October 2026: as Haircut's daily pick):** One offered pair per local calendar day, the same for every player who does not own it yet and never one the player owns, with a countdown to local midnight. The schedule is deterministic and bundled (no live-operations backend): 163 colours of the day, every coherent colour each tool can carry beyond the basic base, and the target families take turns day by day. The base catalogue holds the basic colours only, a starter kit that suits every complexion and matches every natural hair and eye colour (24: brush 6, pencil 5, mascara 2, lip 6, lenses 5); every other colour is a colour of the day (owner, 19 October 2026). The offer shows a product shot of the colour (owner's choice, 19 October 2026) (`src/game/daily.js`, tested in `tests/game.mjs`).
+**Scheduling (owner, 19 October 2026: as Haircut's daily pick):** One offered pair per local calendar day, the same for every player who does not own it yet and never one the player owns, with a countdown to local midnight. The schedule is deterministic and bundled (no live-operations backend): 233 colours of the day, every coherent colour each tool can carry beyond the basic base, and the target families take turns day by day. The base catalogue holds the basic colours only, a starter kit that suits every complexion and matches every natural hair and eye colour (34: brush 6, highlighter 4, pencil 5, liquid liner 2, mascara 2, lip 6, face gems 4, lenses 5); every other colour is a colour of the day (owner, 19 October 2026). The offer shows a product shot of the colour (owner's choice, 19 October 2026) (`src/game/daily.js`, tested in `tests/game.mjs`).
 
 **One earned video:** Adds that pair to its tool's colours for good, on every face. No daily 0/2 or partial-credit counter. One successful claim per colour; an owned colour is never offered again.
 
@@ -427,7 +432,7 @@ The following are remaining engineering/content/release data, not unresolved cor
 4. Verified publisher monetization access, reporting fields, inventory test route and commercial terms.
 5. Named physical devices, exact runtime representation and release performance/evidence results.
 
-Nothing in this list reopens one-ad daily rewards, same-face replay, the four tools/lenses, close camera, no sliders, review or the selected interstitial control. Any proposed material departure needs the concrete owner-approved change process in `AGENTS.md`.
+Nothing in this list reopens one-ad daily rewards, same-face replay, the seven tools/lenses, close camera, no sliders, review or the selected interstitial control. Any proposed material departure needs the concrete owner-approved change process in `AGENTS.md`.
 
 Before shipping, produce the source revision, immutable ZIP, manifest, test result ledger, device evidence, McPlay warning dispositions and matching portal answers. Separate **specified**, **implemented**, **locally verified**, **CI verified**, **physical-device verified**, **host accepted** and **published**. This contract upload changes documentation only and does not authorize publication.
 

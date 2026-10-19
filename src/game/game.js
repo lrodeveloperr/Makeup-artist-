@@ -11,19 +11,19 @@
 //   owned                      colours of the day the player has earned, in order
 //   pick: { day, colour }      today's offer (kept for the day once chosen)
 //   seen                       the day the player last opened the daily section (its dot)
-//   selection: { tool, colour: { brush, pencil, mascara, lip, lens } }
+//   selection: { tool, colour: { <tool>: colour id, ..., lens } } (a tool missing from an older save gets its default)
 // }
 import { createQueueState, nextFace, RECENT, ROTATION } from '../face/queue.js';
 import { generateFace, GENERATOR_VERSION } from '../face/generator.js';
 import { PROFILES } from '../face/profiles.js';
 import { createMakeup, isChanged, packMakeup, unpackMakeup } from '../makeup/makeup.js';
-import { colourById, DAILY, DEFAULT_SELECTION } from '../makeup/palette.js';
+import { colourById, DAILY, DEFAULT_SELECTION, TOOL_IDS } from '../makeup/palette.js';
 import { createCadence, validCadence, addActive, countLook, rewarded, afterBreak } from './cadence.js';
 import { dailyOffer, validDay } from './daily.js';
 
 export const GAME_ID = 'worksbien-makeup';
 export const SAVE_VERSION = 1;
-const SELECT_TOOLS = ['brush', 'pencil', 'mascara', 'lip', 'lens'];
+const SELECT_TOOLS = [...TOOL_IDS, 'lens'];
 const DAILY_COUNT = Object.values(DAILY).flat().length;
 
 const freshAttempt = (id) => ({ id, phase: 'create', makeup: createMakeup(), completed: false });

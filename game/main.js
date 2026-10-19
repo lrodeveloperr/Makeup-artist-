@@ -1,4 +1,4 @@
-// The game: one screen. Create (four tools and the lenses, their colours, Done) → the finish (a chime and a burst
+// The game: one screen. Create (seven tools and the lenses, their colours, Done) → the finish (a chime and a burst
 // of sparkles) → review, as in Haircut (Retry for a video, the next customer pictured beside Next, the eye to
 // compare with the before) → the next customer. The colour of the day is behind the button at the top left.
 // Rules and saving are in src/game; this file is the screen.
@@ -17,7 +17,10 @@ const $ = (id) => document.getElementById(id);
 const svg = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}><path d="${d}"/></svg>`;
 const ICON = {
   brush: svg('M4.5 19.5l6.2-6.2M10.7 13.3c-.6-3.6 2.4-8.6 8.3-9.8.6 5.8-4.6 9.3-8.3 9.8zM3.5 20.5l2-1'),
+  glow: svg('M4.5 10.5A8 8 0 0 1 19.5 10.5L12 16zM12 16v6M12 16L8.8 5.2M12 16l3.2-10.8M20.5 1.5v3.4M18.8 3.2h3.4'), // a fan brush and a glint
   pencil: svg('M4 20l1.4-4.6L16 4.8l3.2 3.2L8.6 18.6zM14.2 6.6l3.2 3.2M5.4 15.4l3.2 3.2'),
+  liner: svg('M2.5 15.5q8.5 3.5 16.5-3l2.5-4-6 2.5M17 2.5l2.5 2.5-7 7-3.2.7.7-3.2z'), // a wing and the pen's tip
+  gem: svg('M6.5 4h11l4 5.5L12 21 2.5 9.5zM2.5 9.5h19M8 9.5l4 11.5 4-11.5M9 4l3 5.5L15 4'),
   mascara: svg('M3.5 20.5l8-8M11 13l6.5-6.5M12.6 9.2l2.2 2.2M14.4 7.4l2.2 2.2M16.2 5.6l2.2 2.2M10.8 11l2.2 2.2'),
   lip: svg('M8 21h8v-7.5H8zM9.2 13.5V9.5h5.6v4M10.2 9.5V5.2L13.8 3v6.5'),
   lens: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 1 0 0-6.8', ' fill="none"'),
@@ -36,12 +39,31 @@ const ICON = {
 // Haircut's rosette for Done: a scalloped seal
 const SEAL = `<svg class="seal" viewBox="-50 -50 100 100" aria-hidden="true"><polygon points="${Array.from({ length: 32 }, (_, k) => { const a = (k / 32) * 2 * Math.PI, r = k % 2 ? 41 : 48; return `${(r * Math.sin(a)).toFixed(1)},${(-r * Math.cos(a)).toFixed(1)}`; }).join(' ')}"/></svg>`;
 const BADGE = `<span class="vbadge">${ICON.video}</span>`;
-const TOOLS = [['brush', 'Brush'], ['pencil', 'Pencil'], ['mascara', 'Mascara'], ['lip', 'Lips'], ['lens', 'Lenses']];
+const TOOLS = [['brush', 'Brush'], ['glow', 'Highlighter'], ['pencil', 'Pencil'], ['liner', 'Liquid liner'], ['mascara', 'Mascara'], ['lip', 'Lips'], ['gem', 'Face gems'], ['lens', 'Lenses']];
 const TOOL_NAME = Object.fromEntries(TOOLS);
 // a swatch's look: its colour, with a shine for gloss and sparkles for shimmer
 const swatchBackground = (c) => (c.gloss
   ? `radial-gradient(circle at 35% 30%, #fffc 0 14%, #fff0 32%)${c.shimmer ? ', radial-gradient(circle at 66% 62%, #fff9 0 6%, #fff0 14%)' : ''}, ${c.hex}`
-  : c.shimmer ? `radial-gradient(circle at 30% 30%, #fffb 0 7%, #fff0 16%), radial-gradient(circle at 66% 62%, #fff9 0 5%, #fff0 13%), ${c.hex}` : c.hex);
+  : c.shimmer || c.glow ? `radial-gradient(circle at 30% 30%, #fffb 0 7%, #fff0 16%), radial-gradient(circle at 66% 62%, #fff9 0 5%, #fff0 13%), ${c.hex}` : c.hex);
+// a gem's swatch: its shape in its colour and material
+const GEM_PATH = {
+  stone: 'M12 2.5l6.7 2.8 2.8 6.7-2.8 6.7-6.7 2.8-6.7-2.8L2.5 12l2.8-6.7z',
+  drop: 'M12 2C9.2 6.6 6 10.3 6 14.4a6 6 0 0 0 12 0C18 10.3 14.8 6.6 12 2z',
+  heart: 'M12 21s-8.5-5-8.5-11A4.6 4.6 0 0 1 12 7.2 4.6 4.6 0 0 1 20.5 10c0 6-8.5 11-8.5 11z',
+  star: 'M12 1.5l3 7.3 7.5.6-5.7 5 1.8 7.6L12 18l-6.6 4 1.8-7.6-5.7-5 7.5-.6z',
+};
+// five round petals about the centre
+const petals = Array.from({ length: 5 }, (_, k) => { const a = (k / 5) * 2 * Math.PI - Math.PI / 2; return [12 + 5.4 * Math.cos(a), 12.4 + 5.4 * Math.sin(a)]; });
+const gemSwatch = (c) => {
+  const id = `g-${c.id}`, rim = c.look === 'iris' ? '<stop offset=".45" stop-color="#ffd6f4"/><stop offset=".7" stop-color="#c9f2ff"/>' : '';
+  const fill = `<defs><radialGradient id="${id}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/>${rim}<stop offset="${c.look === 'pearl' ? '.55' : '.4'}" stop-color="${c.hex}"/><stop offset="1" stop-color="${c.hex}" stop-opacity=".85"/></radialGradient></defs>`;
+  const paint = ` fill="url(#${id})" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>`;
+  const body = c.shape === 'pearl' ? `<circle cx="12" cy="12" r="8.5"${paint}`
+    : c.shape === 'flower' ? `${petals.map(([x, y]) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="4.4"${paint}`).join('')}<circle cx="12" cy="12.4" r="3.4"${paint}`
+    : `<path d="${GEM_PATH[c.shape]}"${paint}`;
+  const facets = c.shape === 'stone' ? '<path d="M8.6 8.6h6.8v6.8H8.6zM12 2.5v6.1M21.5 12h-6.1M12 21.5v-6.1M2.5 12h6.1" fill="none" stroke="#fff" stroke-width=".9" opacity=".7"/>' : '';
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${fill}${body}${facets}</svg>`;
+};
 
 // visible text is none: the error screen and the save notice are icons too (their words are spoken labels)
 document.querySelector('#error .oops').innerHTML = ICON.oops;
@@ -136,7 +158,7 @@ async function main() {
     shownSelection = key;
     swatches.replaceChildren(...coloursFor(tool, s.owned).map((c) => {
       const b = document.createElement('button');
-      b.style.background = swatchBackground(c);
+      if (c.shape) { b.className = 'gem'; b.innerHTML = gemSwatch(c); } else b.style.background = swatchBackground(c);
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-label', c.daily ? `${c.name} (colour of the day)` : c.name);
       b.setAttribute('aria-checked', String(s.selection.colour[tool] === c.id));

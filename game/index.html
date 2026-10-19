@@ -8,8 +8,9 @@
 <script>
   // The UI scale, as Haircut's: 1 on phones (short side 300–560 px), up to 2.4 on big screens, down to 0.6 in tiny
   // embeds; and never so big that the controls crowd out the face (portrait: the screen's height / 700; landscape:
-  // its height / 380). Landscape (wider than 1.15 × tall) puts the counter in a column at the side. Set before the
-  // first layout, and again on every resize.
+  // its height / 380). Landscape (wider than 1.15 × tall) puts the counter in a column at the side. In portrait the
+  // eight tools sit in one row where it fits with buttons at least 32 px on screen, else in two rows of four (tiny
+  // or narrow embeds). Set before the first layout, and again on every resize.
   (function () {
     function scale() {
       var w = innerWidth, h = innerHeight, m = Math.min(w, h), land = w > h * 1.15;
@@ -17,6 +18,7 @@
       s = Math.max(0.6, Math.min(s, h / (land ? 380 : 700)));
       document.documentElement.style.setProperty('--s', s.toFixed(3));
       document.documentElement.classList.toggle('land', land);
+      document.documentElement.classList.toggle('two', !land && (w / s < 388 || 43 * s < 32)); // 8 × 43 px, 7 gaps of 4, the counter's 8 px sides
     }
     scale();
     addEventListener('resize', scale);
@@ -87,8 +89,17 @@
   #swatches button { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
   #swatches button[aria-checked="true"] { transform: translateY(-4px) scale(1.12); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
   #swatches .star { position: absolute; right: -7px; top: -7px; width: 20px; height: 20px; }
-  #toolbar { display: flex; justify-content: center; gap: 10px; padding-top: 4px; }
-  #toolbar .ctl { width: 56px; height: 56px; border-radius: 50%; }
+  #toolbar { display: grid; grid-template-columns: repeat(8, 43px); justify-content: center; gap: 4px; padding-top: 4px; }
+  #toolbar .ctl { width: 43px; height: 43px; border-radius: 50%; }
+  #toolbar .ctl svg { width: 23px; height: 23px; }
+  /* tiny or narrow embeds: two rows of four bigger tools; review's counter grows with it, so the face never moves */
+  .two footer { height: calc(204px + env(safe-area-inset-bottom)); }
+  .two #toolbar { grid-template-columns: repeat(4, 52px); gap: 6px 10px; }
+  .two #toolbar .ctl { width: 52px; height: 52px; }
+  .two #toolbar .ctl svg { width: 26px; height: 26px; }
+  /* a gem's swatch is the gem itself */
+  #swatches button.gem { background: var(--panel); display: grid; place-items: center; }
+  #swatches button.gem > svg:not(.star) { width: 30px; height: 30px; overflow: visible; }
   #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
   /* review, as Haircut's completion: the top buttons give way (the eye for the before takes the corner); on the
      counter, Retry for a video and the next customer, pictured, docked against the Next arrow */
@@ -179,8 +190,9 @@
   .land footer { grid-area: 1 / 2; height: auto; width: calc(300px + env(safe-area-inset-right)); box-sizing: border-box; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) 14px;
     background: linear-gradient(90deg, #fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: -10px 0 18px -10px #6a3a3a55; }
   .land #create { display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 8px; }
-  .land #toolbar { flex-direction: column; padding: 0; gap: 8px; }
-  .land #swatches { display: grid; grid-template-columns: repeat(4, 42px); gap: 9px; align-content: center; max-height: 100%; box-sizing: border-box; overflow: hidden auto; padding: 10px 8px; }
+  .land #toolbar { grid-template-columns: repeat(2, 44px); padding: 0; gap: 8px; }
+  .land #toolbar .ctl { width: 44px; height: 44px; }
+  .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); gap: 9px; align-content: center; max-height: 100%; box-sizing: border-box; overflow: hidden auto; padding: 10px 8px; }
   .land #review { flex-direction: column; gap: 20px; padding: 0 18px; }
 </style>
 </head>

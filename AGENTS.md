@@ -4,7 +4,7 @@ Read `MAKEUP-AI-BUILD-CONTRACT.md` before building, reviewing or changing this g
 
 ## Preserve the settled product
 
-- Four fixed makeup tools, all always available: soft brush, detail pencil, mascara wand and lip applicator. Contact lenses are a separate eye-colour selector, also freely available with base colours.
+- Seven fixed makeup tools, all always available: soft brush, highlighter, detail pencil, liquid liner, mascara wand, lip applicator and face gems (owner, 19 October 2026: the highlighter, liner and gems joined the original four). Contact lenses are a separate eye-colour selector, also freely available with base colours.
 - Freestyle application in any order; the player's strokes determine the work. Front-facing, sufficiently close camera. No camera rotation, precision-zoom controls, size/intensity sliders, scoring rubric or required target.
 - Finish opens a player-controlled review with before/after comparison. Next remains available. No free remover, eraser, undo, same-face reset or hidden restart bypass.
 - Exactly two rewarded purposes: one completed rewarded ad for same-face replay, and one completed rewarded ad for the daily extra colour. The daily reward is exactly one colour for one specified tool or lens selector, offered until local midnight and kept for good once earned (owner, 19 October 2026). It never unlocks a tool or a whole palette.
