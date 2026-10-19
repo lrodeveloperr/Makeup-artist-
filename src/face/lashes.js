@@ -114,6 +114,9 @@ export class Lashes {
     this.update(this.hg, this.eyeCentres);
   }
 
+  // whether a wand (as for coat) passes through any lash, coated or not (the wand's sound plays while it does)
+  touches(wand, reach) { return this.paths.some((pts) => nearPath(pts, wand, reach)); }
+
   // Mascara (contract §2: only the lashes actually touched change; each side independent). wand: points
   // [x0, y0, x1, y1, ...] in the face's screen plane (z = this.zPlane); colour: linear RGB; t: TOOLS.mascara;
   // touched: the lashes this stroke has already coated (each lash takes one coat per stroke). Returns true if

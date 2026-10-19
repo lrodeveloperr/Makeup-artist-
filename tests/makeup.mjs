@@ -226,7 +226,7 @@ function fakeApplicator() {
   };
   a.paint = recorder();
   a.gems = { list: [], mesh: {}, set(list) { this.list = list; }, locate: (ref) => (ref[0] > 1 ? null : {}) };
-  a.view = { lashes: { zPlane: 0.5, coat: (wand, colour, t, touched) => { touched.add(0); return true; } } };
+  a.view = { lashes: { zPlane: 0.5, coat: (wand, colour, t, touched) => { touched.add(0); return true; }, touches: () => true } };
   a.makeup = createMakeup();
   a.allowed = () => true;
   return a;
@@ -402,6 +402,8 @@ test('mascara: each stroke coats a touched lash once; length and thickness stop 
   assert.ok(lashes.coat(wand, black, t, touched));
   const once = lashes.lashes.map((l) => l.lengthMul);
   assert.equal(lashes.coat(wand, black, t, touched), false, 'the same stroke does not coat again');
+  assert.ok(lashes.touches(wand, t.reach), 'but the wand still touches them (and sounds)');
+  assert.equal(lashes.touches(wand.map((v, i) => (i % 2 ? v + 1 : v)), t.reach), false, 'far from the lashes it does not');
   assert.deepEqual(lashes.lashes.map((l) => l.lengthMul), once);
   const coated = [...touched];
   assert.ok(coated.length >= upper.length * 0.8, `${coated.length} of ${upper.length} upper lashes`);

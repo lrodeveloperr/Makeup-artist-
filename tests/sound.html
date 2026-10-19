@@ -1,7 +1,8 @@
 <!doctype html><meta charset="utf-8"><title>Sound check</title>
 <script type="module">
 // Renders the game's sounds offline (tests/sound.mjs drives it): each tool brushed back and forth at a known tempo,
-// paused, then swept slowly; the taps; the controls; the finish. Returns the audio and when each stroke unit began.
+// paused, then swept slowly; the taps; the controls; the finish. Returns the audio and when each stroke unit began
+// (attacks: the units that begin a movement, not those carrying a long sweep on).
 import * as S from '../game/sound.js';
 import { colourById } from '../src/makeup/palette.js';
 const sr = 44100, dt = 1 / 120, PX = 110; // pointer samples a second; pixels a decimetre (a phone's framing)
@@ -38,7 +39,7 @@ window.render = async (name, tool, colour) => {
   S.logUnits(null);
   const d = (await ctx.startRendering()).getChannelData(0).slice(0, Math.ceil(take.end * sr));
   let bin = ''; new Uint8Array(new Float32Array(d).buffer).forEach((x) => (bin += String.fromCharCode(x)));
-  return { ...take, starts: log.map(([, t]) => t), units: S.stats.units, pcm: btoa(bin) };
+  return { ...take, starts: log.map(([, t]) => t), attacks: log.filter(([, , legato]) => !legato).map(([, t]) => t), units: S.stats.units, pcm: btoa(bin) };
 };
 window.ready = true;
 </script>

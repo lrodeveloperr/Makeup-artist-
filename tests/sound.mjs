@@ -41,10 +41,12 @@ try {
     const units = r.units[name === 'lipgloss' ? 'gloss' : tool];
     if (!(units >= 3)) errors.push(`${name}: only ${units} units in its recording`);
     if (peak > 0.12) errors.push(`${name}: peaks at ${peak.toFixed(3)}, louder than the controls`);
-    // no two units start within 60 ms of each other (a sound cut off as soon as it begins)
-    for (let j = 1; j < r.starts.length; j++) if (r.starts[j] - r.starts[j - 1] < 0.06) errors.push(`${name}: two units at ${r.starts[j - 1].toFixed(2)} and ${r.starts[j].toFixed(2)} s`);
-    // a fresh unit within 60 ms of every turn of the hand; inside a sweep, units never stutter
-    for (const t of r.turns) if (!r.starts.some((s) => Math.abs(s - t) <= 0.06)) errors.push(`${name}: no fresh movement within 60 ms of the turn at ${t.toFixed(2)} s`);
+    // no two movements start within 60 ms of each other (a sound cut off as soon as it begins)
+    for (let j = 1; j < r.attacks.length; j++) if (r.attacks[j] - r.attacks[j - 1] < 0.06) errors.push(`${name}: two units at ${r.attacks[j - 1].toFixed(2)} and ${r.attacks[j].toFixed(2)} s`);
+    // a fresh movement (a unit with its attack) within 60 ms of every turn of the hand, and none inside a sweep: a
+    // sweep that outlasts its unit carries on legato; inside a sweep, units never stutter
+    for (const t of r.turns) if (!r.attacks.some((s) => Math.abs(s - t) <= 0.06)) errors.push(`${name}: no fresh movement within 60 ms of the turn at ${t.toFixed(2)} s`);
+    for (const s of r.attacks) if (!r.turns.some((t) => Math.abs(s - t) <= 0.06)) errors.push(`${name}: a new movement at ${s.toFixed(2)} s, inside a sweep`);
     r.turns.forEach((t, i) => {
       const inside = r.starts.filter((s) => s >= t + 0.07 && s < (r.turns[i + 1] ?? Infinity));
       const all = r.starts.filter((s) => s >= t && s < (r.turns[i + 1] ?? Infinity));

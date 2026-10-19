@@ -137,8 +137,8 @@ async function main() {
     feedback: {
       // each stroke's sound follows the hand, in decimetres a second on the face (the same on every screen)
       down(sel) { this.voice = stroke(sel.tool, colourById(sel.colour)); this.last = null; },
-      move(x, y, contact) {
-        const t = performance.now() / 1000, P = view.makeup.picker;
+      move(x, y, contact, time) {
+        const t = (time ?? performance.now()) / 1000, P = view.makeup.picker;
         if (this.voice && this.last) {
           const [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]);
           const dx = x - this.last[0], dy = y - this.last[1];

@@ -113,7 +113,7 @@ export class Applicator {
       const p = this.picker.onPlane(x, y, this.view.lashes.zPlane);
       if (p) q = p.map(toQ);
     }
-    if (!q) return this.lift(g); // pen up until the pointer is back on the face
+    if (!q) { g.onLash = false; return this.lift(g); } // pen up until the pointer is back on the face
     if (!g.seg) {
       if (g.segments.length >= LIMITS.segments || g.points >= g.room) return false;
       g.seg = []; g.segments.push(g.seg);
@@ -131,6 +131,7 @@ export class Applicator {
     g.seg.push(...q); g.points++; g.lastQ = q;
     if (g.painter) { g.painter.add(q); return true; }
     const wand = prev ? [...prev, ...q].map(fromQ) : q.map(fromQ);
+    g.onLash = this.view.lashes.touches(wand, TOOLS.mascara.reach);
     return this.view.lashes.coat(wand, g.linear, TOOLS.mascara, g.touched);
   }
 

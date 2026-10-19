@@ -87,16 +87,22 @@ The tools and the taps on the face are **real recordings, all CC0** (public doma
 in [ASSETS.md](../ASSETS.md)). `tools/make-sounds.py` (`npm run sounds`) fetches each one, checks that its page still
 says CC0, cleans it and cuts it into its **units**, its single movements: one brush swish, one lipstick rub, one
 gloss swipe, one burst of mascara bristles, one pencil stroke (each the rise and fall of the tool's sound around one
-peak). Pops and knocks are left out and the most typical units kept, about 2.2 s a tool, saved with silence between
-them (`assets/sounds/*.mp3`, mono, 56 kbit/s, 20–29 KB a tool); the game finds each unit by that silence. The files
+peak, starting with its sound, not a slow build-up). Pops and knocks are left out; the most typical units of every
+length are kept (short, medium, long and longest in turn, about 3 s a tool), so a quick flick and a long, slow sweep
+each find a unit of about their length; each is evened to the same level (crackly ones, the mascara's bristles and
+the gloss, have their sharpest ticks softened so none sounds like a click), and they are saved with silence between
+them (`assets/sounds/*.mp3`, mono, 56 kbit/s, 27–34 KB a tool); the game finds each unit by that silence. The files
 load with the face.
 
 **The sound keeps time with the hand, not with the recording.** Every sweep of the hand plays one unit: a fresh one
 when the hand turns back (brushing back and forth: swish, swish, in time) or moves on after a pause. The game learns
 how long the hand's sweeps take and picks a unit of about that length (one of the three closest, never the same twice
 running), played up to 15 % faster or slower to fit and running a little past the sweep, so the turn, not the
-recording, brings the next movement; when the hand is about to turn it waits for the turn. Only a sweep longer than
-any unit runs on into a second unit, reaching for the longer ones.
+recording, brings the next movement. It also learns how far the sweeps reach, so from how far and how fast this one
+has gone it knows when the hand will turn. A sweep that outlasts its unit carries on **legato**: the next unit joins
+in past its attack and the two cross-fade, so it sounds as the same movement going on, never a new swish mid-sweep;
+it is fitted to the rest of the sweep, and none starts just before a turn. The timing runs on the hand's own clock
+(the pointer samples' times), so a busy frame never sounds like a pause.
 
 | Tool | Recording |
 | --- | --- |
@@ -104,7 +110,7 @@ any unit runs on into a second unit, reaching for the longer ones.
 | Highlighter | A softer, airier brush pass |
 | Pencil | A soft pencil stroke (recorded on paper, softened towards skin) |
 | Liquid liner | Fine felt tips (on paper, softened and quietened) |
-| Mascara | A mascara wand's bristles, recorded close in a studio (plays only while it touches lashes) |
+| Mascara | A mascara wand's bristles, recorded close in a studio (plays while it passes through lashes, coated or not) |
 | Lipstick | A creamy rub on skin; gloss: lip gloss being applied (swipes only) |
 | Face gems | A tap on glass (glass gems; iridescent ones a little brighter), a small hard click (pearls), a jewellery click (metal) |
 | Lenses | A single droplet |
@@ -122,9 +128,20 @@ No CC0 recording of lipstick going onto lips was found; the creamy rub is the cl
   compressor keeps many small sounds from clipping.
 - **Checks:** `tests/sound.mjs` (`npm run test:sound`) renders every sound offline with a hand brushing back and
   forth at a known tempo, then resting, then sweeping slowly: every tool's recording splits into several units, a
-  fresh unit begins within 60 ms of every turn of the hand, units never stutter (none within 60 ms of another, none
-  closer than 0.1 s inside a sweep), it is silent while the hand rests, and the tools peak under the controls. It
-  writes `tests/out/sounds/*.wav` to listen to. The browser game test checks that all 11 recordings load, a stroke
+  fresh movement (a unit with its attack) begins within 60 ms of every turn of the hand and none inside a sweep (a
+  long sweep carries on legato), units never stutter (no two movements within 60 ms, no two units closer than 0.1 s
+  inside a sweep), it is silent while the hand rests, and the tools peak under the controls. It
+  writes `tests/out/sounds/*.wav` to listen to.
+- **Audit in the real game (19 October 2026, owner: "play the game and audit the sound waves").** The built game
+  was played in a browser by a scripted hand (every tool: six quick sweeps, a rest with the hand down, three slow
+  sweeps, eased into each turn like a real hand; then gems and a lens) and its output recorded losslessly. Found and
+  fixed: the brush and lipstick units were mostly 0.13–0.18 s dabs, so a sweep chained two to four of them and
+  stippled (longer units now: a second brush recording, a spread of lengths); the mascara went silent after its
+  first pass (it sounded only while adding a coat); some units began with a slow build-up, coming in late at the
+  turn; crackly units lost up to 8 dB to the limiter; a long sweep's second unit restarted with a fresh swish just
+  before the turn. Now: one attack per sweep, 17–41 ms after the hand reverses on quick sweeps and 80–100 ms on slow
+  ones (where the hand barely moves at the turn), true silence at rest, every unit at the same level, no clipping.
+  The browser game test checks that all 11 recordings load, a stroke
   plays its recording, and nothing plays, not even a tool's click, while the host has sound off.
 
 ## Ads (owner decisions, 19 October 2026)

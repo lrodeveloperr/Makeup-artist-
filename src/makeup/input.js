@@ -9,8 +9,9 @@ const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move
 // canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses, 'gem' for gems), or null
 // while the face takes no input (review, an open panel, a pause);
 // onChange(): the face changed and needs a redraw; onCommit(change): a stroke or lens change was stored;
-// feedback (optional): follows each stroke as it happens, for its sound: down(selection), move(x, y, contact) for
-// every sample (contact: the tool is on the skin; the mascara wand: on lashes), up()
+// feedback (optional): follows each stroke as it happens, for its sound: down(selection), move(x, y, contact, time)
+// for every sample (contact: the tool is on the skin; the mascara wand: passing through lashes, coated or not;
+// time: when the sample was taken, ms, so samples delivered together on a busy frame keep their own timing), up()
 export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback }) {
   let active = null;
   const local = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
@@ -45,7 +46,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     active = { id: e.pointerId, g };
     feedback?.down(sel);
     const changed = applicator.move(g, x, y);
-    feedback?.move(x, y, g.painter ? !!g.seg : changed);
+    feedback?.move(x, y, g.painter ? !!g.seg : !!g.onLash, e.timeStamp);
     if (changed) onChange();
   };
   const move = (e) => {
@@ -56,7 +57,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
       const [x, y] = local(ev);
       if (active.tap) { if (Math.hypot(x - active.x, y - active.y) > TAP_SLOP) active.moved = true; continue; }
       const g = active.g, moved = applicator.move(g, x, y);
-      feedback?.move(x, y, g.painter ? !!g.seg : moved);
+      feedback?.move(x, y, g.painter ? !!g.seg : !!g.onLash, ev.timeStamp);
       changed = moved || changed;
     }
     if (changed) onChange();

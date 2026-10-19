@@ -46,7 +46,7 @@ export function setEnabled(on) {
   sfx.on = !!on;
   if (sfx.on) context(); // start now, so the recordings are decoded before the first stroke
 }
-// for tests: log when each stroke unit starts ([tool, time]) into this array, or stop logging (null)
+// for tests: log when each stroke unit starts ([tool, time, legato]) into this array, or stop logging (null)
 export function logUnits(list) { sfx.log = list; }
 // for rendering the sounds offline (tests and listening samples): play into this context instead
 export function useContext(c) { Object.assign(sfx, { ctx: c, out: master(c), on: true, white: null, pink: null }); decodeAll(c); }
@@ -138,7 +138,7 @@ function findUnits(b) {
     let m = 0;
     for (let j = i; j < Math.min(i + step, d.length); j++) m = Math.max(m, Math.abs(d[j]));
     if (m > 0.003) { if (start < 0) start = i; quiet = 0; }
-    else if (start >= 0 && ++quiet * 0.005 >= 0.05) { out.push([start / b.sampleRate, (i - (quiet - 1) * step) / b.sampleRate]); start = -1; }
+    else if (start >= 0 && ++quiet * 0.005 >= 0.09) { out.push([start / b.sampleRate, (i - (quiet - 1) * step) / b.sampleRate]); start = -1; }
   }
   if (start >= 0) out.push([start / b.sampleRate, d.length / b.sampleRate]);
   return out.filter(([a, e]) => e - a > 0.05);
@@ -156,9 +156,11 @@ const TOOL = {
   liner: { gain: 0.08, ref: 0.9, lp: 3500 },
   mascara: { gain: 0.1, ref: 1, lp: 12000 },
   lip: { gain: 0.12, ref: 1, lp: 8000 },
+  gloss: { gain: 0.12, ref: 1, lp: 9000 },
 };
 const TURN_PX = 3; // pixels of travel that set a sweep's direction
 const BACK_PX = 2; // pixels moved back against it that make a turn
+const LEGATO = 0.3; // how much of a unit's start a legato unit leaves out (its attack)
 
 // A stroke's voice: stroke(tool, colour) at pointer-down, move() for every pointer sample, end() at pointer-up.
 // The sound keeps time with the hand, not with the recording: every sweep plays one of the tool's units, a fresh one
@@ -168,15 +170,20 @@ const BACK_PX = 2; // pixels moved back against it that make a turn
 // the first. A quicker hand plays it louder and brighter; when the hand stops or leaves the face, it fades.
 // Returns null when sound is off, the tool makes no stroke sound or its recording has not arrived.
 export function stroke(tool, colour) {
-  const c = live(), r = TOOL[tool], name = tool === 'lip' && colour?.gloss ? 'gloss' : tool;
+  const c = live(), name = tool === 'lip' && colour?.gloss ? 'gloss' : tool, r = TOOL[name];
   const buffer = c && r && files.buffers.get(name), units = files.units.get(name);
   if (!buffer || !units?.length) return null;
   stats.strokes++;
   const lp = c.createBiquadFilter();
   lp.type = 'lowpass'; lp.frequency.value = r.lp; lp.Q.value = 0.5;
   lp.connect(sfx.out);
-  let cur = null, last = -1, dir = null, ax = 0, ay = 0, back = 0, lastMove = -1, ended = false;
-  let sweep = 0.35, began = -1; // the hand's sweeps (seconds, learnt as it goes), and when this one began
+  let cur = null, last = -1, dir = null, ax = 0, ay = 0, back = 0, ended = false;
+  // the hand's own clock (seconds, from its samples' times, so a busy frame never looks like a pause), its sweeps
+  // (learnt as it goes), and when this sweep began on it
+  let hand = 0, moved = -1, sweep = 0.35, began = -1;
+  // how far the hand's sweeps reach (pixels, learnt as it goes) and how far this one has come: with the time it has
+  // taken, when it will turn
+  let span = 0, travel = 0;
   const level = (k) => r.gain * Math.pow(k, 0.7);
   const fade = (u, at, tau = 0.03) => {
     if (!u) return;
@@ -184,62 +191,71 @@ export function stroke(tool, colour) {
     try { u.s.stop(at + tau * 8); } catch { /* already stopped */ }
   };
   // one movement: a unit about as long as the hand's sweeps (one of the three closest, never the same one twice
-  // running), played a touch faster or slower to fit, faded in from where the last one is fading out
-  const play = (at, k, want = sweep) => {
-    fade(cur, at);
-    const fit = units.map((u, i) => [Math.abs(Math.log((u[1] - u[0]) / (want * 1.15))), i]).sort((p, q) => p[0] - q[0]).slice(0, Math.min(3, units.length));
+  // running), played a touch faster or slower to fit, faded in from where the last one is fading out. A sweep that
+  // runs on past its unit carries on legato: the next unit joins in past its attack and the two cross-fade, so it
+  // sounds as the same movement going on, not a new one
+  const play = (at, k, want = sweep, legato = false) => {
+    fade(cur, at, legato ? 0.06 : 0.03);
+    const skip = legato ? LEGATO : 0;
+    const fit = units.map((u, i) => [Math.abs(Math.log(((u[1] - u[0]) * (1 - skip)) / (want * 1.15))), i]).sort((p, q) => p[0] - q[0]).slice(0, Math.min(3, units.length));
     let i = fit[Math.floor(Math.random() * fit.length)][1];
     if (units.length > 1 && i === last) i = fit.find(([, j]) => j !== last)?.[1] ?? i;
     last = i;
     // fitted to run a little past the sweep, so the turn, not the unit's end, starts the next movement
-    const [a, e] = units[i], rate = Math.min(1.2, Math.max(0.85, (e - a) / (want * 1.15)));
-    sfx.log?.push([tool, at]);
+    const [u0, e] = units[i], a = u0 + skip * (e - u0), rate = Math.min(1.2, Math.max(0.85, (e - a) / (want * 1.15)));
+    sfx.log?.push([tool, at, legato]);
     const s = c.createBufferSource(), g = c.createGain();
     s.buffer = buffer; s.playbackRate.value = rate;
-    g.gain.setValueAtTime(0, at); g.gain.setTargetAtTime(level(k), at, 0.012);
+    g.gain.setValueAtTime(0, at); g.gain.setTargetAtTime(level(k), at, legato ? 0.05 : 0.012);
     s.connect(g).connect(lp);
     s.start(at, a, e - a + 0.01);
     s.stop(at + (e - a) / rate + 0.05);
-    cur = { s, g, start: at, end: at + (e - a) / rate };
+    cur = { s, g, start: at, end: at + (e - a) / rate, legato };
   };
   return {
     // d: decimetres the hand moved over the face since the last sample; dt: seconds; contact: the tool is on the
     // skin (the mascara wand: on lashes); dx, dy: the move on screen (pixels), for the sweep's direction; at: when
     move(d, dt, contact, dx = 0, dy = 0, at = c.currentTime) {
       if (ended) return;
+      hand += Math.max(dt, 0);
       const k = contact && dt > 0 ? Math.min(1.3, d / dt / r.ref) : 0;
       if (k <= 0.02) return; // still or off the face: the scheduled fade runs on
       // after a pause the sweep's direction is learnt afresh
-      const paused = lastMove < 0 || at - lastMove > 0.12;
-      if (paused) { dir = null; ax = ay = back = 0; }
+      const paused = moved < 0 || hand - moved > 0.12;
+      moved = hand;
+      if (paused) { dir = null; ax = ay = back = travel = 0; }
       // the sweep's direction, from a few pixels of travel; a turn as soon as the hand has moved a little back
       // against it
       let turned = false;
       ax += dx; ay += dy;
       if (!dir) {
         const len = Math.hypot(ax, ay);
-        if (len >= TURN_PX) { dir = [ax / len, ay / len]; ax = ay = 0; }
+        if (len >= TURN_PX) { dir = [ax / len, ay / len]; ax = ay = 0; travel = len; }
       } else {
         const along = dx * dir[0] + dy * dir[1];
         back = along < 0 ? back - along : 0;
         if (back >= BACK_PX) {
           const len = Math.hypot(ax, ay) || 1;
-          turned = true; dir = [ax / len, ay / len]; back = 0;
+          if (travel > 0) span = span ? 0.6 * span + 0.4 * travel : travel;
+          turned = true; dir = [ax / len, ay / len]; back = 0; travel = len;
         }
-        if (along >= 0) ax = ay = 0;
+        if (along >= 0) { ax = ay = 0; travel += along; }
       }
-      lastMove = at;
       // learn the sweep's length from the hand turning back
-      if (turned && began >= 0) sweep = Math.min(1.2, Math.max(0.12, 0.6 * sweep + 0.4 * (at - began)));
-      if (turned || paused) began = at;
-      // a new movement: the first, after a pause, on turning back, or as a sweep runs on longer than the hand's
-      // sweeps usually do near the unit's end (or past it)
-      // (but not when the hand is about to turn, as it usually does now: the turn brings the next movement)
-      const turnDue = Math.abs(at - began - sweep) < 0.08;
-      const runsOn = cur && !turnDue && (at >= cur.end - 0.03 || (at >= cur.start + 0.85 * (cur.end - cur.start) && at - began >= 0.8 * sweep));
-      // a sweep running long reaches for the longer units; a unit that has only just begun is the new movement
-      const fresh = cur && at - cur.start < 0.06;
-      if (!cur || ((paused || turned || runsOn) && !fresh)) play(at, k, runsOn ? Math.max(sweep, 1.5 * (at - began)) : sweep);
+      if (turned && began >= 0) sweep = Math.min(1.2, Math.max(0.12, 0.6 * sweep + 0.4 * (hand - began)));
+      if (turned || paused) began = hand;
+      // when this sweep will turn: from how far the hand's sweeps reach and how quickly this one is going (or, until
+      // it has swept once, from how long its sweeps take); one that has gone past it is a longer stroke, expected to
+      // run on half as long again
+      const gone = hand - began, pace = travel > 0 && gone > 0.03 ? gone / travel : 0;
+      const ahead = span && pace ? (span - travel) * pace : sweep - gone, left = ahead > 0 ? ahead : 0.5 * gone;
+      // a new movement: the first, after a pause, on turning back, or as a sweep runs on past its unit (near the
+      // unit's end, or past it), fitted to the rest of the sweep; never just before the hand turns, as the turn
+      // brings the next movement
+      const runsOn = cur && left > 0.15 && (at >= cur.end - 0.03 || (at >= cur.start + 0.85 * (cur.end - cur.start) && gone >= 0.8 * sweep));
+      // a unit that has only just begun is the new movement (but a turn always brings its own)
+      const fresh = cur && at - cur.start < 0.06 && !(turned && cur.legato);
+      if (!cur || ((paused || turned || runsOn) && !fresh)) play(at, k, runsOn ? left : sweep, runsOn && !paused && !turned);
       else { hold(cur.g.gain, at); cur.g.gain.setTargetAtTime(level(k), at, 0.03); }
       lp.frequency.setTargetAtTime(r.lp * (0.6 + 0.4 * Math.min(k, 1)), at, 0.06);
       // the hand stops: the sound fades with it
