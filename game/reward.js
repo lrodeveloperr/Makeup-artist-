@@ -135,7 +135,6 @@ const PRODUCT = {
         <rect x="38" y="104" width="118" height="32" fill="url(#b${u})"/>
         <rect x="40" y="109" width="114" height="5" rx="2" fill="#fff" opacity=".35"/>
         <path d="M156 104l42 16-42 16z" fill="url(#w${u})"/>
-        ${Array.from({ length: 5 }, (_, k) => `<path d="M158 ${107 + k * 6.5}l${30 - Math.abs(k - 2) * 7} ${(k - 2) * 2.2}" stroke="#a37444" stroke-width=".8" opacity=".7"/>`).join('')}
         <path d="M186 115.5l12 4.5-12 4.5z" fill="${dark(c.hex, 0.15)}"/>
         ${sparkles(c, [42, 106, 110, 28], 18, 7)}
       </g>
