@@ -299,11 +299,13 @@ export class WebGLRenderer {
 
   // Draw one mesh into a render target with premultiplied-alpha "over" blending, no depth test and no
   // culling (its vertex shader decides where it lands, e.g. in texture space). clear: start transparent.
-  drawToTarget(rt, mesh, { clear = false } = {}) {
+  // scissor: [x, y, width, height] in texels (from the bottom), the only part the mesh may draw into
+  drawToTarget(rt, mesh, { clear = false, scissor = null } = {}) {
     const gl = this.gl, t = this.target(rt);
     gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
     gl.viewport(0, 0, rt.width, rt.height);
     if (clear) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); }
+    if (scissor) { gl.enable(gl.SCISSOR_TEST); gl.scissor(...scissor); }
     if (mesh) {
       const p = this.program(mesh.material);
       gl.useProgram(p.prog);
@@ -317,6 +319,7 @@ export class WebGLRenderer {
       gl.enable(gl.DEPTH_TEST); gl.depthMask(true);
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     }
+    if (scissor) gl.disable(gl.SCISSOR_TEST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     t.version++;
   }

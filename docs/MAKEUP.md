@@ -94,6 +94,13 @@ Rose (contract §3).
   with an 8-bit fallback. A dab is drawn by rendering the head mesh into the texture and measuring each texel's
   distance to the dab's centre on the reference body. Dabs are therefore round on the face, have the same size on
   every face, and continue across UV seams.
+- **Only where the dabs reach.** Each batch of dabs draws only the head's triangles that come within its dabs'
+  radius (found in a grid of the triangles' reference-body bounds), clipped to those triangles' texels, instead of
+  the whole head into both whole textures: about 1 ms a pointer sample in software WebGL instead of 95, and on a
+  phone's GPU a few hundred texels a sample instead of two million. The result is exactly the same (the browser
+  smoke test paints every surface tool both ways and compares every value). Drawing the whole head each sample had
+  backed the GPU up while painting, holding back the next frames and the input that waits for them (the first gem
+  tap after a long session sounded 0.7–1.7 s late in the sound audit; now 23 ms).
 - **Picking.** The camera is fixed while the player works. The skin's triangles are projected to the screen once
   per face, size or camera change and binned in an 8-pixel grid, so a pick tests only a few triangles and keeps
   the nearest. The eyeballs are exact spheres, with the iris told apart from the white. Picks hold on shared edges

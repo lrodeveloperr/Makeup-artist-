@@ -39,6 +39,78 @@ void main() {
   gl_FragColor = uLayer == 0 ? vec4(uColour * a, a) : vec4(uFinish * a, a);
 }`;
 
+// Where a batch of dabs can paint. A dab only changes texels within its radius on the face, so a draw covers just the
+// head's triangles near the batch, clipped (scissored) to their texels, instead of the whole head filling both whole
+// textures: the triangles are kept in a grid by their reference-head bounds, and every texel a dab reaches lies in a
+// triangle whose bounds meet the dab's, so the small draw paints exactly what the whole one would.
+class Reach {
+  constructor(geometry, size, cell = 0.1) {
+    const ref = geometry.attributes.ref.array, uv = geometry.attributes.uv.array, idx = geometry.index.array;
+    const n = idx.length / 3, lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < ref.length; i += 3) for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], ref[i + a]); hi[a] = Math.max(hi[a], ref[i + a]); }
+    const dims = [0, 1, 2].map((a) => Math.floor((hi[a] - lo[a]) / cell) + 1);
+    Object.assign(this, { size, cell, lo, dims, n });
+    // each triangle's reference-head bounds (min xyz, max xyz) and UV bounds (min uv, max uv)
+    this.box = new Float32Array(n * 6); this.uv = new Float32Array(n * 4);
+    for (let t = 0; t < n; t++) {
+      const b = this.box, u = this.uv;
+      for (let a = 0; a < 3; a++) { b[t * 6 + a] = Infinity; b[t * 6 + 3 + a] = -Infinity; }
+      u[t * 4] = u[t * 4 + 1] = Infinity; u[t * 4 + 2] = u[t * 4 + 3] = -Infinity;
+      for (let c = 0; c < 3; c++) {
+        const v = idx[t * 3 + c];
+        for (let a = 0; a < 3; a++) { b[t * 6 + a] = Math.min(b[t * 6 + a], ref[v * 3 + a]); b[t * 6 + 3 + a] = Math.max(b[t * 6 + 3 + a], ref[v * 3 + a]); }
+        for (let a = 0; a < 2; a++) { u[t * 4 + a] = Math.min(u[t * 4 + a], uv[v * 2 + a]); u[t * 4 + 2 + a] = Math.max(u[t * 4 + 2 + a], uv[v * 2 + a]); }
+      }
+    }
+    // the grid: the triangles in each cell their bounds touch (a cell's list is items[start[c]] .. items[start[c + 1]])
+    const cells = dims[0] * dims[1] * dims[2], count = new Int32Array(cells + 1);
+    const each = (t, f) => {
+      const [x0, y0, z0] = [0, 1, 2].map((a) => this.at(this.box[t * 6 + a], a)), [x1, y1, z1] = [0, 1, 2].map((a) => this.at(this.box[t * 6 + 3 + a], a));
+      for (let z = z0; z <= z1; z++) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) f((z * dims[1] + y) * dims[0] + x);
+    };
+    for (let t = 0; t < n; t++) each(t, (c) => count[c + 1]++);
+    for (let c = 0; c < cells; c++) count[c + 1] += count[c];
+    this.start = count.slice(); this.items = new Int32Array(count[cells]);
+    const fill = count.slice(0, cells);
+    for (let t = 0; t < n; t++) each(t, (c) => { this.items[fill[c]++] = t; });
+    this.mark = new Uint32Array(n); this.stamp = 0;
+    this.index = idx; this.near = new Uint32Array(n * 3); this.count = 0; // the triangles found (their 3 indices each)
+  }
+
+  at(v, a) { return Math.min(this.dims[a] - 1, Math.max(0, Math.floor((v - this.lo[a]) / this.cell))); }
+
+  // dabs: [x, y, z, size] in the reference-head frame (size: a factor of the radius), count: how many, radius: the
+  // tool's;
+  // -> the texels [x, y, width, height] they can paint, or null if they touch no part of the head; the triangles they
+  // can paint are near[0 .. count]
+  rect(dabs, count, radius) {
+    const s = ++this.stamp, { box, uv, items, start, dims, index, near } = this;
+    this.count = 0;
+    let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
+    for (let i = 0; i < count; i++) {
+      const d = dabs[i], p = [d[0], d[1], d[2]], r = radius * d[3];
+      const lo = p.map((v, a) => this.at(v - r, a)), hi = p.map((v, a) => this.at(v + r, a));
+      for (let z = lo[2]; z <= hi[2]; z++) for (let y = lo[1]; y <= hi[1]; y++) for (let x = lo[0]; x <= hi[0]; x++) {
+        const c = (z * dims[1] + y) * dims[0] + x;
+        for (let k = start[c]; k < start[c + 1]; k++) {
+          const t = items[k];
+          if (this.mark[t] === s) continue;
+          let meets = true;
+          for (let a = 0; a < 3 && meets; a++) meets = box[t * 6 + a] <= p[a] + r && box[t * 6 + 3 + a] >= p[a] - r;
+          if (!meets) continue;
+          this.mark[t] = s;
+          near[this.count++] = index[t * 3]; near[this.count++] = index[t * 3 + 1]; near[this.count++] = index[t * 3 + 2];
+          u0 = Math.min(u0, uv[t * 4]); v0 = Math.min(v0, uv[t * 4 + 1]); u1 = Math.max(u1, uv[t * 4 + 2]); v1 = Math.max(v1, uv[t * 4 + 3]);
+        }
+      }
+    }
+    if (u0 > u1) return null;
+    const N = this.size, px = (v) => Math.min(N, Math.max(0, v));
+    const x0 = px(Math.floor(u0 * N) - 1), y0 = px(Math.floor(v0 * N) - 1), x1 = px(Math.ceil(u1 * N) + 1), y1 = px(Math.ceil(v1 * N) + 1);
+    return x1 > x0 && y1 > y0 ? [x0, y0, x1 - x0, y1 - y0] : null;
+  }
+}
+
 export class PaintLayer {
   constructor(renderer, headGeometry, size = 1024) {
     this.renderer = renderer;
@@ -55,7 +127,12 @@ export class PaintLayer {
         uColour: { value: new GL.Vector3() }, uFinish: { value: new GL.Vector3() },
       },
     });
-    this.mesh = new GL.Mesh(headGeometry.geometry, this.material);
+    this.reach = new Reach(headGeometry.geometry, size);
+    // the head's vertices (shared, not copied) with only the triangles near the batch being drawn
+    const near = new GL.BufferGeometry();
+    near.attributes = headGeometry.geometry.attributes;
+    near.setIndex(new GL.BufferAttribute(this.reach.near.subarray(0, 0), 1));
+    this.mesh = new GL.Mesh(near, this.material);
     this.clear();
   }
 
@@ -76,9 +153,13 @@ export class PaintLayer {
     for (let i = 0; i < dabs.length; i += BATCH) {
       const n = Math.min(BATCH, dabs.length - i);
       for (let k = 0; k < n; k++) this.dabs[k].set(dabs[i + k][0], dabs[i + k][1], dabs[i + k][2], dabs[i + k][3] ?? 1);
+      const scissor = this.reach.rect(this.dabs, n, t.radius);
+      if (!scissor) continue; // off the head: nothing to paint
+      const index = this.mesh.geometry.index;
+      index.array = this.reach.near.subarray(0, this.reach.count); index.needsUpdate = true;
       u.uCount.value = n;
-      u.uLayer.value = 0; u.uRate.value = rate[0]; this.renderer.drawToTarget(this.colour, this.mesh);
-      u.uLayer.value = 1; u.uRate.value = rate[1]; this.renderer.drawToTarget(this.finish, this.mesh);
+      u.uLayer.value = 0; u.uRate.value = rate[0]; this.renderer.drawToTarget(this.colour, this.mesh, { scissor });
+      u.uLayer.value = 1; u.uRate.value = rate[1]; this.renderer.drawToTarget(this.finish, this.mesh, { scissor });
     }
   }
 }

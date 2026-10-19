@@ -1,5 +1,6 @@
 // Browser smoke test: renders faces in Chromium (WebGL2) and fails on shader/page errors or a blank canvas, and
-// applies every makeup tool to a face with scripted strokes, the mouse and touch (see paintCheck, touchCheck).
+// applies every makeup tool to a face with scripted strokes, the mouse and touch (see paintCheck, nearCheck,
+// touchCheck).
 // With --gallery it renders one face of every heritage (each profile and each named blend, plus a second East
 // Asian face to fill the grid) and writes docs/face-gallery.jpg, labelled with the heritage.
 // Usage: node tools/build-preview.mjs && node tests/render-smoke.mjs [--gallery]
@@ -91,6 +92,51 @@ async function paintCheck(page, errors) {
   console.log(`paint: ${r.painted.n} pixels painted by 7 strokes, a gem and a lens; restore differs in ${r.restored.n} pixels (max ${r.restored.max}); reset is clean: ${!r.reset.n}`);
 }
 
+// Paint draws only the head's triangles near each batch of dabs, clipped to their texels (PaintLayer's Reach): the
+// same strokes with every surface tool, over the cheeks, nose, lips, brows, lids and across the face's seams, leave
+// exactly the same paint as drawing the whole head into the whole textures.
+async function nearCheck(page, errors) {
+  const r = await page.evaluate(() => {
+    const v = window.view, a = v.makeup, P = a.picker, E = v.eyes.meshes.map((m) => m.position), gl = v.renderer.gl, PL = a.paint;
+    const read = (rt) => {
+      const t = v.renderer.target(rt), px = rt.halfFloat ? new Float32Array(rt.width * rt.height * 4) : new Uint8Array(rt.width * rt.height * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
+      gl.readPixels(0, 0, rt.width, rt.height, gl.RGBA, rt.halfFloat ? gl.FLOAT : gl.UNSIGNED_BYTE, px);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return px;
+    };
+    const paths = [
+      ['brush', 'brush-rose', [E[0][0] - 0.1, E[0][1] - 0.4, E[0][2]], [E[1][0] + 0.1, E[1][1] - 0.4, E[1][2]]],
+      ['glow', 'glow-champagne', [0, 0.5, 0.8], [0, -0.2, 0.95]],
+      ['pencil', 'pencil-espresso', [E[0][0] - 0.15, E[0][1] + 0.2, E[0][2]], [E[0][0] + 0.15, E[0][1] + 0.22, E[0][2]]],
+      ['liner', 'liner-black', [E[1][0] - 0.12, E[1][1] + 0.08, E[1][2] + 0.08], [E[1][0] + 0.18, E[1][1] + 0.14, E[1][2]]],
+      ['lip', 'lip-rose', [-0.2, -0.58, 0.5], [0.2, -0.58, 0.5]],
+      ['brush', 'brush-rose', [-1.2, -0.2, 0], [1.2, -0.3, 0]],
+    ];
+    const saved = JSON.stringify(a.makeup);
+    const paint = () => {
+      PL.clear();
+      for (const [tool, colour, p0, p1] of paths) {
+        const g = a.begin(tool, colour), [x0, y0] = P.project(p0), [x1, y1] = P.project(p1);
+        for (let k = 0; k <= 80; k++) a.move(g, x0 + ((x1 - x0) * k) / 80, y0 + ((y1 - y0) * k) / 80 + 6 * Math.sin(k / 4));
+        a.end(g);
+      }
+      return [read(PL.colour), read(PL.finish)];
+    };
+    const near = paint(), reach = PL.reach, rect = reach.rect.bind(reach);
+    reach.rect = (...args) => { rect(...args); reach.near.set(reach.index); reach.count = reach.index.length; return [0, 0, PL.colour.width, PL.colour.height]; };
+    const whole = paint();
+    reach.rect = rect;
+    a.restore(JSON.parse(saved));
+    let painted = 0, differ = 0;
+    for (let l = 0; l < 2; l++) for (let i = 0; i < near[l].length; i++) { if (whole[l][i]) painted++; if (near[l][i] !== whole[l][i]) differ++; }
+    return { painted, differ };
+  });
+  if (r.painted < 10000) errors.push(`paint reach: only ${r.painted} values painted`);
+  if (r.differ) errors.push(`paint reach: ${r.differ} paint values differ from drawing the whole head`);
+  console.log(`paint reach: ${r.painted} paint values, ${r.differ} differ from drawing the whole head`);
+}
+
 // Touch: one finger paints; a second finger during the stroke adds nothing; a lens and a gem apply on a tap, not a
 // drag.
 async function touchCheck(browser, errors) {
@@ -158,6 +204,7 @@ try {
   await first.waitForFunction('window.done === true', null, { timeout: 120000 });
   console.log(`first face on screen ${Date.now() - t0} ms after navigation (local server, ${process.env.CI ? 'CI' : 'software'} WebGL)`);
   await paintCheck(first, errors);
+  await nearCheck(first, errors);
   await first.close();
   await touchCheck(browser, errors);
   await page.goto(gallery
