@@ -43,7 +43,7 @@
   #backdrop > * { position: absolute; }
   /* the mirror is hung behind her: main.js places it from where her head is and sets --u (pixels per decimetre at
      the mirror), so the arch, frame and bulbs keep their proportions on every screen */
-  .mirror { visibility: hidden; border-radius: 50% 50% 0 0 / 30% 30% 0 0; border: calc(var(--u, 4px) * 0.14) solid #fbefe4; border-bottom: 0;
+  .mirror { visibility: hidden; box-sizing: border-box; border-radius: 50% 50% 0 0 / 30% 30% 0 0; border: calc(var(--u, 4px) * 0.14) solid #fbefe4; border-bottom: 0;
     background: linear-gradient(160deg, #fdf3f0 0, #f3dcd8 45%, #ecccc8 100%);
     box-shadow: inset 0 0 0 calc(var(--u, 4px) * 0.03) #e7cbb3, 0 calc(var(--u, 4px) * 0.08) calc(var(--u, 4px) * 0.3) #9a5b5b33; filter: blur(1px); }
   .mirror.placed { visibility: visible; }

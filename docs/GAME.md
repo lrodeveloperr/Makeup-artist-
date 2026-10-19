@@ -66,6 +66,7 @@ on each screen.
   - every control is on screen, at least 30 px, and apart from the others
   - no control covers her eyes or mouth
   - the face fits its canvas and stays put between making and review
+  - she sits in the middle of the salon mirror (within 1 px)
 
 There is no eraser, undo or free reset. Redo is the rewarded replay the contract promises. An untouched
 Done/Next is allowed, but counts nothing.

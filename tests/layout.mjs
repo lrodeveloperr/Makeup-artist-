@@ -2,7 +2,7 @@
 // shapes, in portrait and landscape. One page is resized through every size, so orientation changes are tested
 // live. In each state (making a look, the colour of the day open, review) every control must be on screen, at a
 // tappable size, apart from the others and off the face (her eyes and mouth stay clear); the face must fit its
-// canvas. Writes a contact sheet per state to tests/out/.
+// canvas, centred in the salon mirror. Writes a contact sheet per state to tests/out/.
 // Usage: node tools/build-game.mjs && node tests/layout.mjs
 import fs from 'node:fs';
 import { chromium } from 'playwright';
@@ -43,7 +43,8 @@ try {
     const [L, R] = v.eyes.meshes.map((m) => m.position);
     const marks = [[L[0], L[1], L[2]], [R[0], R[1], R[2]], [0, -0.62, 0.55], [0.55, 0.2, 0.2], [-0.55, 0.2, 0.2], [0, 1.0, 0.3]]
       .map((p) => P.project(p)).map(([x, y]) => [canvas.x + x, canvas.y + y]);
-    return { controls, swatches, canvas, eyesMouth: marks.slice(0, 3), faceEdges: marks.slice(3), scale: getComputedStyle(document.documentElement).getPropertyValue('--s') };
+    const m = document.querySelector('#backdrop .mirror').getBoundingClientRect(), [fx] = P.project([0, 0, 0]);
+    return { controls, swatches, canvas, eyesMouth: marks.slice(0, 3), faceEdges: marks.slice(3), mirrorOff: m.left + m.width / 2 - (canvas.x + fx), scale: getComputedStyle(document.documentElement).getPropertyValue('--s') };
   }, state);
 
   const inside = (b, W, H) => b.x >= -1 && b.y >= -1 && b.x + b.w <= W + 1 && b.y + b.h <= H + 1;
@@ -62,6 +63,8 @@ try {
       // the face's edges (cheeks, top of the head) are inside the canvas, so she is never cut off at the sides
       for (const [x, y] of m.faceEdges) if (x < m.canvas.x || x > m.canvas.x + m.canvas.w || y < m.canvas.y) errors.push(`${where}: the face is cut off by the canvas`);
     }
+    // she sits in the middle of the salon mirror behind her
+    if (Math.abs(m.mirrorOff) > 1) errors.push(`${where}: the mirror is ${Math.round(m.mirrorOff)} px off her centre`);
     // the face stays exactly where it was between making a look and review
     const key = `${W}x${H}`;
     if (state === 'create') canvases[key] = m.canvas;
