@@ -11,6 +11,14 @@
 // scores or what makeup a face "should" wear.
 
 // skin tone: position on the continuous ramp in colors.js (0 = very fair, 1 = very deep)
+// Natural lash and brow styles. Profiles without their own use the defaults; lashes: [lo, hi] ranges.
+export const LASHES = { length: [1.0, 1.35], curl: [0.45, 0.85], density: [0.95, 1.2] };
+export const BROWS = { 'soft-arch': 5, 'high-arch': 3, angled: 3, rounded: 2, straight: 2 };
+const SHORT_STRAIGHT_LASHES = { length: [0.72, 0.95], curl: [0.15, 0.4], density: [0.8, 1.0] };
+const SHORTER_LASHES = { length: [0.8, 1.05], curl: [0.2, 0.5], density: [0.85, 1.05] };
+const FLAT_BROWS = { straight: 5, 'soft-arch': 4, rounded: 2, angled: 1 };
+const SOFT_BROWS = { 'soft-arch': 5, straight: 4, rounded: 2, angled: 1 };
+
 export const PROFILES = {
   'west-african': {
     tone: [0.6, 1.0], undertone: { neutral: 3, golden: 1, red: 1 },
@@ -66,30 +74,34 @@ export const PROFILES = {
       'lower-lip-volume': 0.1, 'head-width': -0.05, 'brow-proj': 0.05 },
   },
   'east-asian': {
+    lashes: SHORT_STRAIGHT_LASHES, brows: FLAT_BROWS,
     tone: [0.08, 0.4], undertone: { golden: 4, neutral: 2, pink: 0.5 },
     texture: { straight: 88, wavy: 12 }, hair: { 'jet-black': 6, 'soft-black': 5, 'darkest-brown': 3, 'dark-brown': 1 },
     iris: { 'dark-brown': 7, brown: 3 },
-    shape: { epicanthus: 0.5, 'lid-fold': 0.45, 'nose-depth': -0.3, 'nose-proj': -0.25, 'nose-width': 0.1, 'nose-length': -0.1,
+    shape: { epicanthus: -0.75, 'lid-fold': 0.45, 'eye-outer-corner': 0.3, 'nose-depth': -0.3, 'nose-proj': -0.25, 'nose-width': 0.1, 'nose-length': -0.1,
       cheekbones: 0.35, 'head-width': 0.25, 'brow-proj': -0.25, 'eye-depth-1': -0.2, 'mouth-proj': -0.05 },
   },
   'southeast-asian': {
+    lashes: SHORTER_LASHES, brows: SOFT_BROWS,
     tone: [0.3, 0.7], undertone: { golden: 4, olive: 1, neutral: 2 },
     texture: { straight: 70, wavy: 25, curly: 5 }, hair: { 'jet-black': 6, 'soft-black': 5, 'darkest-brown': 3, 'dark-brown': 1 },
     iris: { 'dark-brown': 6, brown: 4 },
-    shape: { epicanthus: 0.3, 'lid-fold': 0.25, 'nose-width': 0.3, 'nose-depth': -0.25, 'nose-proj': -0.15,
+    shape: { epicanthus: -0.45, 'lid-fold': 0.3, 'nose-width': 0.3, 'nose-depth': -0.25, 'nose-proj': -0.15,
       'upper-lip-volume': 0.2, 'lower-lip-volume': 0.2, cheekbones: 0.2, 'head-width': 0.15, 'mouth-proj': 0.1 },
   },
   'central-asian': {
+    lashes: SHORTER_LASHES, brows: SOFT_BROWS,
     tone: [0.12, 0.45], undertone: { golden: 3, neutral: 2, olive: 1, pink: 1 },
     texture: { straight: 75, wavy: 25 }, hair: { 'jet-black': 4, 'soft-black': 4, 'darkest-brown': 4, 'dark-brown': 3, chestnut: 1, 'medium-brown': 1 },
     iris: { 'dark-brown': 4, brown: 4, hazel: 1.5, green: 0.6, 'light-brown': 1, blue: 0.3 },
-    shape: { epicanthus: 0.3, 'lid-fold': 0.25, cheekbones: 0.35, 'head-width': 0.25, 'nose-proj': -0.05 },
+    shape: { epicanthus: -0.45, 'lid-fold': 0.3, 'eye-outer-corner': 0.2, cheekbones: 0.35, 'head-width': 0.25, 'nose-proj': -0.05 },
   },
   'indigenous-americas': {
+    lashes: SHORTER_LASHES, brows: SOFT_BROWS,
     tone: [0.3, 0.68], undertone: { golden: 3, red: 2, olive: 1, neutral: 1 },
     texture: { straight: 90, wavy: 10 }, hair: { 'jet-black': 7, 'soft-black': 4, 'darkest-brown': 2 },
     iris: { 'dark-brown': 7, brown: 3 },
-    shape: { cheekbones: 0.4, 'head-width': 0.25, epicanthus: 0.2, 'lid-fold': 0.15, 'nose-proj': 0.1, 'nose-hump': 0.1, 'nose-width': 0.15 },
+    shape: { cheekbones: 0.4, 'head-width': 0.25, epicanthus: -0.25, 'lid-fold': 0.2, 'nose-proj': 0.1, 'nose-hump': 0.1, 'nose-width': 0.15 },
   },
   'pacific-islander': {
     tone: [0.42, 0.75], undertone: { golden: 3, neutral: 2, red: 1 },
@@ -111,10 +123,11 @@ export const PROFILES = {
     shape: { 'brow-proj': 0.45, 'nose-width': 0.4, 'eye-depth-1': 0.3, 'upper-lip-volume': 0.2, 'lower-lip-volume': 0.2, 'mouth-proj': 0.15 },
   },
   'arctic-indigenous': {
+    lashes: SHORT_STRAIGHT_LASHES, brows: FLAT_BROWS,
     tone: [0.22, 0.55], undertone: { golden: 3, neutral: 2, red: 1 },
     texture: { straight: 95, wavy: 5 }, hair: { 'jet-black': 7, 'soft-black': 4, 'darkest-brown': 2 },
     iris: { 'dark-brown': 7, brown: 3 },
-    shape: { epicanthus: 0.45, 'lid-fold': 0.35, cheekbones: 0.4, 'head-width': 0.35, 'nose-width': -0.05, 'nose-proj': -0.15, 'face-fat': 0.1 },
+    shape: { epicanthus: -0.7, 'lid-fold': 0.45, 'eye-outer-corner': 0.2, cheekbones: 0.4, 'head-width': 0.35, 'nose-width': -0.05, 'nose-proj': -0.15, 'face-fat': 0.1 },
   },
 };
 
@@ -173,6 +186,8 @@ export const STYLES = {
 // How often each kind of origin is drawn. Profiles are drawn evenly (not by world population) so every
 // session meets a wide range of faces. Mixed heritage uses the named blends only.
 export const ORIGIN_WEIGHTS = { single: 0.75, blend: 0.25 };
-// Profile shape tendencies are applied at this strength on top of the sculpted base heads.
+// Profile shape tendencies are applied at this strength on top of the sculpted base heads, except the eyelid
+// fold, which defines the eye's look and stays natural at full strength.
 export const PROFILE_SHAPE_SCALE = 0.5;
+export const FULL_STRENGTH = new Set(['epicanthus', 'lid-fold']);
 export const TRAITS = { highlights: 0.1 };

@@ -5,7 +5,9 @@ render smoke test listed below. It does not yet include makeup painting, the gam
 YouTube adapter. Hair and outfits are procedural and work for every face, but they need an art pass before
 release (see "Known limits").
 
-![24 faces from the queue](face-gallery.jpg)
+![One face of every heritage: the 15 profiles, the 8 named blends and a second East Asian face](face-gallery.jpg)
+
+The gallery shows one face of every heritage (labels are for development only; players never see them).
 
 ## Owner decisions this implements (18 October 2026)
 
@@ -92,7 +94,11 @@ seed, so a save can store the record or just `{version, seed}`.
   four parts:
   - **Sculpted base heads.** Each profile mixes MakeHuman's three sculpted young-female heads (`BASE_HEADS`, for
     example South Asian = 65% Caucasian, 20% African, 15% Asian head). These carry most of the ancestry and look
-    more natural than slider offsets, so profile slider tendencies are applied at half strength.
+    more natural than slider offsets, so profile slider tendencies are applied at half strength. The eyelid
+    fold is the exception: it defines the eye and stays natural at full strength. East Asian, Arctic, Southeast
+    Asian, Central Asian and Indigenous American faces have a smooth upper lid with the fold over the inner corner
+    (MakeHuman's `epicanthus` at negative values; positive values deepen a double-lid crease) and a lower,
+    single or hooded lid fold (`lid-fold` positive).
   - **Calibrated spread.** One standard deviation of a dimension moves the face by a fixed visible amount (about
     0.7 mm for small features, 1.2–1.4 mm for skull and structure). This uses each target's measured effect in
     `dim-impact.js`, which is generated from the asset and checked by the tests.
@@ -109,7 +115,12 @@ seed, so a save can store the record or just `{version, seed}`.
   - Freckles depend on fairness and red hair.
   - Beauty marks on about 44% of faces. No vitiligo or albinism (owner decision).
 - **Eyes, brows, lashes.** Iris colour comes from the profile. Brows use five shapes with varied thickness, density
-  and colour (derived from natural hair colour). Lash length, density and curl vary.
+  and colour (derived from natural hair colour); profiles can weight the shapes (flatter brows for East Asian and
+  Arctic faces). Lash length, density and curl vary within the profile's natural range (shorter and straighter
+  for East Asian and Arctic faces, a little shorter for Southeast Asian, Central Asian and Indigenous American).
+- **Mixed heritage.** Undertone, hair, iris, brows and lashes come from one parent profile, chosen in proportion
+  to the square of its share, so colouring follows the larger part of the heritage and stays coherent with the
+  face.
 - **Hair.**
   - The profile sets natural texture (straight, wavy, curly, coily) and natural colour. Colour is a table of
     17 natural shades (jet black to platinum blonde, plus auburn, copper and strawberry blonde) with a weight per
@@ -141,9 +152,11 @@ seed, so a save can store the record or just `{version, seed}`.
 
 ### Variety director (`src/face/queue.js`)
 
-This picks each next face from up to 8 deterministic candidates. It scores each candidate against the last four
-faces on origin, hairstyle, parting, skin-tone band, hair colour, outfit colour, iris and brow shape. Its state is
-`{version, cursor, recent}` and survives a JSON save. It never stalls: after 8 candidates it takes the most
+It rotates through every heritage: each run of 20 faces meets all 15 profiles once, plus five mixed-heritage
+faces, in a shuffled order, so no heritage goes unseen for long (the audit checks every window). Within the
+heritage that is due, it picks from up to 8 deterministic candidates, scored against the last four faces on
+origin, hairstyle, parting, skin-tone band, hair colour, outfit colour, iris and brow shape. Its state is
+`{version, cursor, recent, bag}` and survives a JSON save. It never stalls: after 8 candidates it takes the most
 different one.
 
 ## Hairstyles
@@ -205,7 +218,7 @@ node tools/build-preview.mjs            # build/preview; serve with: node tools/
 node tests/unit.mjs                     # asset, generator and queue checks
 node tests/face-audit.mjs 2000 300      # writes docs/FACE-AUDIT.md and docs/face-audit.json
 node tests/size-budget.mjs              # download-size budget (fails over 400 KB total or 512 KiB per file)
-node tests/render-smoke.mjs [--gallery] # Chromium WebGL render check; --gallery rewrites docs/face-gallery.jpg
+node tests/render-smoke.mjs [--gallery] # Chromium WebGL render check; --gallery rewrites docs/face-gallery.jpg (one face per heritage)
 ```
 
 Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use Next / Back or the arrow keys.

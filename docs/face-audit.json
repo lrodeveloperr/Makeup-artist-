@@ -1,5 +1,5 @@
 {
- "generatorVersion": 5,
+ "generatorVersion": 6,
  "faces": 2000,
  "geometrySample": 300,
  "failures": [],
@@ -29,55 +29,55 @@
    "feminine": 2000
   },
   "style": {
-   "box-braids": 147,
-   "cornrow-braids": 86,
-   "curly-long": 276,
-   "locs": 74,
-   "long-layered": 205,
-   "long-straight": 608,
-   "long-wavy": 494,
-   "silk-press": 110
+   "box-braids": 152,
+   "cornrow-braids": 92,
+   "curly-long": 275,
+   "locs": 80,
+   "long-layered": 200,
+   "long-straight": 607,
+   "long-wavy": 479,
+   "silk-press": 115
   },
   "texture": {
-   "coily": 445,
+   "coily": 470,
    "curly": 310,
-   "straight": 793,
-   "wavy": 452
+   "straight": 784,
+   "wavy": 436
   },
   "colour": {
-   "ash-blonde": 17,
-   "ash-brown": 25,
-   "auburn": 17,
+   "ash-blonde": 11,
+   "ash-brown": 21,
+   "auburn": 13,
    "chestnut": 45,
    "copper": 8,
-   "dark-blonde": 28,
-   "dark-brown": 203,
-   "darkest-brown": 348,
-   "golden-blonde": 22,
-   "honey-blonde": 11,
-   "jet-black": 647,
-   "light-blonde": 10,
-   "light-brown": 27,
-   "medium-brown": 51,
-   "platinum-blonde": 5,
-   "soft-black": 534,
-   "strawberry-blonde": 2
+   "dark-blonde": 24,
+   "dark-brown": 202,
+   "darkest-brown": 353,
+   "golden-blonde": 14,
+   "honey-blonde": 8,
+   "jet-black": 663,
+   "light-blonde": 7,
+   "light-brown": 21,
+   "medium-brown": 43,
+   "platinum-blonde": 3,
+   "soft-black": 561,
+   "strawberry-blonde": 3
   },
   "iris": {
-   "blue": 78,
-   "brown": 626,
-   "dark-brown": 1079,
-   "green": 49,
-   "grey": 23,
-   "hazel": 95,
+   "blue": 69,
+   "brown": 631,
+   "dark-brown": 1101,
+   "green": 41,
+   "grey": 20,
+   "hazel": 88,
    "light-brown": 50
   },
   "undertone": {
-   "golden": 625,
-   "neutral": 803,
-   "olive": 212,
-   "pink": 104,
-   "red": 256
+   "golden": 629,
+   "neutral": 808,
+   "olive": 217,
+   "pink": 87,
+   "red": 259
   },
   "tone": {
    "0": 40,
@@ -92,11 +92,11 @@
    "9": 63
   },
   "brows": {
-   "angled": 361,
-   "high-arch": 401,
-   "rounded": 286,
-   "soft-arch": 701,
-   "straight": 251
+   "angled": 310,
+   "high-arch": 294,
+   "rounded": 309,
+   "soft-arch": 667,
+   "straight": 420
   },
   "age": {
    "18": 67,
@@ -113,47 +113,47 @@
    "29": 82
   },
   "outfitColour": {
-   "berry": 9,
-   "black": 30,
+   "berry": 8,
+   "black": 31,
    "blush": 35,
-   "burgundy": 21,
+   "burgundy": 20,
    "charcoal": 16,
-   "cobalt": 70,
+   "cobalt": 74,
    "coral": 109,
    "cornflower": 25,
-   "cream": 58,
-   "emerald": 101,
-   "fuchsia": 90,
+   "cream": 57,
+   "emerald": 97,
+   "fuchsia": 88,
    "gold": 33,
-   "golden-yellow": 88,
+   "golden-yellow": 91,
    "grey-blue": 8,
-   "hot-pink": 108,
-   "ivory": 73,
-   "lavender": 97,
-   "leaf-green": 52,
+   "hot-pink": 106,
+   "ivory": 74,
+   "lavender": 96,
+   "leaf-green": 53,
    "lilac": 48,
    "mint": 52,
-   "mustard": 68,
-   "navy": 41,
-   "olive": 24,
+   "mustard": 69,
+   "navy": 40,
+   "olive": 25,
    "orange": 24,
    "peach": 27,
    "plum": 29,
    "powder-blue": 14,
-   "raspberry": 12,
-   "red": 105,
+   "raspberry": 10,
+   "red": 109,
    "rose": 8,
-   "royal-blue": 57,
+   "royal-blue": 54,
    "royal-purple": 19,
-   "rust": 53,
-   "sky-blue": 43,
-   "teal": 70,
+   "rust": 52,
+   "sky-blue": 44,
+   "teal": 69,
    "terracotta": 4,
-   "tomato": 43,
-   "turquoise": 93,
+   "tomato": 42,
+   "turquoise": 96,
    "violet": 40,
    "warm-pink": 7,
-   "white": 96
+   "white": 97
   },
   "pattern": {
    "dots": 260,
@@ -180,28 +180,28 @@
   }
  },
  "rates": {
-  "freckles": 0.1235,
+  "freckles": 0.123,
   "moles": 0.4435,
   "highlights": 0.1145
  },
- "distinctSignatures": 1995,
+ "distinctSignatures": 1990,
  "queue": {
   "adjacentIdentical": 0,
-  "adjacentSameStyle": 0.003501750875437719,
-  "adjacentSameOrigin": 0,
-  "adjacentSameToneBin": 0.011005502751375688,
+  "adjacentSameStyle": 0.013006503251625813,
+  "adjacentSameOrigin": 0.014507253626813406,
+  "adjacentSameToneBin": 0.04852426213106553,
   "repeatsWithinFour": 0
  },
  "geometry": {
   "eyeR": {
-   "min": 0.1368046214367306,
-   "p5": 0.13938061781983888,
+   "min": 0.1368046217896846,
+   "p5": 0.1393806182759475,
    "median": 0.15285498919951632,
    "p95": 0.15898597160410388,
    "max": 0.16228186934958355
   },
   "lidGap": {
-   "min": 0.05772257037460804,
+   "min": 0.05772256851196289,
    "p5": 0.0671162586659193,
    "median": 0.07957190088927746,
    "p95": 0.09261393547058105,
@@ -215,9 +215,9 @@
    "max": 0.38759106397628784
   },
   "top": {
-   "min": 0.9258805513381958,
-   "p5": 0.9496830105781555,
-   "median": 1.019155740737915,
+   "min": 0.9259330034255981,
+   "p5": 0.9497331380844116,
+   "median": 1.0191569328308105,
    "p95": 1.0760421752929688,
    "max": 1.09987211227417
   },
@@ -225,8 +225,8 @@
    "min": -2.5615694522857666,
    "p5": -2.5109846591949463,
    "median": -2.3737432956695557,
-   "p95": -2.1811320781707764,
-   "max": -0.9516475796699524
+   "p95": -2.181138515472412,
+   "max": -0.95159512758255
   }
  }
 }

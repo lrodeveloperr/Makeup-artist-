@@ -1,7 +1,8 @@
 // Developer preview of generated faces (not the game UI). Shows the queue's faces one by one, or a contact
 // sheet with ?sheet. Origin labels are internal data shown here for review only; the game never shows them.
 //   ?seed=N        start the queue / sheet at N
-//   ?sheet&n=16    contact sheet of N faces (&cols, &w, &h, &label)
+//   ?sheet&n=16    contact sheet of N faces (&cols, &w, &h, &label; &label=heritage for the heritage only;
+//                  &seeds=a,b,c for chosen seeds)
 //   ?style=a,b     force hairstyles (debugging), &texture=coily
 //   ?zoom=k&zx&zy, ?orbit=rad, ?nohair, ?nogarment, ?scalp   debugging views
 import { FaceView } from '../src/face/face-view.js';
@@ -33,18 +34,26 @@ function override(face, i) {
   }
   return face;
 }
+// heritage as a readable name: a single profile, or a named blend with its parts
+const pretty = (id) => id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+  .replace('North African Middle Eastern', 'North African / Middle Eastern').replace('Southern Central African', 'Southern / Central African')
+  .replace('Asian European', 'Asian × European').replace('Arab African', 'Arab × East African');
+const heritage = (f) => (f.origin.kind === 'blend' ? `${pretty(f.origin.blend)} (blend)` : pretty(f.origin.parts[0].id));
 const describe = (f) => `#${f.seed} · ${f.origin.parts.map((p) => `${p.id}${p.weight < 1 ? ' ' + Math.round(p.weight * 100) + '%' : ''}`).join(' + ')} · ${f.presentation}, ${f.age} · ${f.hair.style} (${f.hair.texture}, ${f.hair.colour}) · ${f.eyes.iris} eyes${f.skin.freckles.density ? ' · freckles' : ''} · ${f.outfit.names.join('/')} ${f.outfit.pattern} ${f.outfit.kind} (${f.outfit.neckline})`;
 
 if (sheet) {
   ui?.remove();
-  const start = +(q.get('seed') || 1), count = +(q.get('n') || 12), cols = +(q.get('cols') || 4);
+  const seeds = q.get('seeds')?.split(',').map(Number);
+  const start = +(q.get('seed') || 1), count = seeds ? seeds.length : +(q.get('n') || 12), cols = +(q.get('cols') || 4);
   const grid = document.createElement('div');
   grid.style.cssText = `display:grid;grid-template-columns:repeat(${cols},${W}px)`;
   document.body.appendChild(grid);
   let state = createQueueState(start);
   for (let i = 0; i < count; i++) {
     let face;
-    if (q.has('queue')) ({ face, state } = nextFace(state)); else face = generateFace(start + i);
+    if (seeds) face = generateFace(seeds[i]);
+    else if (q.has('queue')) ({ face, state } = nextFace(state));
+    else face = generateFace(start + i);
     view.setFace(override(face, i));
     view.render();
     const fig = document.createElement('figure');
@@ -55,8 +64,10 @@ if (sheet) {
     fig.appendChild(img);
     if (q.has('label')) {
       const cap = document.createElement('figcaption');
-      cap.style.cssText = 'position:absolute;left:4px;right:4px;bottom:2px;font:10px system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000';
-      cap.textContent = describe(face);
+      cap.style.cssText = q.get('label') === 'heritage'
+        ? 'position:absolute;left:0;right:0;top:0;padding:4px 6px;font:600 13px system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.45)'
+        : 'position:absolute;left:4px;right:4px;bottom:2px;font:10px system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000';
+      cap.textContent = q.get('label') === 'heritage' ? heritage(face) : describe(face);
       fig.appendChild(cap);
     }
     grid.appendChild(fig);

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import { readHead } from '../tools/read-head.mjs';
 import { HeadGeometry } from '../src/face/head-geometry.js';
 import { generateFace, signature, SHAPE_DIMS, GENERATOR_VERSION } from '../src/face/generator.js';
-import { createQueueState, nextFace } from '../src/face/queue.js';
+import { createQueueState, nextFace, heritageOf, ROTATION } from '../src/face/queue.js';
 import { PROFILES } from '../src/face/profiles.js';
 import { HAIR_STYLES } from '../src/face/hair-styles.js';
 import { HAIR_COLOURS, IRIS, UNDERTONES } from '../src/face/colors.js';
@@ -63,9 +63,11 @@ for (let seed = 1; seed <= N; seed++) {
 
 // ---------------- queue: no adjacent repeats, variety between neighbours ----------------
 let state = createQueueState(7), prev = null, adjacentSame = 0, sameStyle = 0, sameOrigin = 0, sameTone = 0, repeats4 = 0;
+const order = [];
 const recentSigs = [];
 for (let i = 0; i < N; i++) {
   const r = nextFace(state);
+  order.push(heritageOf(r.face));
   state = JSON.parse(JSON.stringify(r.state)); // the queue state must survive a save/load round trip
   const sig = signature(r.face), parts = sig.split('|');
   if (prev) {
@@ -80,6 +82,13 @@ for (let i = 0; i < N; i++) {
   prev = sig;
 }
 if (adjacentSame) failures.push(`queue: ${adjacentSame} adjacent identical faces`);
+// every run of ROTATION faces meets every heritage
+let rotationMisses = 0;
+for (let w = 0; w + ROTATION <= order.length; w += ROTATION) {
+  const seen = new Set(order.slice(w, w + ROTATION));
+  for (const id of Object.keys(PROFILES)) if (!seen.has(id)) rotationMisses++;
+}
+if (rotationMisses) failures.push(`queue: ${rotationMisses} heritages missing from a ${ROTATION}-face rotation`);
 
 // ---------------- geometry: every face keeps usable makeup targets ----------------
 const head = readHead();
@@ -140,7 +149,7 @@ ${failures.length ? '\n' + failures.map((f) => '- ' + f).join('\n') + '\n' : ''}
 - Every profile is deterministic (same seed → identical record), uses only catalogue values, keeps every shape value in [-1, 1], ages 18–30, and never places a beauty mark on the eyes or lips.
 - Every face is feminine, with natural (undyed) hair in a long style from the catalogue that suits her natural hair texture.
 - Every outfit uses catalogue values; its colours come from the palette for the face's complexion; deeper skin (tone ≥ 0.45) never wears very dark colours (black, navy, charcoal, burgundy, plum); and the main colour is never close to the skin's own colour.
-- The queue (\`src/face/queue.js\`) never shows the same complete face twice in a row, and its state survives a JSON save/load.
+- The queue (\`src/face/queue.js\`) never shows the same complete face twice in a row, meets every one of the ${Object.keys(PROFILES).length} heritages in every run of ${ROTATION} faces (plus mixed-heritage faces), and its state survives a JSON save/load.
 - For the geometry sample: finite vertices, symmetric eyes, open eyelids (lash lines apart) and a usable mouth on every face.
 
 ## Variety

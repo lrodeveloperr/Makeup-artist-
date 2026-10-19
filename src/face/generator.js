@@ -1,13 +1,13 @@
 // Deterministic face generator: seed -> plain, serialisable face record. The record holds every resolved
 // value, so a saved face renders identically even if these tables change in a later generator version.
 import { createRng } from './rng.js';
-import { PROFILES, BLENDS, ORIGIN_WEIGHTS, TRAITS, BASE_HEADS, STYLES, PROFILE_SHAPE_SCALE } from './profiles.js';
+import { PROFILES, BLENDS, ORIGIN_WEIGHTS, TRAITS, BASE_HEADS, STYLES, PROFILE_SHAPE_SCALE, FULL_STRENGTH, LASHES, BROWS } from './profiles.js';
 import { HAIR_STYLES } from './hair-styles.js';
 import { BLONDE } from './colors.js';
 import { chooseOutfit } from './outfit.js';
 import { DIM_IMPACT } from './dim-impact.js';
 
-export const GENERATOR_VERSION = 5;
+export const GENERATOR_VERSION = 6;
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 const r3 = (x) => Math.round(x * 1000) / 1000 || 0; // never -0, so records survive a JSON round trip
 
@@ -86,8 +86,9 @@ const LIGHTER = {
   'light-blonde': 'platinum-blonde', 'platinum-blonde': 'platinum-blonde',
   auburn: 'copper', copper: 'strawberry-blonde', 'strawberry-blonde': 'golden-blonde',
 };
-// pick a parent profile in proportion to its weight
-const parent = (rng, parts) => PROFILES[rng.pick(Object.fromEntries(parts.map((p) => [p.id, p.weight])))];
+// pick a parent profile, favouring the larger part of a mixed heritage (weight squared), so colouring stays
+// coherent with how the face looks
+const parent = (rng, parts) => PROFILES[rng.pick(Object.fromEntries(parts.map((p) => [p.id, p.weight ** 2])))];
 
 export function generateFace(seed) {
   seed >>>= 0;
@@ -102,7 +103,8 @@ export function generateFace(seed) {
   const shape = {};
   for (const id of SHAPE_DIMS) {
     let mean = BASE[id] || 0;
-    for (const p of parts) mean += p.weight * PROFILE_SHAPE_SCALE * (PROFILES[p.id].shape[id] || 0);
+    const scale = FULL_STRENGTH.has(id) ? 1 : PROFILE_SHAPE_SCALE;
+    for (const p of parts) mean += p.weight * scale * (PROFILES[p.id].shape[id] || 0);
     const sd = sdOf(id);
     let dev = RESIDUAL * sr.gauss(1);
     FACTORS.forEach((f, k) => { if (f[id]) dev += f[id] * z[k]; });
@@ -178,8 +180,10 @@ export function generateFace(seed) {
     seed: r3(er.range(0, 100)),
   };
   const br = root.fork(7);
+  const eyeStyle = parent(br, parts); // natural brow shape and lash length and curl follow the ancestry
+  const ls = eyeStyle.lashes || LASHES;
   const brows = {
-    shape: br.pick({ 'soft-arch': 5, 'high-arch': 3, angled: 3, rounded: 2, straight: 2 }),
+    shape: br.pick(eyeStyle.brows || BROWS),
     thickness: r3(br.range(0.65, 1.0)),
     density: r3(br.range(0.75, 1.0)),
     length: r3(br.range(0.95, 1.08)),
@@ -187,7 +191,7 @@ export function generateFace(seed) {
     seed: br.int(0, 99999),
   };
   const lashes = {
-    length: r3(br.range(1.0, 1.35)), density: r3(br.range(0.95, 1.2)), curl: r3(br.range(0.45, 0.85)),
+    length: r3(br.range(...ls.length)), density: r3(br.range(...ls.density)), curl: r3(br.range(...ls.curl)),
     colour: BLONDE.has(natural) ? 'light-brown' : 'jet-black',
     seed: br.int(0, 99999),
   };
