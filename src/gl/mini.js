@@ -193,9 +193,10 @@ vec3 linearToSRGB(vec3 c) { return mix(c * 12.92, pow(c, vec3(0.41666)) * 1.055 
 const OUTPUT = { '#include <tonemapping_fragment>': 'gl_FragColor.rgb = neutralToneMap(gl_FragColor.rgb);', '#include <colorspace_fragment>': 'gl_FragColor.rgb = linearToSRGB(gl_FragColor.rgb);' };
 
 export class WebGLRenderer {
-  constructor({ canvas, antialias = true, preserveDrawingBuffer = false } = {}) {
+  // alpha: a see-through canvas (the page shows behind empty space); drawing then leaves premultiplied colour
+  constructor({ canvas, antialias = true, preserveDrawingBuffer = false, alpha = false } = {}) {
     this.domElement = canvas || document.createElement('canvas');
-    const gl = this.domElement.getContext('webgl2', { antialias, alpha: false, preserveDrawingBuffer, premultipliedAlpha: false });
+    const gl = this.domElement.getContext('webgl2', { antialias, alpha, preserveDrawingBuffer, premultipliedAlpha: alpha });
     if (!gl) throw new Error('WebGL2 is not available');
     this.gl = gl;
     this.pixelRatio = 1;
@@ -376,8 +377,8 @@ export class WebGLRenderer {
     const gl = this.gl;
     this.collect();
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    const bg = scene.background;
-    gl.clearColor(...linearBackground(bg), 1);
+    const bg = scene.background; // null: transparent
+    gl.clearColor(...(bg ? [...linearBackground(bg), 1] : [0, 0, 0, 0]));
     gl.depthMask(true);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const view = camera.view();

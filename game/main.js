@@ -10,23 +10,26 @@ import { Session } from '../src/game/session.js';
 import { timeLeft } from '../src/game/daily.js';
 
 const $ = (id) => document.getElementById(id);
-const svg = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}><path d="${d}"/></svg>`;
+const svg = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}><path d="${d}"/></svg>`;
 const ICON = {
-  brush: svg('M5 21c3 0 5-2 5-5l1-1 2 2-1 1c-3 0-5 2-7 3zM11 15l7-11 2 2-7 11'),
-  pencil: svg('M4 20l1-4L16 5l3 3L8 19zM14 7l3 3'),
-  mascara: svg('M4 20L15 9M13 5l6 6M15 4l5 5M11 7l6 6M12 4l1 2M18 10l2 1'),
-  lip: svg('M9 21h6v-8H9zM10 13V7l4-3v9'),
-  lens: svg('M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6'),
-  check: svg('M5 12.5l4.5 4.5L19 7.5', ' stroke-width="2.6"'),
-  next: svg('M5 12h13M13 6l6 6-6 6', ' stroke-width="2.4"'),
-  redo: svg('M4 12a8 8 0 1 0 3-6.2M4 4v4h4', ' stroke-width="2.2"'),
-  eye: svg('M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 10a2 2 0 1 0 0 4 2 2 0 1 0 0-4'),
-  video: svg('M3 5.5h18v12H3zM10 9v5.5l4.6-2.7zM8 21h8'),
-  clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2'),
-  close: svg('M6 6l12 12M18 6L6 18', ' stroke-width="2.6"'),
-  gift: svg('M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0'),
-  star: '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.2 7.3 7.3 2.2-7.3 2.2L12 20.5l-2.2-7.3L2.5 11l7.3-2.2z" fill="#ffe14d" stroke="#2b2522" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  brush: svg('M4.5 19.5l6.2-6.2M10.7 13.3c-.6-3.6 2.4-8.6 8.3-9.8.6 5.8-4.6 9.3-8.3 9.8zM3.5 20.5l2-1'),
+  pencil: svg('M4 20l1.4-4.6L16 4.8l3.2 3.2L8.6 18.6zM14.2 6.6l3.2 3.2M5.4 15.4l3.2 3.2'),
+  mascara: svg('M3.5 20.5l8-8M11 13l6.5-6.5M12.6 9.2l2.2 2.2M14.4 7.4l2.2 2.2M16.2 5.6l2.2 2.2M10.8 11l2.2 2.2'),
+  lip: svg('M8 21h8v-7.5H8zM9.2 13.5V9.5h5.6v4M10.2 9.5V5.2L13.8 3v6.5'),
+  lens: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 1 0 0-6.8', ' fill="none"'),
+  check: svg('M5 12.5l4.5 4.5L19 7.5', ' stroke-width="3.6"'),
+  next: svg('M5 12h13M12.5 5.5L19 12l-6.5 6.5', ' stroke-width="3.2"'),
+  redo: svg('M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 4.2v4.6h4.6', ' stroke-width="3"'),
+  eye: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 10a2 2 0 1 0 0 4 2 2 0 1 0 0-4', ' stroke-width="2.6"'),
+  video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
+  clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2', ' stroke-width="2.6"'),
+  close: svg('M6.5 6.5l11 11M17.5 6.5l-11 11', ' stroke-width="3.2"'),
+  gift: svg('M4 10.5h16V21H4zM2.8 7h18.4v3.5H2.8zM12 7v14M12 7c-1.6-4.2-6.2-3.6-5.2-.4M12 7c1.6-4.2 6.2-3.6 5.2-.4', ' stroke-width="2.3"'),
+  star: '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.2 7.3 7.3 2.2-7.3 2.2L12 20.5l-2.2-7.3L2.5 11l7.3-2.2z" fill="#ffe14d" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
 };
+// Haircut's rosette for Done: a scalloped seal
+const SEAL = `<svg class="seal" viewBox="-50 -50 100 100" aria-hidden="true"><polygon points="${Array.from({ length: 32 }, (_, k) => { const a = (k / 32) * 2 * Math.PI, r = k % 2 ? 41 : 48; return `${(r * Math.sin(a)).toFixed(1)},${(-r * Math.cos(a)).toFixed(1)}`; }).join(' ')}"/></svg>`;
+const BADGE = `<span class="vbadge">${ICON.video}</span>`;
 const TOOLS = [['brush', 'Brush'], ['pencil', 'Pencil'], ['mascara', 'Mascara'], ['lip', 'Lips'], ['lens', 'Lenses']];
 const TOOL_NAME = Object.fromEntries(TOOLS);
 // a swatch's look: its colour, with a shine for gloss and sparkles for shimmer
@@ -56,7 +59,7 @@ async function main() {
   let view, raw;
   try {
     [view, raw] = await Promise.all([
-      FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: Math.min(devicePixelRatio, 2) }),
+      FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true }),
       host.load(),
     ]);
   } catch (e) { return fail('LOAD', e); }
@@ -105,7 +108,9 @@ async function main() {
   for (const [id, label] of TOOLS) {
     const b = document.createElement('button');
     b.dataset.tool = id;
-    b.innerHTML = `${ICON[id]}${label}`;
+    b.className = 'ctl';
+    b.setAttribute('aria-label', label);
+    b.innerHTML = ICON[id];
     b.onclick = () => session.select(id);
     toolbar.appendChild(b);
   }
@@ -128,10 +133,10 @@ async function main() {
   };
 
   // ---- create and review ----
-  $('done').innerHTML = `Done ${ICON.check}`;
-  $('next').innerHTML = `Next ${ICON.next}`;
-  $('redo').innerHTML = `${ICON.redo} Redo <span class="badge">${ICON.video}</span>`;
-  $('before').innerHTML = `${ICON.eye} Before`;
+  $('done').innerHTML = `${SEAL}${ICON.check}`;
+  $('next').innerHTML = ICON.next;
+  $('redo').innerHTML = `${ICON.redo}${BADGE}`;
+  $('before').innerHTML = ICON.eye;
   $('done').onclick = () => { input.interrupt(); session.finish(); };
   // a request marks the session busy straight away, so the buttons are disabled while it runs
   $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); };
@@ -161,16 +166,17 @@ async function main() {
   const renderPanel = () => {
     const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = c && s.owned.includes(c.id);
     const t = timeLeft();
-    card.querySelector('.gem').innerHTML = c ? `<svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="none" stroke="#0001" stroke-width="7"/>
-      <circle class="arc" cx="75" cy="75" r="70" fill="none" stroke="${t.ms < 2 * 3600e3 ? '#ff3b30' : t.ms < 6 * 3600e3 ? '#ff9f1c' : '#2fa35a'}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(RING * t.frac).toFixed(1)} ${RING.toFixed(1)}"/></svg>
+    card.querySelector('.gem').innerHTML = c ? `<svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-width="8"/>
+      <circle class="arc" cx="75" cy="75" r="70" fill="none" stroke="${t.ms < 2 * 3600e3 ? '#ff3b30' : t.ms < 6 * 3600e3 ? '#ff9f1c' : '#2fa35a'}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(RING * t.frac).toFixed(1)} ${RING.toFixed(1)}"/></svg>
       <div class="sw" style="background:${swatchBackground(c)}"></div>${owned ? `<div class="tick">${ICON.check}</div>` : ''}` : '';
     card.querySelector('.name').innerHTML = c ? `${ICON[c.target]} ${c.name}` : 'You have every colour';
-    card.querySelector('.what').textContent = c ? `${TOOL_NAME[c.target]}${owned ? ': yours to keep' : ' · yours to keep for one video'}` : 'New colours are coming.';
+    card.querySelector('.what').textContent = c ? `${TOOL_NAME[c.target]} · ${owned ? 'yours for good' : 'one video, yours for good'}` : 'New colours are coming.';
     const get = card.querySelector('.get');
     get.hidden = !c;
     get.disabled = session.busy; // once owned it reads "Use it now" and closes the panel
-    get.innerHTML = owned ? `${ICON.check} Yours! Use it now` : `<span class="badge">${ICON.video}</span> Watch a video to get it`;
-    card.querySelector('.time').innerHTML = `${ICON.clock} ${owned ? 'Next colour in' : 'Ends in'} ${t.text}`;
+    get.innerHTML = owned ? `${ICON.check} Yours! Use it now` : `<span class="vb">${ICON.video}</span> Watch a video to keep it`;
+    card.querySelector('.time').innerHTML = `${ICON.clock} ${t.text}`;
+    card.querySelector('.time').setAttribute('aria-label', `${owned ? 'Next colour in' : 'Ends in'} ${t.text}`);
   };
   const openPanel = () => {
     input.interrupt();

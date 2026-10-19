@@ -17,13 +17,14 @@ import { createRng } from './rng.js';
 export const CAMERA = { fov: 20, target: new GL.Vector3(0, -0.38, 0), distance: 10 };
 
 export class FaceView {
-  constructor({ canvas, width = 600, height = 800, pixelRatio = 1 } = {}) {
-    this.renderer = new GL.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  // transparent: no background colour, so the page behind the canvas (the game's backdrop) shows around the face
+  constructor({ canvas, width = 600, height = 800, pixelRatio = 1, transparent = false } = {}) {
+    this.renderer = new GL.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: transparent });
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
     this.cssSize = [width, height];
     this.scene = new GL.Scene();
-    this.scene.background = new GL.Color(0xd9cfc7);
+    this.scene.background = transparent ? null : new GL.Color(0xd9cfc7);
     this.camera = new GL.PerspectiveCamera(CAMERA.fov, width / height, 0.5, 60);
     this.camera.position.copy(CAMERA.target).add(new GL.Vector3(0, 0, CAMERA.distance));
     this.camera.lookAt(CAMERA.target);

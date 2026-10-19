@@ -20,6 +20,21 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 | Colour of the day | A panel over the screen showing today's colour, its tool, a countdown ring to midnight, and **Watch a video to get it**. Once earned it shows **Yours! Use it now**, and the colour is already selected. |
 | Loading / Retry | A loading cover until the face is on screen. A missing SDK, a failed load, or a save that isn't this game's stops at **Retry**, and the save is never overwritten. |
 
+**Look.** The controls are Haircut's, recoloured:
+- round "sticker" buttons with an ink outline and a hard shadow that presses down
+- icons only, with spoken labels for accessibility
+- a video badge on everything that plays a video
+- a rosette seal for Done
+
+The customer sits behind a vanity counter that carries the controls, and a themed scene sits behind her (the 3D
+canvas is transparent). Create and review keep the same counter height, so the face never moves. Three themes
+are built for the owner to choose from (`?theme=`):
+- `blush`: Blush Studio, cream and ink, rose accent, a lit vanity mirror
+- `candy`: Candy Pop, white and violet ink, mint accent, pastel bokeh
+- `glam`: Glam Night, champagne and near-black ink, gold accent, dark plum with gold lights
+
+The chosen one will become the only theme.
+
 There is no eraser, undo or free reset. Redo is the rewarded replay the contract promises. An untouched
 Done/Next is allowed, but counts nothing.
 
