@@ -9,6 +9,7 @@ import { Lashes } from './lashes.js';
 import { SurfaceSampler } from './surface.js';
 import { Hair } from './hair.js';
 import { Garment, setNeckUniforms } from './garment.js';
+import { Applicator } from '../makeup/applicator.js';
 import { skinAlbedo, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
 import { createRng } from './rng.js';
 
@@ -20,6 +21,7 @@ export class FaceView {
     this.renderer = new GL.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
+    this.cssSize = [width, height];
     this.scene = new GL.Scene();
     this.scene.background = new GL.Color(0xd9cfc7);
     this.camera = new GL.PerspectiveCamera(CAMERA.fov, width / height, 0.5, 60);
@@ -46,6 +48,11 @@ export class FaceView {
     this.hair = new Hair();
     this.garment = new Garment();
     this.scene.add(this.headMesh, this.eyes.group, this.brows.mesh, this.lashes.mesh, this.hair.group, this.garment.mesh);
+    // applied makeup: the paint textures feed the skin shader
+    this.makeup = new Applicator(this);
+    this.skin.uniforms.uPaint.value = this.makeup.paint.colour;
+    this.skin.uniforms.uFinish.value = this.makeup.paint.finish;
+    this.skin.uniforms.uPaintOn.value = 1;
     this.updateViewport();
   }
 
@@ -59,6 +66,7 @@ export class FaceView {
     const t = new GL.Vector3(x, y, 0);
     this.camera.position.set(x, y, CAMERA.distance / factor);
     this.camera.lookAt(t);
+    if (this.profile) this.makeup.layout();
   }
 
   // debugging aid: look from the side (radians around the vertical axis)
@@ -67,13 +75,16 @@ export class FaceView {
     d.applyAxisAngle(new GL.Vector3(0, 1, 0), angle);
     this.camera.position.copy(CAMERA.target).add(d);
     this.camera.lookAt(CAMERA.target);
+    if (this.profile) this.makeup.layout();
   }
 
   setSize(width, height) {
     this.renderer.setSize(width, height, false);
+    this.cssSize = [width, height];
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     if (this.head) this.updateViewport();
+    if (this.profile) this.makeup.layout(); // marks stay where they are; only the pointer mapping changes
   }
 
   // profile: a record from generator.js
@@ -119,6 +130,7 @@ export class FaceView {
     this.garment.build(profile.outfit, hg);
     setNeckUniforms(u, profile.outfit.neckline); // the fabric's soft shadow on the skin
     this.garment.mesh.visible = !this.hideGarment; // debugging aid
+    this.makeup.reset(profile); // a new face starts clean
   }
 
   render() {

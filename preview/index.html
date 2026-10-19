@@ -7,16 +7,27 @@
 <link rel="icon" href="data:,">
 <style>
   html, body { margin: 0; height: 100%; background: #d9cfc7; font: 13px system-ui, sans-serif; color: #2b2522; }
-  #stage { display: flex; justify-content: center; }
-  canvas { display: block; touch-action: none; }
+  body { display: flex; flex-direction: column; }
+  #stage { flex: 1; display: flex; justify-content: center; min-height: 0; overflow: hidden; }
+  canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
   #ui { display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: #f4efeb; }
   #ui button { min-width: 64px; min-height: 44px; border: 0; border-radius: 22px; background: #2b2522; color: #fff; font: inherit; font-weight: 600; }
   #info { flex: 1; line-height: 1.3; }
+  #tools { background: #f4efeb; padding: 6px 8px 10px; }
+  #toolbar { display: flex; justify-content: center; gap: 6px; }
+  #toolbar button { width: 64px; min-height: 52px; border: 2px solid transparent; border-radius: 14px; background: #fff; color: #2b2522;
+    font: 600 11px system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; }
+  #toolbar button[aria-pressed="true"] { border-color: #2b2522; background: #2b2522; color: #fff; }
+  #toolbar svg { width: 24px; height: 24px; }
+  #swatches { display: flex; gap: 6px; overflow-x: auto; padding: 8px 4px 2px; justify-content: safe center; scrollbar-width: none; }
+  #swatches button { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px #0002; padding: 0; }
+  #swatches button[aria-checked="true"] { box-shadow: 0 0 0 3px #2b2522; }
 </style>
 </head>
 <body>
 <div id="ui"><button id="back" aria-label="Previous face">Back</button><span id="info">Loading…</span><button id="next" aria-label="Next face">Next</button></div>
 <div id="stage"></div>
+<div id="tools"><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div><div id="swatches" role="radiogroup" aria-label="Colours"></div></div>
 <script type="module" src="main.js"></script>
 </body>
 </html>

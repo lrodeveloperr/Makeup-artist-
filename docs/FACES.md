@@ -1,9 +1,9 @@
 # Generated faces: graphics and diversity system
 
 Status: **prototype, locally verified**. It renders generated faces in the browser and passes the face audit and
-render smoke test listed below. It does not yet include makeup painting, the game screens, saves, ads or the
-YouTube adapter. Hair and outfits are procedural and work for every face, but they need an art pass before
-release (see "Known limits").
+render smoke test listed below. The makeup painting tools that work on these faces are described in
+[MAKEUP.md](MAKEUP.md). It does not yet include the game screens, saves, ads or the YouTube adapter. Hair and
+outfits are procedural and work for every face, but they need an art pass before release (see "Known limits").
 
 ![One face of every heritage: the 15 profiles, the 8 named blends and a second East Asian face](face-gallery.jpg)
 
@@ -48,8 +48,8 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
   controls), lips (about 20 controls), cheeks, chin, jaw, neck and ears. Each dimension's whole-head translation is
   stored separately and removed at runtime, so faces change shape without moving out of the camera framing.
 - **Face-first UV layout.** The islands are rotated upright and packed. The face and scalp island gets most of the
-  texture, and the eye sockets and inside of the mouth are packed small. Makeup painting will use this layout
-  (`uPaint` in the skin shader).
+  texture, and the eye sockets and inside of the mouth are packed small. Makeup painting uses this layout
+  (`uPaint` and `uFinish` in the skin shader; see [MAKEUP.md](MAKEUP.md)).
 - **Feature regions per vertex.** These are geodesic distance from the lip line and from the lid margins, plus
   masks for cheeks, under-eye, nose, ears and lips taken from the matching targets. Natural features use them, and
   painting can use them later.
@@ -247,10 +247,9 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
   features.
 - **Add a hairstyle.** It must be long. Add a catalogue entry in `hair-styles.js` (the textures that suit it), a case
   in `Hair.build`, and weights in the `STYLES` of the profiles it fits.
-- **Makeup painting (next step).** Render brush stamps into a UV-space render target, compute distance from the 3D
-  hit point in the fragment shader so strokes cross UV seams, and bind it as `uPaint` (premultiplied colour). For
-  mascara, change per-lash `widthMul`, `lengthMul` and `colour` in `Lashes` and call `update`. For lenses, call
-  `Eyes.setIris(left, right)`.
+- **Makeup painting.** Built: see [MAKEUP.md](MAKEUP.md). It paints in UV space, measuring distance on the
+  reference body so strokes cross UV seams. Mascara changes each lash's colour, length and thickness
+  (`Lashes.coat`), and lenses call `Eyes.setIris(left, right)`.
 
 ## Known limits (honest list)
 
@@ -259,7 +258,7 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
   blocks.
 - Outfits are procedural: folds are shading only (the silhouette does not wrinkle), there are no seams or
   buttons, and sleeves end at the frame. An art pass could add authored details on the same body-based garment.
-- The makeup palettes are not built yet. The outfit gives the player a colour cue to work with; it must never become
+- The outfit gives the player a colour cue for the makeup palettes ([MAKEUP.md](MAKEUP.md)). It must never become
   a required target or a score (contract: freestyle, no scoring rubric or required target).
 - No blink or idle animation yet. A procedural upper-lid blink around the eye centre is the planned approach, and
   it must freeze during a stroke (contract §2).

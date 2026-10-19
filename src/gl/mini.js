@@ -1,7 +1,8 @@
 // A minimal WebGL2 renderer for the face scene. It covers only what the game needs: custom shader
-// materials, indexed meshes, a perspective camera, opaque and alpha-blended drawing, and
-// neutral tone mapping to sRGB. The names follow Three.js so the face code reads the same, but this
-// replaces a ~500 KB library with a few KB (load time on YouTube Playables).
+// materials, indexed meshes, a perspective camera, opaque and alpha-blended drawing, neutral tone
+// mapping to sRGB, and off-screen render targets (painted makeup). The names follow Three.js so the
+// face code reads the same, but this replaces a ~500 KB library with a few KB (load time on YouTube
+// Playables).
 
 export const FrontSide = 0, BackSide = 1, DoubleSide = 2;
 
@@ -38,6 +39,8 @@ const srgbToLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) **
 
 // ---------------- matrices (column-major, as WebGL expects) ----------------
 const m4 = () => new Float32Array(16);
+const IDENTITY4 = Float32Array.of(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+const IDENTITY3 = Float32Array.of(1, 0, 0, 0, 1, 0, 0, 0, 1);
 function mul4(a, b, out = m4()) {
   for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
     out[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
@@ -135,6 +138,11 @@ export class SphereGeometry extends BufferGeometry {
 export class DataTexture {
   constructor(data, width, height) { this.data = data; this.width = width; this.height = height; this.version = 0; }
   set needsUpdate(v) { if (v) this.version++; }
+}
+// An off-screen colour buffer that shaders can read as a texture. `float` asks for half-float storage
+// (smooth build-up of many faint layers); it falls back to 8 bits where the device cannot render to it.
+export class RenderTarget {
+  constructor(width, height, { float = false } = {}) { Object.assign(this, { width, height, float, isRenderTarget: true }); }
 }
 let materialIds = 0;
 export class ShaderMaterial {
@@ -269,8 +277,52 @@ export class WebGLRenderer {
     return entry;
   }
 
+  // GL texture and framebuffer of a render target (created on first use, cleared to transparent)
+  target(rt) {
+    const gl = this.gl;
+    let t = this.textures.get(rt);
+    if (t) return t;
+    const half = rt.float && !!gl.getExtension('EXT_color_buffer_float');
+    t = { tex: gl.createTexture(), fbo: gl.createFramebuffer(), version: 0 };
+    gl.bindTexture(gl.TEXTURE_2D, t.tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, half ? gl.RGBA16F : gl.RGBA8, rt.width, rt.height, 0, gl.RGBA, half ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE, null);
+    for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t.tex, 0);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    rt.halfFloat = half;
+    this.textures.set(rt, t);
+    return t;
+  }
+
+  // Draw one mesh into a render target with premultiplied-alpha "over" blending, no depth test and no
+  // culling (its vertex shader decides where it lands, e.g. in texture space). clear: start transparent.
+  drawToTarget(rt, mesh, { clear = false } = {}) {
+    const gl = this.gl, t = this.target(rt);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
+    gl.viewport(0, 0, rt.width, rt.height);
+    if (clear) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); }
+    if (mesh) {
+      const p = this.program(mesh.material);
+      gl.useProgram(p.prog);
+      this.setUniforms(p, mesh.material, { modelViewMatrix: IDENTITY4, projectionMatrix: IDENTITY4, normalMatrix: IDENTITY3 });
+      gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.depthMask(false);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      this.vao(mesh.geometry, p);
+      const g = mesh.geometry;
+      gl.drawElements(gl.TRIANGLES, g.index.array.length, g.index.array instanceof Uint32Array ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
+      gl.bindVertexArray(null);
+      gl.enable(gl.DEPTH_TEST); gl.depthMask(true);
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    t.version++;
+  }
+
   texture(tex, unit) {
     const gl = this.gl;
+    if (tex.isRenderTarget) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, this.target(tex).tex); return; }
     let t = this.textures.get(tex);
     if (!t) { t = { tex: gl.createTexture(), version: -1 }; this.textures.set(tex, t); }
     gl.activeTexture(gl.TEXTURE0 + unit);

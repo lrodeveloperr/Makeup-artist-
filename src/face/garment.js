@@ -233,9 +233,14 @@ export class Garment {
     this.mesh.renderOrder = 0.5; // after the skin, before the hair that falls over it
   }
 
+  // is the reference-body point [x, y, z] under the outfit? (makeup cannot reach the skin there)
+  covers(r) {
+    return !!this.neck && this.mesh.visible && r[1] < -1.0 && coverage(this.neck, r[0], r[1], r[2], 1e-4) > 0.5;
+  }
+
   // outfit: face.outfit; hg: HeadGeometry of the current face
   build(outfit, hg) {
-    const k = NECK[outfit.neckline] || NECK.boat;
+    const k = (this.neck = NECK[outfit.neckline] || NECK.boat);
     const P = hg.subPos, Nm = hg.subNrm, R = hg.refSub, q = hg.sub.subQuads, n = hg.sub.subCount;
     const nc = hg.head.regionChannels.length, iIn = hg.regionIndex.interior;
     // covered vertices (a little wider than the cut, which the shader makes exact per pixel)

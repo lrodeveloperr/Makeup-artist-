@@ -61,6 +61,21 @@ function along(ids, P, s) {
 
 const CLUMPS = 22; // clumps along each upper lid
 
+// does any point of a lash lie within `reach` of the wand's path (x, y pairs) in the screen plane?
+function nearPath(pts, wand, reach) {
+  const r2 = reach * reach;
+  for (const p of pts) {
+    if (wand.length === 2) { if ((p[0] - wand[0]) ** 2 + (p[1] - wand[1]) ** 2 <= r2) return true; continue; }
+    for (let k = 0; k + 3 < wand.length; k += 2) {
+      const ax = wand[k], ay = wand[k + 1], bx = wand[k + 2], by = wand[k + 3];
+      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+      const t = l2 > 0 ? Math.min(Math.max(((p[0] - ax) * dx + (p[1] - ay) * dy) / l2, 0), 1) : 0;
+      if ((p[0] - ax - dx * t) ** 2 + (p[1] - ay - dy * t) ** 2 <= r2) return true;
+    }
+  }
+  return false;
+}
+
 export class Lashes {
   constructor(head) {
     this.margins = lidMargins(head);
@@ -82,16 +97,47 @@ export class Lashes {
           const s = row === 'upper' ? 0.04 + 0.94 * Math.sqrt(r.next()) : 0.25 + 0.65 * r.next();
           // upper lashes gather into small clumps whose tips meet, as real lashes do
           const clump = row === 'upper' ? (Math.floor(s * CLUMPS) + 0.5) / CLUMPS : s;
-          this.lashes.push({ eye, row, s, clump, jitter: r.gauss(1), lengthMul: 0.85 + 0.3 * r.next(), widthMul: 1, colour: colour.map((c) => c * (0.85 + 0.3 * r.next())) });
+          const tint = (0.85 + 0.3 * r.next()) * (row === 'upper' ? 1 : 1.6); // lower lashes are finer and lighter
+          this.lashes.push({ eye, row, s, clump, jitter: r.gauss(1), lengthMul: 0.85 + 0.3 * r.next(), widthMul: 1, colour: colour.map((c) => c * tint) });
         }
       }
     }
     this.params = lashes;
+    // natural state, restored before replaying mascara
+    this.natural = this.lashes.map((l) => ({ colour: l.colour.slice(), lengthMul: l.lengthMul, widthMul: l.widthMul }));
     this.update(hg, eyeCentres);
   }
 
+  // back to the natural lashes (before replaying saved mascara strokes)
+  resetCoats() {
+    this.lashes.forEach((l, i) => { const n = this.natural[i]; l.colour = n.colour.slice(); l.lengthMul = n.lengthMul; l.widthMul = n.widthMul; });
+    this.update(this.hg, this.eyeCentres);
+  }
+
+  // Mascara (contract §2: only the lashes actually touched change; each side independent). wand: points
+  // [x0, y0, x1, y1, ...] in the face's screen plane (z = this.zPlane); colour: linear RGB; t: TOOLS.mascara;
+  // touched: the lashes this stroke has already coated (each lash takes one coat per stroke). Returns true if
+  // any lash changed.
+  coat(wand, colour, t, touched) {
+    let changed = false;
+    this.paths.forEach((pts, i) => {
+      if (touched.has(i) || !nearPath(pts, wand, t.reach)) return;
+      touched.add(i);
+      const l = this.lashes[i], n = this.natural[i];
+      for (let a = 0; a < 3; a++) l.colour[a] += (colour[a] - l.colour[a]) * t.coat;
+      l.lengthMul = Math.min(l.lengthMul + t.length, n.lengthMul * t.lengthMax);
+      l.widthMul = Math.min(l.widthMul + t.width, t.widthMax);
+      changed = true;
+    });
+    if (changed) this.update(this.hg, this.eyeCentres);
+    return changed;
+  }
+
   update(hg, eyeCentres) {
+    this.hg = hg; this.eyeCentres = eyeCentres;
     const P = hg.base, strands = []; // helper vertices are only in the (unrefined) morphed base positions
+    this.paths = [];
+    let zSum = 0;
     for (const lash of this.lashes) {
       const pts = this.path(lash, lash.s, P, eyeCentres, lash.lengthMul, lash.jitter);
       if (lash.clump !== lash.s) {
@@ -101,8 +147,12 @@ export class Lashes {
       }
       const upper = lash.row === 'upper';
       const w = (upper ? 0.0022 : 0.001) * lash.widthMul;
-      strands.push({ points: pts, widths: [w, w * 0.95, w * 0.85, w * 0.65, w * 0.42, w * 0.2], up: [0, 0, 1], side: pts.side, color: upper ? lash.colour : lash.colour.map((x) => x * 1.6) });
+      strands.push({ points: pts, widths: [w, w * 0.95, w * 0.85, w * 0.65, w * 0.42, w * 0.2], up: [0, 0, 1], side: pts.side, color: lash.colour });
+      this.paths.push(pts);
+      zSum += pts[0][2];
     }
+    // the plane the mascara wand works in (the lashes' roots)
+    this.zPlane = zSum / Math.max(this.lashes.length, 1);
     buildStrandGeometry(strands, this.mesh.geometry);
   }
 

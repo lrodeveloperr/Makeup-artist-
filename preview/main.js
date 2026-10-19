@@ -1,5 +1,6 @@
-// Developer preview of generated faces (not the game UI). Shows the queue's faces one by one, or a contact
-// sheet with ?sheet. Origin labels are internal data shown here for review only; the game never shows them.
+// Developer preview of generated faces (not the game UI). Shows the queue's faces one by one with the makeup
+// tools to try on them, or a contact sheet with ?sheet. Origin labels are internal data shown here for review
+// only; the game never shows them.
 //   ?seed=N        start the queue / sheet at N
 //   ?sheet&n=16    contact sheet of N faces (&cols, &w, &h, &label; &label=heritage for the heritage only;
 //                  &seeds=a,b,c for chosen seeds)
@@ -8,14 +9,19 @@
 import { FaceView } from '../src/face/face-view.js';
 import { generateFace } from '../src/face/generator.js';
 import { createQueueState, nextFace } from '../src/face/queue.js';
+import { attachInput } from '../src/makeup/input.js';
+import { PALETTE, DEFAULT_SELECTION } from '../src/makeup/palette.js';
 
 const q = new URLSearchParams(location.search);
 const sheet = q.has('sheet');
-const ui = document.getElementById('ui');
-const fit = () => [Math.min(innerWidth, 720), innerHeight - (ui ? ui.offsetHeight : 0)];
+const ui = document.getElementById('ui'), tools = document.getElementById('tools');
+if (sheet) tools?.remove();
+const stage = document.getElementById('stage');
+const fit = () => [Math.min(stage.clientWidth, 720), stage.clientHeight];
 let [W, H] = sheet ? [+(q.get('w') || 300), +(q.get('h') || 400)] : q.has('w') ? [+q.get('w'), +q.get('h')] : fit();
 const canvas = document.createElement('canvas');
 canvas.width = W; canvas.height = H;
+canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
 const view = await FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: sheet ? 1 : Math.min(devicePixelRatio, 2) });
 if (q.has('scalp')) { view.debugScalp = true; view.hair.group.visible = false; }
 if (q.has('nohair')) view.hair.group.visible = false;
@@ -73,7 +79,7 @@ if (sheet) {
     grid.appendChild(fig);
   }
 } else {
-  document.getElementById('stage').appendChild(canvas);
+  stage.appendChild(canvas);
   const info = document.getElementById('info');
   // queue history so Back works; Next always draws from the variety director
   const history = [];
@@ -95,7 +101,60 @@ if (sheet) {
   document.getElementById('next').onclick = next;
   document.getElementById('back').onclick = back;
   addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') next(); if (e.key === 'ArrowLeft') back(); });
-  addEventListener('resize', () => { [W, H] = fit(); view.setSize(W, H); view.render(); });
+
+  // ---- makeup tools: four tools and the lens selector, each with its own colours ----
+  const selection = { tool: DEFAULT_SELECTION.tool, colour: { ...DEFAULT_SELECTION.colour } };
+  const TOOLS = [
+    ['brush', 'Brush', 'M5 21c3 0 5-2 5-5l1-1 2 2-1 1c-3 0-5 2-7 3zM11 15l7-11 2 2-7 11'],
+    ['pencil', 'Pencil', 'M4 20l1-4L16 5l3 3L8 19zM14 7l3 3'],
+    ['mascara', 'Mascara', 'M4 20L15 9M13 5l6 6M15 4l5 5M11 7l6 6M12 4l1 2M18 10l2 1'],
+    ['lip', 'Lips', 'M9 21h6v-8H9zM10 13V7l4-3v9'],
+    ['lens', 'Lenses', 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6'],
+  ];
+  const bar = document.getElementById('toolbar'), swatches = document.getElementById('swatches');
+  const swatchBackground = (c) => (c.gloss ? `radial-gradient(circle at 35% 30%, #fffc 0 14%, #fff0 32%), ${c.hex}`
+    : c.shimmer ? `radial-gradient(circle at 30% 30%, #fffb 0 7%, #fff0 16%), radial-gradient(circle at 66% 62%, #fff9 0 5%, #fff0 13%), ${c.hex}` : c.hex);
+  const showSwatches = () => {
+    swatches.replaceChildren(...PALETTE[selection.tool].map((c) => {
+      const b = document.createElement('button');
+      b.style.background = swatchBackground(c);
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', c.name);
+      b.setAttribute('aria-checked', String(selection.colour[selection.tool] === c.id));
+      b.onclick = () => { selection.colour[selection.tool] = c.id; showSwatches(); };
+      return b;
+    }));
+  };
+  for (const [id, label, path] of TOOLS) {
+    const b = document.createElement('button');
+    b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>${label}`;
+    b.setAttribute('aria-pressed', String(id === selection.tool));
+    b.onclick = () => {
+      selection.tool = id;
+      for (const x of bar.children) x.setAttribute('aria-pressed', String(x === b));
+      showSwatches();
+    };
+    bar.appendChild(b);
+  }
+  showSwatches();
+  let frame = 0;
+  const redraw = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; view.render(); }); };
+  const input = attachInput(canvas, view.makeup, {
+    selection: () => ({ tool: selection.tool, colour: selection.colour[selection.tool] }),
+    onChange: redraw,
+    onCommit: () => { info.textContent = `${describe(window.face)} — ${view.makeup.makeup.strokes.length} strokes`; },
+  });
+  window.input = input;
+  // the canvas fills the stage, which changes size with the window and when the info line wraps differently
+  // (unless ?w&h fix the size)
+  if (!q.has('w')) new ResizeObserver(() => {
+    const [w, h] = fit();
+    if (w === W && h === H) return;
+    input.interrupt(); // a resize ends the current stroke (its valid part is kept)
+    [W, H] = [w, h]; view.setSize(W, H);
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    view.render();
+  }).observe(stage);
   next();
 }
 window.view = view;

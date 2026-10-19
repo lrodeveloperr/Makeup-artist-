@@ -1,6 +1,7 @@
 // Skin shader for the head surface. Natural features (lips, flush, under-eye tone, freckles, beauty marks)
 // are evaluated per pixel in the reference-head coordinate frame, so every generated face
-// carries them in the same anatomical places. Applied makeup arrives later through uPaint (UV space).
+// carries them in the same anatomical places. Applied makeup arrives through uPaint (premultiplied colour) and
+// uFinish (gloss, shimmer), both in UV space (see makeup/paint.js).
 import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 import { NECK_GLSL, neckUniforms } from './garment.js';
@@ -37,7 +38,7 @@ uniform vec4 uScalp;     // hairline: front height, temple height, side height, 
 uniform vec4 uBrowA;     // brow shape: peak position, peak height, tail, rise exponent
 uniform vec4 uBrowB;     // fall exponent, thickness, length, density
 uniform vec3 uBrowCol;
-uniform sampler2D uPaint;
+uniform sampler2D uPaint, uFinish;
 uniform float uPaintOn;
 varying vec3 vPos, vNormal, vRef;
 varying vec2 vUv;
@@ -150,6 +151,7 @@ void main() {
 
   // --- applied makeup (premultiplied colour in UV space) ---
   vec4 paint = uPaintOn > 0.5 ? texture2D(uPaint, vUv) : vec4(0.0);
+  vec4 finish = uPaintOn > 0.5 ? texture2D(uFinish, vUv) : vec4(0.0);
   vec3 albedo = skin * (1.0 - paint.a) + paint.rgb;
 
   // --- lighting ---
@@ -163,6 +165,15 @@ void main() {
   float NoV = max(dot(n, v), 1e-3);
   float rough = mix(0.6, 0.47, uOil * (vRB.x + 0.6 * smoothstep(0.35, 0.75, r.y) * (1.0 - scalpMask(r))));
   rough = mix(rough, 0.28, lip);
+  rough = mix(rough, 0.12, clamp(finish.r, 0.0, 1.0)); // gloss
+  // shimmer: a soft pearly sheen in the product's colour, plus fine glints fixed to the skin that catch the
+  // light at their own angles (cells about a pixel wide at the game's framing)
+  vec3 cell = floor(r * 260.0);
+  float glint = step(0.82, hash13(cell + 3.1));
+  vec3 gn = normalize(n + 0.5 * (vec3(hash13(cell), hash13(cell + 7.0), hash13(cell + 13.0)) - 0.5));
+  vec3 tint = paint.a > 0.0 ? paint.rgb / paint.a : vec3(1.0);
+  tint = mix(vec3(1.0), tint / max(max(tint.r, max(tint.g, tint.b)), 1e-3), 0.6);
+  vec3 sparkle = vec3(0.0), sheen = vec3(0.0);
   vec3 diffuse = ambient(n) * ao;
   vec3 spec = vec3(0.0);
   for (int i = 0; i < 3; i++) {
@@ -181,10 +192,14 @@ void main() {
       s += 0.9 * D_GGX(NoH, rough * rough) * V_Smith(NoV, nl, rough * rough);
       s += 0.1 * D_GGX(NoH, 0.25 * 0.25) * V_Smith(NoV, nl, 0.25 * 0.25);
       spec += uLightCol[i] * s * F_Schlick(0.028, VoH) * nl * ao;
+      sparkle += uLightCol[i] * glint * pow(max(dot(gn, h), 0.0), 40.0) * nl;
+      sheen += uLightCol[i] * D_GGX(NoH, 0.16) * V_Smith(NoV, nl, 0.16) * nl;
     }
   }
   // skin under painted hair is matte: the hair layer above carries the shine
-  vec3 col = albedo * diffuse + 0.5 * spec * (1.0 - paint.a * 0.4) * (1.0 - uScalpAmount * smoothstep(0.0, 0.5, sc));
+  // makeup dulls the skin's own sheen; gloss brings back a wet shine
+  vec3 col = albedo * diffuse + 0.5 * spec * (1.0 - paint.a * 0.4 + 1.5 * finish.r) * (1.0 - uScalpAmount * smoothstep(0.0, 0.5, sc));
+  col += finish.g * tint * (0.05 * sheen + 1.2 * sparkle);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -217,7 +232,7 @@ export function createSkinMaterial() {
       uBrowA: { value: new GL.Vector4(0.64, 0.06, 0.15, 1) },
       uBrowB: { value: new GL.Vector4(1.2, 1, 1, 0.8) },
       uBrowCol: { value: new GL.Vector3(0.03, 0.02, 0.015) },
-      uPaint: { value: emptyPaint },
+      uPaint: { value: emptyPaint }, uFinish: { value: emptyPaint },
       uPaintOn: { value: 0 },
     },
   });

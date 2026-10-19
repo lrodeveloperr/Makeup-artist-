@@ -4,7 +4,7 @@ WorksBien Studios · version 1.0 · 18 October 2026
 
 Repository: https://github.com/lrodeveloperr/Makeup-artist-
 
-**Status:** settled owner product decisions plus explicitly identified engineering defaults and verification requirements. Documentation only: no makeup implementation, passed game tests, upload archive or certification is represented as complete.
+**Status:** settled owner product decisions plus explicitly identified engineering defaults and verification requirements. Prototypes of the face system ([docs/FACES.md](docs/FACES.md)) and the makeup painting tools ([docs/MAKEUP.md](docs/MAKEUP.md)) are built and locally verified; no game flow, passed acceptance suite, upload archive or certification is represented as complete.
 
 **Graphics: owner-selected on 18 October 2026** (decision rows below; implementation and evidence in [docs/FACES.md](docs/FACES.md)). Art palette, final hair/garment art and effects beyond that decision remain open. Camera proximity, face orientation and stroke accuracy below are functional requirements.
 
@@ -16,7 +16,7 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 
 | Decision | Governing value | Authority | Consequence / acceptance |
 | --- | --- | --- | --- |
-| Makeup tools | Four fixed tools, all available immediately | O | No progression/tool gate; G01–G04 |
+| Makeup tools | Four fixed tools, all available immediately | O | No progression/tool gate; G01–G04; fixed footprints/rates documented and tested in [docs/MAKEUP.md](docs/MAKEUP.md) |
 | Eye colour | Add contact lenses as a simple selector | O | Independent iris colours possible; G05 |
 | Camera | Front-facing and already close enough; no 360 or precision zoom control | O | Functional accuracy at ordinary framing; G06, UI01 |
 | Application controls | Player strokes and repeated passes determine the result; no size/intensity sliders | O | No settings work before creating; G01–G04, UI01 |
