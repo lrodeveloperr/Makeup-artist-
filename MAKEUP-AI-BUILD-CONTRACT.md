@@ -294,7 +294,7 @@ Every audio path follows initial and changed host audio enablement plus device/s
 
 ## 12. Language, access and platform boundaries
 
-Use mostly direct, nonverbal manipulation. English is required; essential notices include one-ad cost, exact reward target, that the colour is kept, unavailable inventory, unsaved/retry state and the distinction between Next and same-face Replay. Localize all essential labels/messages in every declared locale, including accessible tool/colour/action labels.
+**O, 19 October 2026: the visible interface is textless** (Blush Studio look, on Haircut's controls): icons, pictures and numbers only, as in Haircut. Words live in the spoken labels. Use mostly direct, nonverbal manipulation. English is required for those labels; essential notices (shown as icons) include one-ad cost, exact reward target, that the colour is kept, unavailable inventory, unsaved/retry state and the distinction between Next and same-face Replay. Localize all essential labels/messages in every declared locale, including accessible tool/colour/action labels.
 
 Use the host language API with a documented mapping/fallback to English. Do not use browser language APIs or restore a cloud language that overrides the current host. The final declared locale list remains a pre-release deliverable; do not claim 27 languages because Haircut contains them.
 

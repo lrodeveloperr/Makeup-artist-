@@ -43,6 +43,8 @@ async function stroke(page) {
   await page.mouse.move(box.x + a[0], box.y + a[1]); await page.mouse.down();
   await page.mouse.move(box.x + b[0], box.y + b[1], { steps: 8 }); await page.mouse.up();
 }
+// the screen is textless (owner, 19 October 2026): nothing visible but icons, pictures and numbers
+const words = (page) => page.evaluate(() => document.body.innerText.replace(/[\d:\s]/g, ''));
 const making = (page) => page.evaluate(() => { for (let i = 0; i < 61; i++) game.session.tick(1000); }); // a minute of making
 const idle = (page) => page.waitForFunction(() => !game.session.busy);
 
@@ -53,12 +55,14 @@ try {
     let s = await state(page);
     assert.deepEqual(s.sdk.slice(0, 3), ['firstFrameReady', 'loadData', 'gameReady'], 'readiness after the face is on screen');
     assert.equal(s.phase, 'create');
+    assert.equal(await words(page), '', 'no words on the create screen');
     const nextSeed = s.next;
     // look 1: a stroke, Done, hold Before, Next (no ad yet)
     await stroke(page);
     await page.click('#done');
     s = await state(page);
     assert.deepEqual([s.phase, s.strokes, s.completions], ['review', 1, 1]);
+    assert.equal(await words(page), '', 'no words in review');
     const bb = await page.locator('#before').boundingBox();
     await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await page.mouse.down();
     assert.equal(await page.evaluate(() => game.view.skin.uniforms.uPaintOn.value), 0, 'held: the clean face');
@@ -80,6 +84,7 @@ try {
     // the colour of the day: refused video, nothing; earned video, kept and selected
     assert.ok(await page.isVisible('#daily .dot'), 'the dot shows while today\'s colour waits');
     await page.click('#daily');
+    assert.equal(await words(page), '', 'no words in the colour of the day');
     await page.evaluate(() => { window.__fakeAds.rewarded = false; });
     await page.click('#panel .get'); await idle(page);
     assert.deepEqual((await state(page)).owned, []);
@@ -89,7 +94,8 @@ try {
     const colour = s.pick.colour, tool = await page.evaluate((id) => document.querySelector('#toolbar [aria-pressed="true"]').dataset.tool, colour);
     assert.deepEqual(s.owned, [colour]);
     assert.equal(s.selection.colour[s.selection.tool], colour);
-    await page.click('#panel .get'); // "Use it now"
+    assert.equal(await words(page), '', 'no words once the colour is earned');
+    await page.click('#panel .get'); // the tick: use it now
     assert.ok(await page.isHidden('#panel'));
     assert.equal(await page.getAttribute('#swatches button:first-child', 'aria-checked'), 'true', 'the new colour leads its row, selected');
     assert.equal(tool, s.selection.tool);

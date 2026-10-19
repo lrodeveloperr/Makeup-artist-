@@ -24,6 +24,9 @@ const ICON = {
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
   clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2', ' stroke-width="2.6"'),
   close: svg('M6.5 6.5l11 11M17.5 6.5l-11 11', ' stroke-width="3.2"'),
+  forever: svg('M8.5 8.6a3.4 3.4 0 1 0 0 6.8c2.9 0 4.1-6.8 7-6.8a3.4 3.4 0 1 1 0 6.8c-2.9 0-4.1-6.8-7-6.8z', ' stroke-width="2.6"'),
+  cloud: svg('M7 18.5h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.5 1.6A3.4 3.4 0 0 0 7 18.5zM4 4l16 16', ' stroke-width="2.4"'),
+  oops: svg('M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M12 7.5v6M12 16.6v.4', ' stroke-width="2.8"'),
   gift: svg('M4 10.5h16V21H4zM2.8 7h18.4v3.5H2.8zM12 7v14M12 7c-1.6-4.2-6.2-3.6-5.2-.4M12 7c1.6-4.2 6.2-3.6 5.2-.4', ' stroke-width="2.3"'),
   star: '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.2 7.3 7.3 2.2-7.3 2.2L12 20.5l-2.2-7.3L2.5 11l7.3-2.2z" fill="#ffe14d" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
 };
@@ -36,6 +39,11 @@ const TOOL_NAME = Object.fromEntries(TOOLS);
 const swatchBackground = (c) => (c.gloss
   ? `radial-gradient(circle at 35% 30%, #fffc 0 14%, #fff0 32%)${c.shimmer ? ', radial-gradient(circle at 66% 62%, #fff9 0 6%, #fff0 14%)' : ''}, ${c.hex}`
   : c.shimmer ? `radial-gradient(circle at 30% 30%, #fffb 0 7%, #fff0 16%), radial-gradient(circle at 66% 62%, #fff9 0 5%, #fff0 13%), ${c.hex}` : c.hex);
+
+// visible text is none: the error screen and the save notice are icons too (their words are spoken labels)
+document.querySelector('#error .oops').innerHTML = ICON.oops;
+$('retry').innerHTML = ICON.redo;
+$('notice').innerHTML = ICON.cloud;
 
 function fail(code, error) {
   $('cover').hidden = true;
@@ -162,21 +170,26 @@ async function main() {
   daily.hidden = !host.rewardedSupported; // no rewarded videos here: nothing to offer
   card.querySelector('.x').innerHTML = ICON.close;
   let panelTimer = 0;
-  const RING = 2 * Math.PI * 70;
+  const RING = 2 * Math.PI * 79;
+  // textless: the swatch inside the countdown ring, the tool it is for and "for good", then the video button
   const renderPanel = () => {
-    const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = c && s.owned.includes(c.id);
-    const t = timeLeft();
-    card.querySelector('.gem').innerHTML = c ? `<svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-width="8"/>
-      <circle class="arc" cx="75" cy="75" r="70" fill="none" stroke="${t.ms < 2 * 3600e3 ? '#ff3b30' : t.ms < 6 * 3600e3 ? '#ff9f1c' : '#2fa35a'}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(RING * t.frac).toFixed(1)} ${RING.toFixed(1)}"/></svg>
-      <div class="sw" style="background:${swatchBackground(c)}"></div>${owned ? `<div class="tick">${ICON.check}</div>` : ''}` : '';
-    card.querySelector('.name').innerHTML = c ? `${ICON[c.target]} ${c.name}` : 'You have every colour';
-    card.querySelector('.what').textContent = c ? `${TOOL_NAME[c.target]} · ${owned ? 'yours for good' : 'one video, yours for good'}` : 'New colours are coming.';
-    const get = card.querySelector('.get');
+    const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = !!c && s.owned.includes(c.id);
+    const t = timeLeft(), gem = card.querySelector('.gem'), get = card.querySelector('.get'), time = card.querySelector('.time');
+    gem.innerHTML = c ? `<svg viewBox="0 0 170 170" aria-hidden="true"><circle cx="85" cy="85" r="79" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-width="9"/>
+      <circle cx="85" cy="85" r="79" fill="none" stroke="${t.ms < 2 * 3600e3 ? '#ff3b30' : t.ms < 6 * 3600e3 ? '#ff9f1c' : '#2fa35a'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(RING * t.frac).toFixed(1)} ${RING.toFixed(1)}"/></svg>
+      <div class="sw" style="background:${swatchBackground(c)}"></div>${owned ? `<div class="tick">${ICON.check}</div>` : ''}`
+      : `<div class="full">${ICON.check}</div>`; // every colour of the day is already the player's
+    gem.setAttribute('role', 'img');
+    gem.setAttribute('aria-label', c ? `${c.name}, for the ${TOOL_NAME[c.target].toLowerCase()}` : 'You have every colour');
+    card.querySelector('.chips').innerHTML = c ? `<span class="chip" role="img" aria-label="${TOOL_NAME[c.target]}">${ICON[c.target]}</span><span class="chip" role="img" aria-label="Yours for good">${ICON.forever}</span>` : '';
     get.hidden = !c;
-    get.disabled = session.busy; // once owned it reads "Use it now" and closes the panel
-    get.innerHTML = owned ? `${ICON.check} Yours! Use it now` : `<span class="vb">${ICON.video}</span> Watch a video to keep it`;
-    card.querySelector('.time').innerHTML = `${ICON.clock} ${t.text}`;
-    card.querySelector('.time').setAttribute('aria-label', `${owned ? 'Next colour in' : 'Ends in'} ${t.text}`);
+    get.disabled = session.busy; // once owned it is a tick that closes the panel (the colour is already selected)
+    get.classList.toggle('owned', owned);
+    get.innerHTML = owned ? ICON.check : `<span class="vb">${ICON.video}</span>`;
+    get.setAttribute('aria-label', owned ? 'Yours. Use it now' : 'Watch one video to keep this colour for good');
+    time.hidden = !c;
+    time.innerHTML = `${ICON.clock} ${t.text}`;
+    time.setAttribute('aria-label', `${owned ? 'Next colour in' : 'Ends in'} ${t.text}`);
   };
   const openPanel = () => {
     input.interrupt();

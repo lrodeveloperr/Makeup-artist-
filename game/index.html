@@ -1,24 +1,19 @@
 <!doctype html>
-<html lang="en" data-theme="blush">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Makeup</title>
 <link rel="icon" href="data:,">
-<script>
-  // three looks to choose from (?theme=blush | candy | glam); the chosen one will become the only one
-  (function () { var t = new URLSearchParams(location.search).get('theme'); if (/^(blush|candy|glam)$/.test(t || '')) document.documentElement.dataset.theme = t; })();
-</script>
 <!--HOST-->
 <style>
-  /* Haircut's controls, kept: round "sticker" buttons with an ink outline and a hard shadow that presses down,
-     wordless icons, a video badge on everything that plays a video, a rosette seal for Done, a scene behind the
-     customer. Each theme changes the colours and the scene. */
-  :root { --ink: #2a1d15; --panel: #fff6e6; --accent: #ff7aa8; --accent-ink: #2a1d15; --seal: #5ccf72; --badge: #ffb627;
-    --muted: #6b5a4e; --edge: 0 4px 0 var(--ink); --edge-down: 0 1px 0 var(--ink); --outline: 3px solid var(--ink);
-    font-family: "DM Sans", ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif; }
-  [data-theme="candy"] { --ink: #3b1a5a; --panel: #ffffff; --accent: #7ce3cf; --seal: #c39bff; --badge: #ffd84d; --muted: #6d5a85; }
-  [data-theme="glam"] { --ink: #1b0d16; --panel: #fbeedd; --accent: #f2c14e; --seal: #f2c14e; --badge: #ff7aa8; --muted: #6b5560; }
+  /* Blush Studio (owner's choice, 19 October 2026). Haircut's controls, recoloured: round "sticker" buttons with an
+     ink outline and a hard shadow that presses down, a video badge on everything that plays a video, a rosette seal
+     for Done. Textless: icons, numbers and pictures only; spoken labels (aria-label) carry the words. */
+  :root { --ink: #2a1d15; --panel: #fff6e6; --accent: #ff7aa8; --seal: #5ccf72; --badge: #ffb627;
+    --edge: 0 4px 0 var(--ink); --edge-down: 0 1px 0 var(--ink); --outline: 3px solid var(--ink);
+    --wall: radial-gradient(120% 80% at 50% 30%, #fbe4de 0, #f1c8c3 55%, #dfa9ab 100%);
+    font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif; }
   html, body { margin: 0; height: 100%; background: #e9c9c4; color: var(--ink); }
   body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
   button { font: inherit; color: inherit; cursor: pointer; }
@@ -26,37 +21,15 @@
   [hidden] { display: none !important; }
   #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
 
-  /* ---- the scene behind the customer ---- */
-  #backdrop { position: absolute; inset: 0; overflow: hidden; z-index: -1; }
+  /* the salon behind the customer: a blush wall and a lit vanity mirror */
+  #backdrop { position: absolute; inset: 0; overflow: hidden; z-index: -1; background: var(--wall); }
   #backdrop > * { position: absolute; }
-  [data-theme="blush"] #backdrop { background: radial-gradient(120% 80% at 50% 30%, #fbe4de 0, #f1c8c3 55%, #dfa9ab 100%); }
-  [data-theme="blush"] .mirror { left: 7%; right: 7%; top: 5%; bottom: 20%; border-radius: 46% 46% 22px 22px / 26% 26% 22px 22px;
+  .mirror { left: 7%; right: 7%; top: 5%; bottom: 20%; border-radius: 46% 46% 22px 22px / 26% 26% 22px 22px;
     background: linear-gradient(160deg, #fdf3f0 0, #f3dcd8 45%, #ecccc8 100%); border: 14px solid #fbefe4; box-shadow: inset 0 0 0 3px #e7cbb3, 0 8px 30px #9a5b5b33; filter: blur(1px); }
-  [data-theme="blush"] .bulbs { --b: radial-gradient(circle, #fffdf3 0 5px, #ffe2a6 6px, #ffd78a55 11px, #0000 17px); }
-  .bulbs { display: none; }
-  [data-theme="blush"] .bulbs, [data-theme="glam"] .bulbs { display: block; }
+  .bulbs { --b: radial-gradient(circle, #fffdf3 0 5px, #ffe2a6 6px, #ffd78a55 11px, #0000 17px); }
   .bulbs.l, .bulbs.r { top: 16%; bottom: 24%; width: 36px; background: var(--b) center 0 / 36px 54px repeat-y; }
   .bulbs.l { left: calc(7% - 11px); } .bulbs.r { right: calc(7% - 11px); }
   .bulbs.t { top: 3%; left: 22%; right: 22%; height: 36px; background: var(--b) 0 center / 54px 36px repeat-x; }
-  [data-theme="candy"] #backdrop { background:
-      radial-gradient(circle at 12% 18%, #ffffff99 0 18px, #fff0 19px), radial-gradient(circle at 86% 12%, #ffffff77 0 28px, #fff0 29px),
-      radial-gradient(circle at 80% 46%, #ffd1ec99 0 40px, #fff0 41px), radial-gradient(circle at 10% 62%, #c6f4ea99 0 34px, #fff0 35px),
-      radial-gradient(circle at 92% 78%, #fff3b099 0 22px, #fff0 23px), radial-gradient(circle at 22% 88%, #ffffff88 0 14px, #fff0 15px),
-      linear-gradient(170deg, #cdb8ff 0, #f5c8ec 48%, #ffe1c7 100%); }
-  [data-theme="candy"] .sparkle { width: 26px; height: 26px; background: #fff; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); opacity: .9; }
-  .sparkle { display: none; }
-  [data-theme="candy"] .sparkle { display: block; }
-  .sparkle.a { left: 16%; top: 30%; } .sparkle.b { right: 14%; top: 26%; transform: scale(.6); } .sparkle.c { left: 72%; top: 64%; transform: scale(.8); }
-  [data-theme="glam"] #backdrop { background:
-      radial-gradient(circle at 14% 22%, #f2c14e55 0 10px, #0000 22px), radial-gradient(circle at 84% 16%, #f2c14e44 0 16px, #0000 30px),
-      radial-gradient(circle at 90% 60%, #ff7aa833 0 18px, #0000 34px), radial-gradient(circle at 8% 70%, #f2c14e33 0 14px, #0000 28px),
-      radial-gradient(55% 42% at 50% 36%, #6b2a55 0, #3a1230 55%, #160711 100%); }
-  [data-theme="glam"] .mirror { left: 10%; right: 10%; top: 6%; bottom: 24%; border-radius: 50% 50% 24px 24px / 30% 30% 24px 24px;
-    border: 6px solid #f2c14e88; box-shadow: 0 0 40px #f2c14e33, inset 0 0 60px #f2c14e22; filter: blur(1.5px); }
-  [data-theme="glam"] .bulbs { --b: radial-gradient(circle, #fff8dc 0 4px, #f2c14e 5px, #f2c14e55 10px, #0000 16px); }
-  [data-theme="glam"] .bulbs.l { left: calc(10% - 15px); } [data-theme="glam"] .bulbs.r { right: calc(10% - 15px); }
-  .mirror { display: none; }
-  [data-theme="blush"] .mirror, [data-theme="glam"] .mirror { display: block; }
 
   /* ---- controls ---- */
   #top { display: flex; align-items: flex-start; justify-content: space-between; padding: max(10px, env(safe-area-inset-top)) 12px 4px; min-height: 80px; box-sizing: border-box; }
@@ -64,7 +37,7 @@
   canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
   .ctl { position: relative; display: grid; place-items: center; padding: 0; border: var(--outline); background: var(--panel); color: var(--ink);
     box-shadow: var(--edge); transition: transform .08s, box-shadow .08s; touch-action: manipulation; }
-  .ctl:not(:disabled):active, .ctl[aria-pressed="true"].hold { transform: translateY(3px); box-shadow: var(--edge-down); }
+  .ctl:not(:disabled):active { transform: translateY(3px); box-shadow: var(--edge-down); }
   .ctl:disabled { opacity: .55; }
   .ctl svg { width: 26px; height: 26px; }
   .round { width: 52px; height: 52px; border-radius: 50%; }
@@ -83,74 +56,76 @@
      share one height, so the face never moves */
   footer { height: calc(146px + env(safe-area-inset-bottom)); box-sizing: border-box; padding: 6px 8px env(safe-area-inset-bottom); position: relative;
     background: linear-gradient(#fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: 0 -10px 18px -10px #6a3a3a55; }
-  [data-theme="candy"] footer { background: linear-gradient(#ffffff 0 7px, #ffe6f3 7px, #ffd2e8 100%); box-shadow: 0 -10px 18px -10px #6a3a8a44; }
-  [data-theme="glam"] footer { background: linear-gradient(#f2c14e 0 3px, #2c1526 3px, #170a13 100%); box-shadow: 0 -10px 22px -8px #000a; }
   #swatches { display: flex; gap: 8px; overflow-x: auto; padding: 8px 10px 10px; justify-content: safe center; scrollbar-width: none; }
   #swatches button { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
   #swatches button[aria-checked="true"] { transform: translateY(-4px) scale(1.12); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
   #swatches .star { position: absolute; right: -7px; top: -7px; width: 20px; height: 20px; }
   #toolbar { display: flex; justify-content: center; gap: 10px; padding-top: 4px; }
   #toolbar .ctl { width: 56px; height: 56px; border-radius: 50%; }
-  #toolbar .ctl[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
+  #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
   #review { display: flex; gap: 18px; justify-content: center; align-items: center; }
   #review .round { width: 64px; height: 64px; }
   #review .round svg { width: 30px; height: 30px; }
-  #next { width: 88px !important; height: 88px !important; background: var(--accent); color: var(--accent-ink); }
+  #next { width: 88px !important; height: 88px !important; background: var(--accent); }
   #next svg { width: 40px !important; height: 40px !important; }
   #before[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
-  #notice { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); background: var(--panel); border: var(--outline); border-radius: 18px; padding: 5px 12px;
-    box-shadow: 0 3px 0 var(--ink); font-size: 12px; font-weight: 700; white-space: nowrap; }
+  #notice { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--panel); border: var(--outline); box-shadow: 0 3px 0 var(--ink); }
+  #notice svg { width: 22px; height: 22px; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
 
   /* ---- the colour of the day ---- */
   #panel { position: fixed; inset: 0; background: #2a1d1566; display: grid; place-items: center; padding: 16px; }
-  #panel .card { position: relative; width: min(330px, 100%); box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 26px;
-    box-shadow: 0 6px 0 var(--ink); padding: 18px 18px 20px; text-align: center; }
-  #panel h2 { margin: 2px 40px 12px; font-size: 18px; font-weight: 800; }
-  #panel .x { position: absolute; right: 12px; top: 12px; width: 42px; height: 42px; }
+  #panel .card { position: relative; width: min(300px, 100%); box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 26px;
+    box-shadow: 0 6px 0 var(--ink); padding: 24px 18px 20px; text-align: center; }
+  #panel .x { position: absolute; right: -12px; top: -12px; width: 46px; height: 46px; }
   #panel .x svg { width: 22px; height: 22px; }
-  .gem { position: relative; width: 150px; height: 150px; margin: 0 auto 10px; }
+  .gem { position: relative; width: 170px; height: 170px; margin: 0 auto 12px; }
   .gem > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-  .gem .sw { position: absolute; inset: 20px; border-radius: 50%; border: var(--outline); box-shadow: 0 4px 0 var(--ink), inset 0 -10px 18px #0002; }
-  .gem .tick { position: absolute; right: 8px; bottom: 8px; width: 40px; height: 40px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
-  .gem .tick svg { width: 22px; height: 22px; }
-  #panel .name { font-weight: 800; font-size: 17px; display: flex; gap: 6px; align-items: center; justify-content: center; }
-  #panel .name svg { width: 22px; height: 22px; }
-  #panel .what { margin: 3px 0 14px; color: var(--muted); font-size: 13px; font-weight: 600; }
-  #panel .get { width: 100%; min-height: 54px; border-radius: 27px; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 15px;
-    display: flex; gap: 10px; align-items: center; justify-content: center; }
-  #panel .get .vb { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--badge); border: 2.5px solid var(--ink); }
-  #panel .get .vb svg { width: 17px; height: 17px; }
+  .gem .sw { position: absolute; inset: 22px; border-radius: 50%; border: var(--outline); box-shadow: 0 4px 0 var(--ink), inset 0 -10px 18px #0002; }
+  .gem .tick { position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
+  .gem .tick svg { width: 24px; height: 24px; }
+  .gem .full { position: absolute; inset: 22px; display: grid; place-items: center; }
+  .gem .full svg { width: 80px; height: 80px; }
+  /* what it is: the tool it is for, and "for good" */
+  #panel .chips { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+  #panel .chip { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: var(--outline); background: #fff; box-shadow: 0 3px 0 var(--ink); }
+  #panel .chip svg { width: 26px; height: 26px; }
+  #panel .get { width: 100%; height: 62px; border-radius: 31px; background: var(--accent); display: flex; gap: 10px; align-items: center; justify-content: center; }
+  #panel .get .vb { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--badge); border: var(--outline); }
+  #panel .get .vb svg { width: 24px; height: 24px; }
+  #panel .get > svg { width: 34px; height: 34px; }
+  #panel .get.owned { background: var(--seal); }
   #panel .time { display: inline-flex; margin-top: 14px; gap: 6px; align-items: center; padding: 5px 12px; border-radius: 16px; border: 2.5px solid var(--ink); background: #fff8;
-    font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; }
+    font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; }
   #panel .time svg { width: 18px; height: 18px; }
   .nope { animation: nope .4s; }
   @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
   /* ---- loading and recovery ---- */
-  #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 14px; text-align: center; padding: 24px; font-weight: 700; }
-  #cover { background: inherit; }
-  #cover, #error { background: radial-gradient(120% 80% at 50% 30%, #fbe4de 0, #f1c8c3 55%, #dfa9ab 100%); }
-  [data-theme="candy"] #cover, [data-theme="candy"] #error { background: linear-gradient(170deg, #cdb8ff 0, #f5c8ec 48%, #ffe1c7 100%); }
-  [data-theme="glam"] #cover, [data-theme="glam"] #error { background: radial-gradient(55% 42% at 50% 36%, #6b2a55 0, #3a1230 55%, #160711 100%); color: var(--panel); }
+  #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; padding: 24px; background: var(--wall); }
   .spin { width: 46px; height: 46px; border-radius: 50%; border: var(--outline); background: conic-gradient(var(--accent) 0 30%, var(--panel) 0); box-shadow: 0 4px 0 var(--ink); animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #retry { min-height: 52px; padding: 0 26px; border-radius: 26px; background: var(--accent); font-weight: 800; }
-  #error small { opacity: .7; font-weight: 600; }
-  @media (prefers-reduced-motion: reduce) { .spin, .nope { animation: none; } .ctl, #swatches button { transition: none; } }
-  @media (max-height: 560px) { #top { min-height: 64px; } footer { height: calc(118px + env(safe-area-inset-bottom)); } #swatches { padding-bottom: 4px; } .round { width: 46px; height: 46px; } #toolbar .ctl { width: 48px; height: 48px; } #done { width: 64px; height: 64px; }
+  #error .oops { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: var(--outline); box-shadow: var(--edge); }
+  #error .oops svg { width: 46px; height: 46px; }
+  #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
+  #retry svg { width: 40px; height: 40px; }
+  #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
+  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg { animation: none; } .ctl, #swatches button { transition: none; } }
+  @media (max-height: 560px) { #top { min-height: 64px; } footer { height: calc(118px + env(safe-area-inset-bottom)); } #swatches { padding-bottom: 4px; }
+    .round { width: 46px; height: 46px; } #toolbar .ctl { width: 48px; height: 48px; } #done { width: 64px; height: 64px; }
     #review .round { width: 54px; height: 54px; } #next { width: 70px !important; height: 70px !important; } }
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="backdrop" aria-hidden="true"><div class="mirror"></div><i class="bulbs l"></i><i class="bulbs r"></i><i class="bulbs t"></i>
-    <i class="sparkle a"></i><i class="sparkle b"></i><i class="sparkle c"></i></div>
+  <div id="backdrop" aria-hidden="true"><div class="mirror"></div><i class="bulbs l"></i><i class="bulbs r"></i><i class="bulbs t"></i></div>
   <header id="top">
     <button id="daily" class="ctl round" aria-label="Colour of the day" hidden></button>
     <span></span>
     <button id="done" class="ctl" aria-label="Done"></button>
   </header>
-  <main id="stage"><div id="notice" role="status" hidden>Not saved yet. Retrying…</div></main>
+  <main id="stage"><div id="notice" role="status" aria-label="Not saved yet. Retrying." hidden></div></main>
   <footer id="create"><div id="swatches" role="radiogroup" aria-label="Colours"></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
   <footer id="review" hidden>
     <button id="before" class="ctl round" aria-pressed="false" aria-label="Hold to see before"></button>
@@ -161,16 +136,14 @@
 <div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>
   <div class="card">
     <button class="x ctl round" aria-label="Close"></button>
-    <h2>Colour of the day</h2>
     <div class="gem"></div>
-    <div class="name"></div>
-    <div class="what"></div>
+    <div class="chips"></div>
     <button class="get ctl"></button>
-    <div class="time"></div>
+    <div class="time" role="timer"></div>
   </div>
 </div>
-<div id="cover"><div class="spin"></div></div>
-<div id="error" hidden><div>Something went wrong.</div><div id="error-text">Your saved looks are safe.</div><button id="retry" class="ctl">Retry</button><small id="error-code"></small></div>
+<div id="cover" aria-label="Loading"><div class="spin"></div></div>
+<div id="error" role="alert" aria-label="Something went wrong. Your saved looks are safe." hidden><div class="oops"></div><button id="retry" class="ctl" aria-label="Retry"></button><small id="error-code"></small></div>
 <script type="module" src="main.js"></script>
 </body>
 </html>

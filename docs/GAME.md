@@ -20,20 +20,24 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 | Colour of the day | A panel over the screen showing today's colour, its tool, a countdown ring to midnight, and **Watch a video to get it**. Once earned it shows **Yours! Use it now**, and the colour is already selected. |
 | Loading / Retry | A loading cover until the face is on screen. A missing SDK, a failed load, or a save that isn't this game's stops at **Retry**, and the save is never overwritten. |
 
-**Look.** The controls are Haircut's, recoloured:
+**Look: Blush Studio, textless (owner's choice, 19 October 2026).** The controls are Haircut's, recoloured:
 - round "sticker" buttons with an ink outline and a hard shadow that presses down
-- icons only, with spoken labels for accessibility
-- a video badge on everything that plays a video
-- a rosette seal for Done
+- a yellow video badge on everything that plays a video
+- a green rosette seal for Done
+- a rose accent for the active tool and for Next
 
-The customer sits behind a vanity counter that carries the controls, and a themed scene sits behind her (the 3D
-canvas is transparent). Create and review keep the same counter height, so the face never moves. Three themes
-are built for the owner to choose from (`?theme=`):
-- `blush`: Blush Studio, cream and ink, rose accent, a lit vanity mirror
-- `candy`: Candy Pop, white and violet ink, mint accent, pastel bokeh
-- `glam`: Glam Night, champagne and near-black ink, gold accent, dark plum with gold lights
+The customer sits behind a vanity counter that carries the controls, in front of a blush salon wall with a lit
+vanity mirror (the 3D canvas is transparent). Create and review keep the same counter height, so the face never
+moves.
 
-The chosen one will become the only theme.
+Nothing on screen is a word:
+- The colour of the day shows its swatch in the countdown ring, the tool it's for, "∞" (yours for good), a
+  video button (a tick once earned), and the time left in numbers.
+- An unsaved state is a cloud icon.
+- The error screen is a warning icon and a Retry arrow, with a small diagnostic code.
+
+Every control has a spoken English label (`aria-label`). `tests/game-smoke.mjs` checks there is no visible text
+on each screen.
 
 There is no eraser, undo or free reset. Redo is the rewarded replay the contract promises. An untouched
 Done/Next is allowed, but counts nothing.
@@ -155,6 +159,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - reload restoring everything
 - a missing SDK and a foreign save stopping at Retry
 - the dev page without ads
+- no visible words on any screen
 
 **Size:** the game page is 408 KB (`tests/size-budget.mjs`, game budget 1 MB).
 
