@@ -84,7 +84,9 @@ Done/Next is allowed, but counts nothing.
 ## Sound (owner decision, 19 October 2026: satisfying ASMR sounds, no music)
 
 Every sound is synthesised in `game/sound.js` (no audio files, no music) and plays only while the host allows
-sound. Each tool sounds like the real product touching the face:
+sound. Each tool's sound is a texture built sample by sample the way the real product makes its sound (thousands
+of bristle-tip contacts, a kohl tip's grain, lipstick's stick-slip drag), 2.5 s of it built when the tool is first
+used and looped under the stroke:
 
 | Tool | Sound |
 | --- | --- |
@@ -98,12 +100,15 @@ sound. Each tool sounds like the real product touching the face:
 | Lenses | A soft, wet plip |
 
 - **A stroke follows the hand.** Its speed is measured on the face (decimetres a second, the same on every
-  screen): faster is louder and brighter. It falls silent when the hand stops or leaves the face.
+  screen): faster plays the texture louder, faster and brighter, as friction does. It falls silent when the hand
+  stops or leaves the face.
 - **The controls:** a soft tactile click when a tool is picked up, a tap when a colour is chosen, a pop as the
   colour of the day opens, a whoosh as the next customer sits down, a rising sparkle for an earned colour, and a
   low soft bump when something is refused. The finish keeps Haircut's bell chime.
-- **Levels:** strokes peak at about 0.17 of full scale, about as loud as the finish chime; a gentle compressor
-  keeps many small sounds from clipping.
+- **Levels (owner, 19 October 2026: the tools were too loud):** the tools are quiet and close, about −45 dB on
+  average and peaking at 0.02–0.05 of full scale, well under the controls (0.12) and the finish chime (0.26). Gems
+  and lenses are a little softer than the controls. Each texture is set to the same average level however its
+  random build comes out, and a gentle compressor keeps many small sounds from clipping.
 - **Checks:** the browser test checks that a stroke makes a sound, and that nothing plays, not even a tool's
   click, while the host has sound off. `tests/out/sounds/*.wav` are rendered samples of every sound, for listening.
 

@@ -95,20 +95,133 @@ function glide(c, t, f0, f1, gain, dur) {
   o.connect(g).connect(bus || sfx.out);
   o.start(t); o.stop(t + dur + 0.02);
 }
-const between = ([a, b]) => a + Math.random() * (b - a);
 const hold = (p, t) => (p.cancelAndHoldAtTime ? p.cancelAndHoldAtTime(t) : p.cancelScheduledValues(t));
 
-// How each tool sounds on the face. bed: the continuous texture (filtered noise: band centre f, width q, top lp,
-// level at full speed); ref: the speed (decimetres a second) that reaches full level; grains: discrete bristle or
-// graphite ticks, one every `every` decimetres of travel; glints: the highlighter's sparkle; lift: the tick as the
-// liner's tip leaves the skin.
+// ---- the tools' textures ----
+// Each tool's sound is a texture built sample by sample, the way the real thing makes its sound: a brush is
+// thousands of tiny bristle-tip contacts over a soft body of air; kohl is an irregular grain; a felt tip is a
+// smooth, almost silent glide; a mascara wand's rows of bristles comb through lashes; lipstick drags over skin in
+// tiny stick-slip catches (gloss: wet and tacky). 2.5 s of each is built when the tool is first used and loops
+// under the stroke; it plays faster, brighter and louder as the hand speeds up, as friction does.
+function dsp(sr, seconds) {
+  const fade = Math.round(sr * 0.05), n = Math.round(sr * seconds) + fade;
+  const rnd = Math.random, gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const k = (fc) => 1 - Math.exp((-2 * Math.PI * fc) / sr);
+  const f = {
+    n, sr,
+    noise: (gain = 1) => Float32Array.from({ length: n }, () => (rnd() * 2 - 1) * gain),
+    // a Poisson stream of impulses, `rate` a second, sizes from amp(), random signs
+    impulses(rate, amp) {
+      const x = new Float32Array(n);
+      for (let t = -Math.log(1 - rnd()) / rate * sr; t < n; t += -Math.log(1 - rnd()) / rate * sr) x[t | 0] += amp() * (rnd() < 0.5 ? -1 : 1);
+      return x;
+    },
+    // a jittered pulse train (stick-slip): about `hz` a second, wandering in pitch
+    pulses(hz, jitter, amp) {
+      const x = new Float32Array(n);
+      let p = hz;
+      for (let t = 0; t < n; t += sr / p) { x[t | 0] += amp(); p = Math.max(hz * 0.5, Math.min(hz * 1.6, p * (1 + gauss() * jitter))); }
+      return x;
+    },
+    lowpass(x, fc, poles = 1) { const a = k(fc); for (let j = 0; j < poles; j++) { let y = 0; for (let i = 0; i < n; i++) x[i] = y += a * (x[i] - y); } return x; },
+    highpass(x, fc) { const a = k(fc); let y = 0; for (let i = 0; i < n; i++) { y += a * (x[i] - y); x[i] -= y; } return x; },
+    // a resonance (RBJ band-pass, constant peak gain): rings each impulse at f
+    resonate(x, fr, q) {
+      const w = (2 * Math.PI * fr) / sr, al = Math.sin(w) / (2 * q), a0 = 1 + al;
+      const b0 = al / a0, a1 = (-2 * Math.cos(w)) / a0, a2 = (1 - al) / a0;
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (let i = 0; i < n; i++) { const y = b0 * x[i] - b0 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = x[i]; y2 = y1; y1 = y; x[i] = y; }
+      return x;
+    },
+    // a slow, uneven swell (the pressure and angle of a real hand), `hz` a second, `depth` of the level
+    swell(x, hz, depth) {
+      let ph = rnd() * 6.283, r = 0;
+      for (let i = 0; i < n; i++) { ph += (2 * Math.PI * hz) / sr; r += (gauss() * 0.02 - r * 0.0005); x[i] *= 1 - depth * (0.5 + 0.5 * Math.sin(ph + r)); }
+      return x;
+    },
+    mix: (...parts) => { const x = new Float32Array(n); for (const [p, g] of parts) for (let i = 0; i < n; i++) x[i] += p[i] * g; return x; },
+    // loop seamlessly (the tail fades into the head), set the average level (RMS 0.25, so every build of a random
+    // texture is as loud as the last) and round off the rare big clicks
+    finish(x) {
+      const m = n - fade, y = x.slice(0, m);
+      for (let i = 0; i < fade; i++) { const t = i / fade; y[i] = y[i] * t + x[m + i] * (1 - t); }
+      let e = 0; for (const v of y) e += v * v;
+      const g = 0.25 / (Math.sqrt(e / m) || 1);
+      for (let i = 0; i < m; i++) y[i] = Math.tanh(y[i] * g);
+      return y;
+    },
+  };
+  return f;
+}
+const logn = (s) => () => Math.exp(s * Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random()));
+const TEXTURE = {
+  // a soft powder brush: a body of air, and a dense rustle of bristle tips
+  brush(d) {
+    const body = d.lowpass(d.noise(), 700, 2);
+    const tips = d.lowpass(d.resonate(d.impulses(2200, logn(0.6)), 2300, 0.8), 4500);
+    return d.swell(d.mix([body, 1.6], [tips, 0.9]), 1.7, 0.35);
+  },
+  // a fan brush: fewer, finer, higher tips and less body; airy
+  glow(d) {
+    const body = d.lowpass(d.noise(), 1200, 2);
+    const tips = d.lowpass(d.resonate(d.impulses(1200, logn(0.7)), 4200, 1.1), 7000);
+    return d.swell(d.mix([body, 0.6], [tips, 1]), 2.2, 0.3);
+  },
+  // kohl on soft skin: an irregular grain, muted
+  pencil(d) {
+    const grain = d.resonate(d.impulses(420, logn(0.9)), 2100, 2.2);
+    const fine = d.resonate(d.impulses(1600, logn(0.5)), 3600, 1.4);
+    const body = d.lowpass(d.noise(), 600, 2);
+    return d.swell(d.lowpass(d.mix([grain, 1], [fine, 0.35], [body, 0.5]), 4200), 3, 0.25);
+  },
+  // a felt tip: smooth and almost silent, a breath of the tip on skin
+  liner(d) {
+    const body = d.lowpass(d.noise(), 1000, 2);
+    const tip = d.resonate(d.noise(), 4200, 2.5);
+    return d.swell(d.mix([body, 1], [tip, 0.05]), 1.2, 0.15);
+  },
+  // a mascara wand: its rows of bristles comb through lashes in a quick flutter
+  mascara(d) {
+    const rows = d.resonate(d.pulses(38, 0.15, () => 0.6 + Math.random() * 0.4), 3000, 1.2);
+    const flicks = d.resonate(d.impulses(700, logn(0.8)), 3400, 2);
+    const body = d.lowpass(d.noise(), 900, 2);
+    return d.lowpass(d.mix([rows, 0.7], [flicks, 1], [body, 0.25]), 6000);
+  },
+  // lipstick: waxy stick-slip catches as it drags, over a soft body
+  lip(d) {
+    const catches = d.resonate(d.pulses(95, 0.06, () => 0.5 + Math.random() * 0.5), 720, 4);
+    const body = d.lowpass(d.noise(), 800, 2);
+    return d.swell(d.lowpass(d.mix([catches, 1], [body, 0.9]), 2200, 2), 2.5, 0.3);
+  },
+  // gloss: a smoother, wetter drag with sticky little pops as the wand lifts off the gloss
+  gloss(d) {
+    const tacks = d.lowpass(d.resonate(d.impulses(16, logn(0.5)), 380, 5), 1500);
+    const drag = d.resonate(d.pulses(70, 0.08, () => 0.3 + Math.random() * 0.3), 600, 3);
+    const body = d.lowpass(d.noise(), 1100, 2);
+    return d.swell(d.mix([tacks, 1.4], [drag, 0.6], [body, 0.8]), 2, 0.25);
+  },
+};
+const textures = new Map();
+function texture(c, kind) {
+  const key = `${kind}@${c.sampleRate}`;
+  if (!textures.has(key)) {
+    const d = dsp(c.sampleRate, 2.5), data = d.finish(TEXTURE[kind](d)), b = c.createBuffer(1, data.length, c.sampleRate);
+    b.getChannelData(0).set(data);
+    textures.set(key, b);
+  }
+  return textures.get(key);
+}
+
+// How each tool plays its texture: its level at full speed (the tools are quiet and close, well under the menu
+// sounds), ref: the speed (decimetres a second) that reaches full level, lp: its brightness at full speed;
+// glints: the highlighter's faint sparkle; lift: the soft tick as the liner's tip leaves the skin.
 const TOOL = {
-  brush: { bed: { pink: true, f: 2400, q: 0.5, lp: 6500, gain: 0.64 }, ref: 1.6 },
-  glow: { bed: { pink: true, f: 4200, q: 0.7, lp: 9500, gain: 0.48 }, ref: 1.3, glints: 0.06 },
-  pencil: { bed: { f: 3600, q: 1.1, lp: 8000, gain: 0.14 }, ref: 1, grains: { every: 0.004, f: [2800, 5200], q: 2.5, dur: 0.004, gain: [0.08, 0.22] } },
-  liner: { bed: { f: 1600, q: 1.6, lp: 3800, gain: 0.32 }, ref: 0.9, lift: { f: 2600, q: 2, dur: 0.012, gain: 0.14 } },
-  mascara: { bed: { f: 3000, q: 0.7, lp: 7000, gain: 0.13 }, ref: 1, grains: { every: 0.0025, f: [2200, 4200], q: 2, dur: 0.0035, gain: [0.08, 0.24] } },
-  lip: { bed: { pink: true, f: 850, q: 0.8, lp: 2400, gain: 0.68 }, ref: 1 },
+  brush: { gain: 0.05, ref: 1.6, lp: 5000 },
+  glow: { gain: 0.045, ref: 1.3, lp: 8000, glints: 0.07 },
+  pencil: { gain: 0.04, ref: 1, lp: 4500 },
+  liner: { gain: 0.032, ref: 0.9, lp: 3000, lift: { f: 2600, q: 2, dur: 0.01, gain: 0.025 } },
+  mascara: { gain: 0.04, ref: 1, lp: 6500 },
+  lip: { gain: 0.04, ref: 1, lp: 2400 },
 };
 
 // A stroke's voice: stroke(tool, colour) at pointer-down, move() for every pointer sample, end() at pointer-up.
@@ -116,48 +229,32 @@ const TOOL = {
 export function stroke(tool, colour) {
   const c = live(), r = TOOL[tool];
   if (!c || !r) return null;
-  noise(c);
-  const t0 = c.currentTime;
-  const src = c.createBufferSource(), bp = c.createBiquadFilter(), lp = c.createBiquadFilter(), g = c.createGain();
-  src.buffer = r.bed.pink ? sfx.pink : sfx.white; src.loop = true;
-  bp.type = 'bandpass'; bp.frequency.value = r.bed.f; bp.Q.value = r.bed.q;
-  lp.type = 'lowpass'; lp.frequency.value = r.bed.lp;
+  const t0 = c.currentTime, buffer = texture(c, tool === 'lip' && colour?.gloss ? 'gloss' : tool);
+  const src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
+  src.buffer = buffer; src.loop = true;
+  lp.type = 'lowpass'; lp.frequency.value = r.lp; lp.Q.value = 0.5;
   g.gain.value = 0;
-  src.connect(bp).connect(lp).connect(g).connect(bus || sfx.out);
-  src.start(t0, Math.random() * 1.5);
-  const wet = (colour?.gloss || 0) > 0;
-  let travel = 0, sparkle = 0, tack = 0, next = 0, touched = false, ended = false;
+  src.connect(lp).connect(g).connect(sfx.out);
+  src.start(t0, Math.random() * (buffer.duration - 0.1));
+  let sparkle = 0, touched = false, ended = false;
   return {
     // d: decimetres the hand moved over the face since the last sample; dt: seconds; contact: the tool is on the
     // skin (the mascara wand: on lashes); at: when (defaults to now)
     move(d, dt, contact, at = c.currentTime) {
       if (ended) return;
-      const k = contact && dt > 0 ? Math.min(1.4, d / dt / r.ref) : 0;
+      const k = contact && dt > 0 ? Math.min(1.3, d / dt / r.ref) : 0;
       hold(g.gain, at);
-      g.gain.setTargetAtTime(r.bed.gain * Math.pow(k, 0.6), at, 0.025);
+      g.gain.setTargetAtTime(r.gain * Math.pow(k, 0.7), at, 0.03);
       g.gain.setTargetAtTime(0, at + 0.09, 0.04); // the hand stops: the sound fades with it
-      bp.frequency.setTargetAtTime(r.bed.f * (0.8 + 0.3 * Math.min(k, 1)), at, 0.05);
+      if (k > 0) {
+        src.playbackRate.setTargetAtTime(0.8 + 0.35 * Math.min(k, 1), at, 0.06);
+        lp.frequency.setTargetAtTime(r.lp * (0.55 + 0.45 * Math.min(k, 1)), at, 0.06);
+      }
       if (!contact || !(d > 0)) return;
       touched = true;
-      // grains: as many as the travel calls for, but never closer than 6 ms (they blur into the bed beyond that)
-      if (r.grains) {
-        travel += d;
-        while (travel >= r.grains.every) {
-          travel -= r.grains.every;
-          const when = Math.max(at, next);
-          if (when > at + dt + 0.01) { travel = 0; break; }
-          grain(c, when, { f: between(r.grains.f), q: r.grains.q, dur: r.grains.dur, gain: between(r.grains.gain) });
-          next = when + 0.006;
-        }
-      }
       if (r.glints && (sparkle += d) >= r.glints) {
         sparkle = 0;
-        ping(c, at + Math.random() * 0.02, 4500 + Math.random() * 3500, 0.03 + Math.random() * 0.04, 0.07);
-      }
-      // lipstick drags and skips a little; gloss is wet and tacky
-      if (tool === 'lip' && (tack += d) >= (wet ? 0.025 : 0.06)) {
-        tack = 0;
-        grain(c, at, wet ? { f: 700, q: 0.9, dur: 0.02, gain: 0.24, type: 'lowpass', pink: true } : { f: 1100, q: 1.2, dur: 0.01, gain: 0.1, pink: true });
+        ping(c, at + Math.random() * 0.02, 5000 + Math.random() * 3500, 0.006 + Math.random() * 0.008, 0.06);
       }
     },
     end(at = c.currentTime) {
@@ -174,9 +271,7 @@ export function stroke(tool, colour) {
 // A tap on the face: a gem setting on the skin (colour: the gem, with its look), or a lens on an iris.
 export function tap(kind, colour, at) {
   const c = live();
-  if (!c) return;
-  bus = sfx.taps;
-  try { tapSound(c, kind, colour, at); } finally { bus = null; }
+  if (c) tapSound(c, kind, colour, at);
 }
 function tapSound(c, kind, colour, at) {
   const t = at ?? c.currentTime + 0.005;
