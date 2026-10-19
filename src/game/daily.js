@@ -26,9 +26,14 @@ export function dailyOffer(day, owned) {
   return null;
 }
 
-// time left until local midnight: milliseconds, the fraction of the day left, and the countdown text
+// Time left until local midnight, as Haircut's daily pick shows it: milliseconds, the fraction of the day left,
+// the countdown text (h:mm:ss, or m:ss in the last hour), the level ('g' green, 'o' orange from 6 hours,
+// 'r' red from 2 hours) and the last ten minutes.
 export function timeLeft(now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()), end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const ms = Math.max(0, end - now), t = Math.floor(ms / 1000), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
-  return { ms, frac: Math.min(1, ms / (end - start)), text: h ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}` };
+  return {
+    ms, frac: Math.min(1, ms / (end - start)), text: h ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`,
+    level: t < 2 * 3600 ? 'r' : t < 6 * 3600 ? 'o' : 'g', last: t < 600,
+  };
 }

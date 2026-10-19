@@ -104,19 +104,34 @@
     box-shadow: 0 6px 0 var(--ink); padding: 22px 20px 18px; text-align: center; }
   #panel .x { position: absolute; right: -14px; top: -14px; width: 48px; height: 48px; }
   #panel .x svg { width: 22px; height: 22px; }
-  #panel .art { position: relative; width: 224px; height: 224px; margin: 0 auto 16px; border-radius: 30px; border: var(--outline); box-shadow: 0 4px 0 var(--ink); overflow: hidden;
-    background: radial-gradient(120% 90% at 50% 20%, #fbe4de 0, #e9bdb9 100%); }
-  #panel .art > svg { display: block; width: 100%; height: 100%; }
-  #panel .art .tick { position: absolute; right: 8px; bottom: 8px; width: 48px; height: 48px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
+  /* Haircut's daily-pick countdown: a ring around the picture that drains anticlockwise with the day (green, orange
+     from 6 hours, red from 2 hours, a red dot at the very end), and a timer pill in the same colour. In the last
+     ten minutes the card glows red and the picture beats. Once the colour is taken the ring goes. */
+  #panel .art { position: relative; width: 224px; height: 224px; margin: 0 auto 14px; display: grid; place-items: center; }
+  #panel .pic { position: relative; width: 81%; height: 81%; border-radius: 50%; overflow: hidden; border: var(--outline); box-shadow: 0 4px 0 var(--ink);
+    background: radial-gradient(120% 90% at 50% 20%, #fffaf6 0, #f3dcd6 100%); }
+  #panel .pic > svg { display: block; width: 116%; height: 116%; margin: -8%; }
+  #panel .ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #panel .ring .arc { fill: none; stroke-linecap: round; }
+  #panel .ring .trk { fill: none; stroke: #e9dcc4; stroke-width: 11; }
+  #panel .ring .out { stroke: var(--ink); stroke-width: 15; }
+  #panel .ring .col { stroke-width: 9; stroke: #3fbf5a; transition: stroke .4s; }
+  #panel .card.o .ring .col { stroke: #ff9f1c; } #panel .card.r .ring .col { stroke: #ff3b30; }
+  #panel .card.last { animation: alarm 1s ease-in-out infinite; }
+  #panel .card.last .art { animation: beat 1s ease-in-out infinite; }
+  @keyframes alarm { 0%, 100% { box-shadow: 0 6px 0 var(--ink), 0 0 0 4px #ff4d3d55, 0 0 14px 4px #ff4d3d66; } 50% { box-shadow: 0 6px 0 var(--ink), 0 0 0 7px #ff4d3d77, 0 0 28px 10px #ff4d3d99; } }
+  @keyframes beat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.08); } 24% { transform: scale(1.01); } 34% { transform: scale(1.06); } }
+  #panel .art .tick { position: absolute; right: 14px; bottom: 14px; width: 48px; height: 48px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
   #panel .art .tick svg { width: 26px; height: 26px; }
   #panel .get { width: 100%; height: 70px; border-radius: 35px; background: var(--accent); }
   #panel .get .vb { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--badge); border: var(--outline); }
   #panel .get .vb svg { width: 28px; height: 28px; }
   #panel .get > svg { width: 38px; height: 38px; }
   #panel .get.owned { background: var(--seal); }
-  #panel .time { display: inline-flex; margin-top: 14px; gap: 6px; align-items: center; padding: 4px 12px; border-radius: 16px; border: 2.5px solid var(--ink); background: #fff8;
-    font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; }
-  #panel .time svg { width: 18px; height: 18px; }
+  #panel .time { display: inline-flex; margin-top: 14px; gap: 6px; align-items: center; height: 34px; box-sizing: border-box; padding: 0 12px; border-radius: 17px;
+    background: var(--panel); border: 2.5px solid var(--ink); font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; }
+  #panel .time.g { background: #c8f0cf; } #panel .time.o { background: #ffd27a; } #panel .time.r { background: #ff3b30; color: #fff; }
+  #panel .time svg { width: 20px; height: 20px; }
   .nope { animation: nope .4s; }
   @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
@@ -129,7 +144,7 @@
   #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
   #retry svg { width: 40px; height: 40px; }
   #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
-  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #panel .art svg, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
   @media (max-height: 560px) { #top { min-height: 64px; } footer { height: calc(118px + env(safe-area-inset-bottom)); } #swatches { padding-bottom: 4px; }
     .round { width: 46px; height: 46px; } #toolbar .ctl { width: 48px; height: 48px; } #done { width: 50px; height: 50px; }
     #redo { width: 60px; height: 60px; } #next { height: 78px; } #next .pic { width: 66px; height: 66px; } #next .go { width: 48px; height: 48px; } }

@@ -36,6 +36,12 @@ Nothing on screen is a word:
   open compact with its brush, a sharpened pencil with the line it draws, a mascara and its wand, or an eye
   wearing the lens. Gloss adds a wet highlight, shimmer adds sparkle. Below it are a video button (a tick once
   earned) and the time left in numbers.
+- The countdown is Haircut's daily-pick clock:
+  - a ring around the picture that drains anticlockwise with the day, green, then orange from 6 hours left, then
+    red from 2 hours, ending as a red dot
+  - a stopwatch pill in the same colour
+  - in the last ten minutes the card glows red and the picture beats
+  - once the colour is taken the ring goes
 - An unsaved state is a cloud icon.
 - The error screen is a warning icon and a Retry arrow, with a small diagnostic code.
 

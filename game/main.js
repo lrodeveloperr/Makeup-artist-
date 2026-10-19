@@ -26,7 +26,7 @@ const ICON = {
   redo: svg('M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 4.2v4.6h4.6', ' stroke-width="3"'),
   eye: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 10a2 2 0 1 0 0 4 2 2 0 1 0 0-4', ' stroke-width="2.6"'),
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
-  clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2', ' stroke-width="2.6"'),
+  clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2M9.5 2.5h5', ' stroke-width="2.6"'), // Haircut's stopwatch
   close: svg('M6.5 6.5l11 11M17.5 6.5l-11 11', ' stroke-width="3.2"'),
   cloud: svg('M7 18.5h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.5 1.6A3.4 3.4 0 0 0 7 18.5zM4 4l16 16', ' stroke-width="2.4"'),
   oops: svg('M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M12 7.5v6M12 16.6v.4', ' stroke-width="2.8"'),
@@ -231,14 +231,21 @@ async function main() {
   daily.hidden = !host.rewardedSupported; // no rewarded videos here: nothing to offer
   card.querySelector('.x').innerHTML = ICON.close;
   let panelTimer = 0;
+  const RING_C = 2 * Math.PI * 62;
+  const RING = '<svg class="ring" viewBox="0 0 140 140" aria-hidden="true"><circle class="trk" cx="70" cy="70" r="62"/><g transform="rotate(-90 70 70) translate(0 140) scale(1 -1)"><circle class="arc out" cx="70" cy="70" r="62"/><circle class="arc col" cx="70" cy="70" r="62"/></g></svg>';
   // minimal: the product in today's colour; one button (a video, or a tick once it is yours); the time left
   const renderPanel = () => {
     const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = !!c && s.owned.includes(c.id);
     const t = timeLeft(), art = card.querySelector('.art'), get = card.querySelector('.get'), time = card.querySelector('.time');
     if (art.dataset.colour !== `${c?.id}:${owned}`) {
       art.dataset.colour = `${c?.id}:${owned}`;
-      art.innerHTML = `${c ? productShot(c) : ''}${owned || !c ? `<span class="tick">${ICON.check}</span>` : ''}`;
+      art.innerHTML = `${c && !owned ? RING : ''}${c ? `<span class="pic">${productShot(c)}</span>` : ''}${owned || !c ? `<span class="tick">${ICON.check}</span>` : ''}`;
     }
+    // the countdown, as Haircut's: what is left of the day as an arc emptying anticlockwise towards the top
+    const live = !!c && !owned, len = Math.max(t.frac * RING_C, t.frac > 0 ? 4 : 0);
+    for (const a of art.querySelectorAll('.ring .arc')) a.setAttribute('stroke-dasharray', `${len.toFixed(1)} ${RING_C.toFixed(1)}`);
+    for (const l of ['g', 'o', 'r']) { card.classList.toggle(l, live && t.level === l); time.classList.toggle(l, live && t.level === l); }
+    card.classList.toggle('last', live && t.last);
     art.setAttribute('aria-label', c ? `${TOOL_NAME[c.target]} in ${c.name}` : 'You have every colour');
     get.hidden = !c;
     get.disabled = session.busy; // once owned it is a tick that closes the panel (the colour is already selected)

@@ -34,6 +34,9 @@ test('colour of the day: same for everyone that day, never one already owned, to
   const t = timeLeft(new Date(2026, 9, 19, 23, 59, 30));
   assert.equal(t.text, '0:30');
   assert.equal(timeLeft(new Date(2026, 9, 19, 12, 0, 0)).text, '12:00:00');
+  // Haircut's colours: green, orange from 6 hours left, red from 2 hours; the last ten minutes alarm
+  assert.deepEqual([9, 19, 23].map((h) => timeLeft(new Date(2026, 9, 19, h, 0, 0)).level), ['g', 'o', 'r']);
+  assert.deepEqual([timeLeft(new Date(2026, 9, 19, 23, 49, 0)).last, timeLeft(new Date(2026, 9, 19, 23, 51, 0)).last], [false, true]);
 });
 
 test('interstitial pacing: every second finished look, at least a minute of making, never on an untouched look', () => {
