@@ -19,6 +19,9 @@
       document.documentElement.style.setProperty('--s', s.toFixed(3));
       document.documentElement.classList.toggle('land', land);
       document.documentElement.classList.toggle('two', !land && (w / s < 388 || 43 * s < 32)); // 8 × 43 px, 7 gaps of 4, the counter's 8 px sides
+      // review's Retry, as Haircut's: level with Next at the other edge, or in the top-left corner in landscape and
+      // where the screen is too narrow for both (18 + 86 + 10 px beside the 234 px Next row and its margin)
+      document.documentElement.classList.toggle('redo-top', land || w / s < 348);
     }
     scale();
     addEventListener('resize', scale);
@@ -101,22 +104,34 @@
   #swatches button.gem { background: var(--panel); display: grid; place-items: center; }
   #swatches button.gem > svg:not(.star) { width: 30px; height: 30px; overflow: visible; }
   #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
-  /* review, as Haircut's completion: the top buttons give way; on the counter, Retry for a video and the next
-     customer, pictured, docked against the Next arrow */
+  /* review, as Haircut's completion: the top buttons give way. Next is a big arrow at the counter's right edge with
+     the next customer docked against it in one cream pill (a chevron nudging between them); Retry for a video sits
+     level with it at the left edge, as far in as the pill is from the right. In landscape, and where the screen is
+     too narrow for both, Retry takes the top-left corner at the top buttons' size (main.js moves it there). */
   body.review #daily, body.review #done { display: none; }
-  #review { display: flex; gap: 22px; justify-content: center; align-items: center; }
+  body:not(.review) #redo { display: none; }
+  #review { display: flex; justify-content: space-between; align-items: center; padding: 6px max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(18px, env(safe-area-inset-left)); }
+  .redo-top #review { justify-content: flex-end; }
   #review > * { animation: rise .45s .25s ease-out both; }
   @keyframes rise { from { opacity: 0; transform: translateY(26px); } }
-  #redo { width: 72px; height: 72px; animation: rise .45s .25s ease-out both, breathe 1.3s .7s ease-in-out infinite; }
-  #redo > svg { width: 34px; height: 34px; }
-  #redo .vbadge { width: 32px; height: 32px; right: -8px; bottom: -6px; }
-  #redo .vbadge svg { width: 19px !important; height: 19px !important; }
+  /* on the counter, Retry is the Next arrow's size (86 px), so the row reads as one scale */
+  #redo { width: 86px; height: 86px; animation: rise .45s .25s ease-out both, breathe 1.3s .7s ease-in-out infinite; }
+  #redo > svg { width: 40px; height: 40px; }
+  #redo .vbadge { width: 36px; height: 36px; right: -8px; bottom: -6px; }
+  #redo .vbadge svg { width: 21px !important; height: 21px !important; }
+  #top #redo { width: 52px; height: 52px; animation: none; }
+  #top #redo > svg { width: 26px; height: 26px; }
+  #top #redo .vbadge { width: 24px; height: 24px; right: -8px; bottom: -7px; }
+  #top #redo .vbadge svg { width: 15px !important; height: 15px !important; }
   @keyframes breathe { 50% { transform: scale(1.06); } }
-  #next { display: flex; align-items: center; gap: 10px; height: 96px; padding: 0 10px 0 6px; border-radius: 26px; }
-  #next .pic { display: block; width: 84px; height: 84px; border-radius: 20px; border: 2.5px solid var(--ink); background: radial-gradient(circle at 50% 35%, #fff6e6, #ecd2c4); overflow: hidden; }
+  #next { display: flex; align-items: center; gap: 0; padding: 8px; border-radius: 30px; }
+  #next .pic { display: block; width: 96px; height: 96px; border-radius: 20px; border: 3px solid var(--ink); box-sizing: border-box; background: radial-gradient(circle at 50% 35%, #fff6e6, #ecd2c4); overflow: hidden; }
   #next .pic canvas { display: block; width: 100%; height: 100%; }
-  #next .go { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); border: var(--outline); box-shadow: 0 3px 0 var(--ink); }
-  #next .go svg { width: 30px; height: 30px; }
+  #next .hint { width: 22px; display: grid; place-items: center; animation: nudge 1s ease-in-out infinite; }
+  #next .hint svg { width: 18px; height: 18px; }
+  @keyframes nudge { 50% { transform: translateX(4px); } }
+  #next .go { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); border: var(--outline); box-shadow: 0 4px 0 var(--ink); }
+  #next .go svg { width: 40px; height: 40px; }
   /* the finish: sparkles burst from the face */
   #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   #fx i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); background: var(--c); border: 2px solid var(--ink); border-radius: var(--r);
@@ -177,7 +192,7 @@
   #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
   #retry svg { width: 40px; height: 40px; }
   #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
-  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #next .hint, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
   /* landscape: the counter is a column at the side (tools beside a grid of colours); the top buttons sit over the
      scene's corners */
   .land #app { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: minmax(0, 1fr); }
@@ -190,7 +205,7 @@
   .land #toolbar { grid-template-columns: repeat(2, 44px); padding: 0; gap: 8px; }
   .land #toolbar .ctl { width: 44px; height: 44px; }
   .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); gap: 9px; align-content: center; max-height: 100%; box-sizing: border-box; overflow: hidden auto; padding: 10px 8px; }
-  .land #review { flex-direction: column; gap: 20px; padding: 0 18px; }
+  .land #review { align-items: flex-end; justify-content: flex-end; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) 14px; }
 </style>
 </head>
 <body>
@@ -205,7 +220,7 @@
   <footer id="create"><div id="swatches" role="radiogroup" aria-label="Colours"></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
   <footer id="review" hidden>
     <button id="redo" class="ctl round" aria-label="Do this face again: watch a video" hidden></button>
-    <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="go"></span></button>
+    <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="hint"></span><span class="go"></span></button>
   </footer>
 </div>
 <div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>

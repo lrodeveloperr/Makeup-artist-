@@ -26,6 +26,7 @@ const ICON = {
   lens: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 1 0 0-6.8', ' fill="none"'),
   check: svg('M5 12.5l4.5 4.5L19 7.5', ' stroke-width="3.6"'),
   next: svg('M5 12h13M12.5 5.5L19 12l-6.5 6.5', ' stroke-width="3.2"'),
+  chev: svg('M9 6l6 6-6 6', ' stroke-width="3.4"'), // Haircut's hint between the next customer and Next
   redo: svg('M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 4.2v4.6h4.6', ' stroke-width="3"'),
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
   clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2M9.5 2.5h5', ' stroke-width="2.6"'), // Haircut's stopwatch
@@ -196,6 +197,14 @@ async function main() {
   // ---- create, the finish, and review ----
   $('done').innerHTML = `${SEAL}${ICON.check}`;
   $('next').querySelector('.go').innerHTML = ICON.next;
+  $('next').querySelector('.hint').innerHTML = ICON.chev;
+  // Retry sits on the counter level with Next, or in the top-left corner in landscape and on screens too narrow
+  // for both (the page's scale script decides: html.redo-top)
+  const placeRedo = () => {
+    const home = document.documentElement.classList.contains('redo-top') ? $('top') : $('review'), redo = $('redo');
+    if (redo.parentElement !== home) home.prepend(redo);
+  };
+  placeRedo();
   $('redo').innerHTML = `${ICON.redo}${BADGE}`;
   // sparkles burst from the face (positions in the stage, in pixels)
   const burst = () => {
@@ -351,6 +360,7 @@ async function main() {
       redraw();
     }
     placeMirror(); // the canvas may also have moved
+    placeRedo();
   }).observe(stage);
 
   // ---- ready ----
