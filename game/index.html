@@ -94,7 +94,9 @@
      share one height, so the face never moves */
   footer { min-height: calc(146px + env(safe-area-inset-bottom)); box-sizing: border-box; padding: 6px 8px env(safe-area-inset-bottom); position: relative;
     background: linear-gradient(#fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: 0 -10px 18px -10px #6a3a3a55; }
-  #swatches { display: flex; gap: 8px; overflow-x: auto; padding: 8px 10px 10px; justify-content: safe center; scrollbar-width: none; }
+  /* the selected colour rises 4 px, grows 12 % and wears a 6 px ring, about 13 px above its box: the row starts low
+     enough that all of it stays clear below the counter's top edge, the line between her and the tools */
+  #swatches { display: flex; gap: 8px; overflow-x: auto; padding: 17px 10px 10px; justify-content: safe center; scrollbar-width: none; }
   #swatches button { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
   #swatches button[aria-checked="true"] { transform: translateY(-4px) scale(1.12); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
   #swatches .star { position: absolute; right: -7px; top: -7px; width: 20px; height: 20px; }
@@ -109,7 +111,7 @@
   /* a tall counter (tall, narrow screens; main.js sets html.tall): bigger tools in two rows of four, the colours in
      wrapping rows of bigger swatches, spread over the counter; in review, Retry stands above the Next row */
   .tall #create { display: flex; flex-direction: column; justify-content: space-evenly; }
-  .tall #swatches { flex-wrap: wrap; gap: 12px 10px; max-height: 210px; overflow: hidden auto; padding: 12px 6px; }
+  .tall #swatches { flex-wrap: wrap; gap: 12px 10px; max-height: 210px; overflow: hidden auto; padding: 17px 6px 12px; }
   .tall #swatches button { width: 48px; height: 48px; }
   .tall #toolbar { grid-template-columns: repeat(4, 62px); gap: 14px 10px; padding: 0; }
   .tall #toolbar .ctl { width: 62px; height: 62px; }
