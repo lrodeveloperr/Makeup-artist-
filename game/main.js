@@ -7,10 +7,7 @@ import { attachInput } from '../src/makeup/input.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
 import { chime, hush } from './sound.js';
-import { tryOn, productShot, skinSwatch, skinHex } from './reward.js';
-
-// how the colour of the day is pictured (three options for the owner; see reward.js)
-const REWARD = { tryon: 1, product: 1, swatch: 1 }[new URLSearchParams(location.search).get('reward')] ? new URLSearchParams(location.search).get('reward') : 'tryon';
+import { productShot } from './reward.js';
 import { createHost } from '../src/game/youtube.js';
 import * as G from '../src/game/game.js';
 import { Session } from '../src/game/session.js';
@@ -149,43 +146,29 @@ async function main() {
     swatches.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
-  // ---- a second, small view: the next customer's picture, and the customer trying on the colour of the day ----
-  let side = null, showing = ''; // what the side canvas shows
-  const sideView = () => {
-    if (!side) {
-      side = new FaceView({ canvas: document.createElement('canvas'), width: 240, height: 240, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true, paintSize: 512 });
-      side.init(view.head);
-    }
-    return side;
-  };
+  // ---- the next customer's picture (a small second view that only draws faces) ----
   const thumbs = new Map(); // seed -> a copy of the render (a few at a time)
+  let side = null;
   const thumb = (face) => {
     if (thumbs.has(face.seed)) return thumbs.get(face.seed);
-    const v = sideView(), src = v.renderer.domElement;
-    v.setFace(face);
-    v.zoom(1.75, 0.08); // the head
-    v.render();
-    showing = '';
-    const copy = document.createElement('canvas');
+    if (!side) {
+      side = new FaceView({ canvas: document.createElement('canvas'), width: 168, height: 168, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true, makeup: false });
+      side.init(view.head);
+      side.zoom(1.75, 0.08); // the head
+    }
+    side.setFace(face);
+    side.render();
+    const src = side.renderer.domElement, copy = document.createElement('canvas');
     copy.width = src.width; copy.height = src.height;
     copy.getContext('2d').drawImage(src, 0, 0);
     thumbs.set(face.seed, copy);
     if (thumbs.size > 4) thumbs.delete(thumbs.keys().next().value);
     return copy;
   };
-  // the side canvas itself, showing the customer wearing the colour
-  const tryOnCanvas = (face, colour) => {
-    const key = `${face.seed}:${colour}`;
-    if (showing !== key) { tryOn(sideView(), face, colour); showing = key; }
-    return sideView().renderer.domElement;
-  };
-  // drawn in idle time, so review and the daily panel show their pictures at once
+  // drawn while the player works on the current face, so review shows it at once
   const prepare = () => {
-    const s = session.state, face = s.face, next = s.next, colour = s.pick?.colour;
-    (globalThis.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => {
-      if (session.state.next === next) thumb(next);
-      if (REWARD === 'tryon' && colour && session.state.face === face && !session.state.owned.includes(colour) && !panelOpen) tryOnCanvas(face, colour);
-    });
+    const next = session.state.next;
+    (globalThis.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => { if (session.state.next === next) thumb(next); });
   };
 
   // ---- create, the finish, and review ----
@@ -248,16 +231,13 @@ async function main() {
   daily.hidden = !host.rewardedSupported; // no rewarded videos here: nothing to offer
   card.querySelector('.x').innerHTML = ICON.close;
   let panelTimer = 0;
-  // minimal: the tool, drawn in today's colour; one button (a video, or a tick once it is yours); the time left
+  // minimal: the product in today's colour; one button (a video, or a tick once it is yours); the time left
   const renderPanel = () => {
     const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = !!c && s.owned.includes(c.id);
     const t = timeLeft(), art = card.querySelector('.art'), get = card.querySelector('.get'), time = card.querySelector('.time');
     if (art.dataset.colour !== `${c?.id}:${owned}`) {
       art.dataset.colour = `${c?.id}:${owned}`;
-      art.replaceChildren();
-      if (c && REWARD === 'tryon') art.appendChild(tryOnCanvas(s.face, c.id));
-      else if (c) art.innerHTML = REWARD === 'product' ? productShot(c) : skinSwatch(c, skinHex(s.face));
-      if (owned || !c) art.insertAdjacentHTML('beforeend', `<span class="tick">${ICON.check}</span>`);
+      art.innerHTML = `${c ? productShot(c) : ''}${owned || !c ? `<span class="tick">${ICON.check}</span>` : ''}`;
     }
     art.setAttribute('aria-label', c ? `${TOOL_NAME[c.target]} in ${c.name}` : 'You have every colour');
     get.hidden = !c;

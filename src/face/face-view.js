@@ -18,11 +18,9 @@ export const CAMERA = { fov: 20, target: new GL.Vector3(0, -0.38, 0), distance: 
 
 export class FaceView {
   // transparent: no background colour, so the page behind the canvas (the game's backdrop) shows around the face
-  // makeup: false for a view that only shows faces (no paint textures); paintSize: the paint textures' size
-  // (1024 for the face the player works on; smaller for a preview)
-  constructor({ canvas, width = 600, height = 800, pixelRatio = 1, transparent = false, makeup = true, paintSize } = {}) {
+  // makeup: false for a view that only shows faces (no paint textures; the game's next-customer picture)
+  constructor({ canvas, width = 600, height = 800, pixelRatio = 1, transparent = false, makeup = true } = {}) {
     this.withMakeup = makeup;
-    this.paintSize = paintSize;
     this.renderer = new GL.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: transparent });
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);

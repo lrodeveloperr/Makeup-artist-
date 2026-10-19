@@ -18,7 +18,7 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 | Create | The face. Four tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right, the size of the daily button), and the daily button (top left). |
 | The finish | A look that changed the face: the Done seal pops, Haircut's bell chime plays (if the host allows sound), and sparkles burst from the face. Review then rises onto the counter. An untouched Done goes straight to review with a soft tone. |
 | Review | As Haircut's completion. The top buttons give way to the **eye** (hold to see the clean starting face; read-only). On the counter: **Retry** (breathing, with the video badge: the same face again, clean) and **Next**, with a picture of the next customer docked against the arrow (always free). |
-| Colour of the day | Minimal: the **tool drawn in today's colour**, one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
+| Colour of the day | Minimal: a **product shot** of today's colour (owner's choice, 19 October 2026), one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
 | Loading / Retry | A loading cover until the face is on screen. A missing SDK, a failed load, or a save that isn't this game's stops at **Retry**, and the save is never overwritten. |
 
 **Look: Blush Studio, textless (owner's choice, 19 October 2026).** The controls are Haircut's, recoloured:
@@ -32,9 +32,10 @@ vanity mirror (the 3D canvas is transparent). Create and review keep the same co
 moves.
 
 Nothing on screen is a word:
-- The colour of the day shows the tool in that colour (`game/art.js`: a compact and brush, a lipstick, a pencil,
-  a mascara, an eye wearing the lens; gloss adds a highlight, shimmer adds sparkles), a video button (a tick once
-  earned), and the time left in numbers.
+- The colour of the day shows the product in that colour, drawn to look real (`game/reward.js`): a lipstick, an
+  open compact with its brush, a sharpened pencil with the line it draws, a mascara and its wand, or an eye
+  wearing the lens. Gloss adds a wet highlight, shimmer adds sparkle. Below it are a video button (a tick once
+  earned) and the time left in numbers.
 - An unsaved state is a cloud icon.
 - The error screen is a warning icon and a Retry arrow, with a small diagnostic code.
 
@@ -77,13 +78,16 @@ Done/Next is allowed, but counts nothing.
 This follows the pattern of Haircut's daily pick (`src/game/daily.js`):
 - **Offer:** one special colour for one tool (or the lenses) per local calendar day. It's the same for every
   player who doesn't own it yet, and never one the player owns.
-- **Catalogue:** 52 special colours outside the base catalogue (`DAILY` in `src/makeup/palette.js`). The base
-  keeps the everyday shades only (owner decision, 19 October 2026). The specials are:
-  - 16 brush: neon, metallic, opal, shimmer and fantasy shades
-  - 10 pencil
-  - 7 mascara
-  - 11 lip: every gloss, plus holographic and gold
-  - 8 lens: aqua, violet and other fantasy colours
+- **Catalogue:** 154 colours of the day (`DAILY` in `src/makeup/palette.js`): every coherent colour each tool
+  can carry beyond the everyday base (owner decisions, 19 October 2026). That's five months of daily offers.
+  - 47 brush: pinks, reds, purples, blues, greens, neutrals, and 16 shimmers and metallics
+  - 28 pencil
+  - 21 mascara
+  - 41 lip: brights and fantasy shades, 9 glosses, and metallics and glitters
+  - 17 lens
+
+  `tests/makeup.mjs` checks that every pair of colours within a tool, base included, is tellable apart (CIELAB
+  ΔE ≥ 8 for the same finish, ≥ 4 across matte, gloss and shimmer).
 - **Rotation:** the tool families take turns day by day.
 - **Timing:** a countdown runs to local midnight, when the next colour replaces the offer. A red dot on the
   daily button shows once a day while today's colour is waiting.

@@ -1,56 +1,17 @@
-// The picture that sells the colour of the day, three ways (the owner is choosing; ?reward= picks one):
-//   tryon    the customer herself wearing the colour: a real render of the current face with it applied
-//   product  the product itself, drawn to look real: a lipstick, a compact and brush, a pencil, a mascara, an eye
-//   swatch   the colour swiped on skin in the customer's own tone, with the product tip, as beauty swatches are
-// Everything is textless. Colours are palette entries with their target.
-import { colourById } from '../src/makeup/palette.js';
-import { skinAlbedo } from '../src/face/colors.js';
+// The picture that sells the colour of the day (owner's choice, 19 October 2026: the product shot): the product
+// itself in that colour, drawn to look real: a lipstick, an open compact with its brush, a sharpened pencil with
+// the line it draws, a mascara and its wand, an eye wearing the lens. Gloss adds a wet highlight, shimmer adds
+// sparkle. Textless. Colours are palette entries with their target.
 
 const INK = '#2a1d15';
 const hexToRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const rgbToHex = (c) => `#${c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`;
 const mix = (a, b, t) => rgbToHex(hexToRgb(a).map((v, i) => v + (hexToRgb(b)[i] - v) * t));
 const light = (h, t) => mix(h, '#ffffff', t), dark = (h, t) => mix(h, '#000000', t);
-// the customer's skin as an sRGB hex (skinAlbedo is linear)
-export const skinHex = (face) => rgbToHex(skinAlbedo(face.skin.tone, face.skin.undertone).map((v) => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055)));
 // a small deterministic scatter (sparkles, specks)
 const scatter = (n, seed = 1) => { let x = seed; const r = () => ((x = (x * 1664525 + 1013904223) >>> 0) / 2 ** 32); return Array.from({ length: n }, () => [r(), r(), r()]); };
 let uid = 0;
 
-// ---------------- try-on: the customer wears it ----------------
-// side: a FaceView with makeup (a small paint size); face: her record; colour: a palette id. Draws into the side
-// view's canvas (shown as it is, so nothing is read back).
-export function tryOn(side, face, colour) {
-  const c = colourById(colour), t = c.target;
-  side.setFace(face); // clean
-  const [zoom, y] = { lip: [2.7, -0.62], brush: [2.1, -0.16], pencil: [2.7, 0.02], mascara: [2.7, 0.02], lens: [2.7, 0.02] }[t];
-  side.zoom(zoom, y);
-  const a = side.makeup, pr = (p) => a.picker.project(p);
-  const [L, R] = side.eyes.meshes.map((m) => m.position), r = side.eyes.meshes[0].scale[0];
-  const line = (p0, p1, k = 18) => Array.from({ length: k + 1 }, (_, i) => [p0[0] + ((p1[0] - p0[0]) * i) / k, p0[1] + ((p1[1] - p0[1]) * i) / k]);
-  const stroke = (...parts) => { const g = a.begin(t, colour); for (const p of parts.flat()) a.move(g, p[0], p[1]); a.end(g); };
-  const eyes = [[L, 1], [R, -1]];
-  // record the strokes without painting, then paint them all at once (restore batches the dabs; painting
-  // point by point is for live strokes)
-  const draw = a.paint.draw;
-  a.paint.draw = () => {};
-  if (t === 'brush') for (const [e, s] of eyes) {
-    for (let k = 0; k < 3; k++) stroke(line(pr([e[0] - 0.12, e[1] + 0.09, e[2] + 0.12]), pr([e[0] + 0.13, e[1] + 0.1, e[2] + 0.1])));
-    for (let k = 0; k < 2; k++) stroke(line(pr([e[0] + s * 0.05, e[1] - 0.38, e[2]]), pr([e[0] + s * 0.2, e[1] - 0.46, e[2] - 0.05])));
-  }
-  if (t === 'pencil') for (const [e, s] of eyes) for (let k = 0; k < 2; k++) {
-    stroke(line(pr([e[0] - s * 0.13, e[1] + 0.065, e[2] + 0.12]), pr([e[0], e[1] + 0.085, e[2] + 0.14]), 10), line(pr([e[0], e[1] + 0.085, e[2] + 0.14]), pr([e[0] + s * 0.14, e[1] + 0.07, e[2] + 0.1]), 10), line(pr([e[0] + s * 0.14, e[1] + 0.07, e[2] + 0.1]), pr([e[0] + s * 0.22, e[1] + 0.12, e[2] + 0.04]), 8));
-  }
-  if (t === 'mascara') for (const [e] of eyes) for (let k = 0; k < 3; k++) stroke(line(pr([e[0] - 0.16, e[1] + 0.1, e[2] + 0.2]), pr([e[0] + 0.16, e[1] + 0.1, e[2] + 0.2])));
-  // lips: passes across the mouth, narrowing towards the bow and the bottom of the lower lip
-  if (t === 'lip') for (const [y0, hw] of [[-0.55, 0.1], [-0.58, 0.16], [-0.61, 0.19], [-0.64, 0.19], [-0.67, 0.17], [-0.7, 0.13], [-0.725, 0.07]]) stroke(line(pr([-hw, y0, 0.5]), pr([hw, y0, 0.5]), 24));
-  if (t === 'lens') for (const [e] of eyes) a.tapLens(...pr([e[0], e[1], e[2] + r]), colour);
-  a.paint.draw = draw;
-  a.restore(a.makeup);
-  side.render();
-}
-
-// ---------------- product shots ----------------
 const sparkles = (c, box, n, seed) => (c.shimmer ? scatter(n, seed).map(([x, y, s]) => `<circle cx="${(box[0] + x * box[2]).toFixed(1)}" cy="${(box[1] + y * box[3]).toFixed(1)}" r="${(0.6 + s * 1.6).toFixed(1)}" fill="#fff" opacity="${(0.5 + s * 0.5).toFixed(2)}"/>`).join('') : '');
 const shadow = (cx, cy, rx, ry) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#000" opacity=".18" filter="url(#blur)"/>`;
 // a cylinder's shading across its width
@@ -156,33 +117,4 @@ export function productShot(c) {
   return `<svg viewBox="0 0 240 240" aria-hidden="true"><defs><filter id="blur" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
     <radialGradient id="bg${u}" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fffaf6"/><stop offset="1" stop-color="#f3dcd6"/></radialGradient></defs>
     <rect width="240" height="240" rx="28" fill="url(#bg${u})"/>${PRODUCT[c.target](c, u)}</svg>`;
-}
-
-// ---------------- the swatch on skin ----------------
-const TIP = {
-  lip: (c) => `<g transform="rotate(-50 62 150)"><rect x="46" y="150" width="32" height="50" rx="4" fill="#111"/><rect x="44" y="142" width="36" height="10" rx="2" fill="#d9b25a"/><path d="M50 142V106q0-5 5-7l22-8v51z" fill="${c.hex}"/><path d="M53 136V106q0-3 3-4" stroke="#fff" stroke-width="3" opacity=".5" fill="none"/></g>`,
-  brush: (c) => `<g transform="rotate(-50 60 150)"><rect x="54" y="160" width="12" height="60" rx="5" fill="#5a3a22"/><rect x="52" y="140" width="16" height="22" rx="2" fill="#cfd6de"/><path d="M52 142q8-52 16 0z" fill="#e5d0aa"/><path d="M55 125q5-20 10 0q-5 8-10 0z" fill="${c.hex}" opacity=".9"/></g>`,
-  pencil: (c) => `<g transform="rotate(-50 60 150)"><rect x="52" y="150" width="16" height="70" rx="2" fill="${c.hex}"/><rect x="54" y="152" width="3" height="64" fill="#fff" opacity=".35"/><path d="M52 150l8-26 8 26z" fill="#f1d5ad"/><path d="M57 134l3-10 3 10z" fill="${dark(c.hex, 0.2)}"/></g>`,
-  mascara: (c) => `<g transform="rotate(-50 60 150)"><rect x="54" y="160" width="12" height="60" rx="4" fill="#111"/><rect x="58" y="112" width="4" height="50" fill="#222"/>${Array.from({ length: 12 }, (_, k) => `<path d="M${52 + (k % 2)} ${116 + k * 3.6}h${16 - (k % 2) * 2}" stroke="${c.hex}" stroke-width="1.8" stroke-linecap="round"/>`).join('')}</g>`,
-};
-
-export function skinSwatch(c, skin) {
-  const u = ++uid;
-  if (c.target === 'lens') return `<svg viewBox="0 0 240 240" aria-hidden="true"><rect width="240" height="240" rx="28" fill="${skin}"/><g transform="translate(0 6)">${PRODUCT.lens(c, u)}</g></svg>`;
-  const g = c.gloss;
-  return `<svg viewBox="0 0 240 240" aria-hidden="true"><defs>
-      <filter id="rough${u}" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="${u}"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
-      <filter id="soft${u}"><feGaussianBlur stdDeviation="5"/></filter>
-      <filter id="grain${u}"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0"/></filter>
-      <linearGradient id="sw${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c.hex}"/><stop offset=".55" stop-color="${c.hex}"/><stop offset="1" stop-color="${c.hex}" stop-opacity=".25"/></linearGradient>
-      <clipPath id="cl${u}"><path d="M58 150C90 118 118 172 150 140S196 112 210 104c6 10 0 24-16 36S150 190 118 172 76 180 60 166z"/></clipPath>
-    </defs>
-    <rect width="240" height="240" rx="28" fill="${skin}"/>
-    <rect width="240" height="240" rx="28" filter="url(#grain${u})"/>
-    <path d="M58 150C90 118 118 172 150 140S196 112 210 104c6 10 0 24-16 36S150 190 118 172 76 180 60 166z" fill="url(#sw${u})" filter="url(#rough${u})" opacity="${g ? 0.92 : 0.97}"/>
-    <g clip-path="url(#cl${u})">
-    ${g ? `<path d="M66 148c30-26 56 18 86-6s46-26 56-32" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".5" filter="url(#soft${u})"/><path d="M72 146c26-20 50 14 78-6" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>` : `<path d="M66 148c30-26 56 18 86-6s46-26 56-32" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".14"/>`}
-    ${c.shimmer ? scatter(140, u + 11).map(([x, y, s]) => `<circle cx="${(56 + x * 158).toFixed(1)}" cy="${(100 + y * 84).toFixed(1)}" r="${(0.5 + s * 1.5).toFixed(1)}" fill="${s > 0.6 ? '#fff' : light(c.hex, 0.6)}" opacity="${(0.4 + s * 0.6).toFixed(2)}"/>`).join('') : ''}
-    </g>
-    ${TIP[c.target](c)}</svg>`;
 }
