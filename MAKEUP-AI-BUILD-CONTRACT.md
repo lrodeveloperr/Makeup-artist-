@@ -295,7 +295,7 @@ Retain explicit host, menu and ad-request ownership. Creation is paused if any a
 
 The direct YouTube target uses SDK pause/resume rather than Page Visibility or multi-tab pause ownership. Interruption safely ends a current gesture as defined in §2. Resume restores the same applied state and requires new drawing input. Timers for daily display are recomputed from time; they do not expire paint or award progress while paused.
 
-**Owner decision, 19 October 2026:** no music; satisfying, true-to-the-tool ASMR sounds for every tool, tap and control, synthesised in code (no audio files), with each stroke following the hand's speed ([docs/GAME.md](docs/GAME.md)). Every audio path follows initial and changed host audio enablement plus device/system restrictions. No sound is required to understand an action. Follow YouTube's preference for host-level overall mute rather than cloning an unnecessary global mute control. Any separate music/effects setting must still obey host mute. Resource teardown is bounded across repeated Retry/mount cycles.
+**Owner decisions, 19 October 2026:** no music; satisfying, true-to-the-tool ASMR sounds: real CC0 recordings for every tool and tap on the face (credited in ASSETS.md), synthesised sounds for the controls, each stroke following the hand's speed ([docs/GAME.md](docs/GAME.md)). Every audio path follows initial and changed host audio enablement plus device/system restrictions. No sound is required to understand an action. Follow YouTube's preference for host-level overall mute rather than cloning an unnecessary global mute control. Any separate music/effects setting must still obey host mute. Resource teardown is bounded across repeated Retry/mount cycles.
 
 ## 12. Language, access and platform boundaries
 

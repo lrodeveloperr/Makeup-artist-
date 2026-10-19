@@ -13,6 +13,8 @@ for (const [dir, host] of [['build/game', SDK], ['build/game-dev', DEV]]) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(`${dir}/index.html`, html.replace('<!--HOST-->', host));
   fs.copyFileSync('assets/head.bin.gz', `${dir}/head.bin.gz`);
+  // the tools' CC0 recordings (tools/make-sounds.py)
+  for (const f of fs.readdirSync('assets/sounds')) fs.copyFileSync(`assets/sounds/${f}`, `${dir}/snd-${f}`);
 }
 await esbuild.build({ entryPoints: ['game/main.js'], bundle: true, format: 'esm', minify: process.argv.includes('--minify'), outfile: 'build/game/main.js', logLevel: 'warning', target: 'es2022' });
 fs.copyFileSync('build/game/main.js', 'build/game-dev/main.js');

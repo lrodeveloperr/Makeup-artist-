@@ -6,7 +6,7 @@ import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
-import { chime, hush, setEnabled, stroke, tap, ui, stats as sounds } from './sound.js';
+import { chime, hush, setEnabled, stroke, tap, ui, preload, stats as sounds } from './sound.js';
 import { productShot } from './reward.js';
 import { createHost } from '../src/game/youtube.js';
 import * as G from '../src/game/game.js';
@@ -82,6 +82,7 @@ async function main() {
   let host;
   try { host = createHost({ dev: globalThis.MAKEUP_DEV === true }); } catch (e) { return fail(e.code || 'SDK', e); }
   host.firstFrameReady(); // the loading screen is showing
+  preload(); // the tools' recordings load with the face
 
   const stage = $('stage');
   // the canvas fills the stage, as on phones; on tall, narrow screens it can be as narrow as 0.4 × its height, where

@@ -59,9 +59,10 @@ try {
     assert.equal(s.phase, 'create');
     assert.equal(await words(page), '', 'no words on the create screen');
     const nextSeed = s.next;
-    // look 1: a stroke (it sounds), Done, Next (no ad yet)
+    // look 1: a stroke (it plays the brush's recording), Done, Next (no ad yet)
+    await page.waitForFunction(() => game.sounds.loaded === 11, null, { timeout: 30000 }); // the tools' CC0 recordings
     await stroke(page);
-    assert.ok(await page.evaluate(() => game.sounds.played) > 0, 'the stroke made a sound');
+    assert.ok(await page.evaluate(() => game.sounds.strokes) > 0, 'the stroke played its recording');
     await done(page);
     s = await state(page);
     assert.deepEqual([s.phase, s.strokes, s.completions], ['review', 1, 1]);
