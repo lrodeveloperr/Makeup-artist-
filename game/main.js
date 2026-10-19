@@ -84,8 +84,9 @@ async function main() {
   host.firstFrameReady(); // the loading screen is showing
 
   const stage = $('stage');
-  // the canvas fills the stage, but never narrower than 0.56 × its height, so her head and hair always fit across
-  const fit = () => { const w = Math.min(stage.clientWidth, 1200); return [w, Math.min(stage.clientHeight, Math.round(w / 0.56))]; };
+  // the canvas fills the stage, as on phones; on tall, narrow screens it can be as narrow as 0.4 × its height, where
+  // she fills the width like a close-up (her hair runs off the sides), and no narrower
+  const fit = () => { const w = Math.min(stage.clientWidth, 1200); return [w, Math.min(stage.clientHeight, Math.round(w / 0.4))]; };
   let [W, H] = fit();
   const canvas = document.createElement('canvas');
   canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;

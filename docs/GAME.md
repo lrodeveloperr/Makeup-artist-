@@ -62,11 +62,12 @@ on each screen.
   doesn't move.
 - **Landscape** (wider than 1.15 × tall): the counter becomes a column at the side, with the tools in two columns
   beside a grid of colours, and review stacked. The top buttons sit over the scene's corners.
-- **Narrow, tall screens** (such as 225 × 800 and 320 × 1120): the canvas is never narrower than 0.56 × its height,
-  so her head and hair always fit across and her face is as big as the width allows. The spare height goes to the
-  counter, not to empty wall: it holds bigger tools in two rows of four and the colours in wrapping rows of
-  bigger swatches, and in review Retry stands above the Next row on the counter (the same size as the Next
-  arrow). Create and review keep the same counter, so her face doesn't move.
+- **Narrow, tall screens** (such as 225 × 800 and 320 × 1120): as on phones, her face fills the space above the
+  counter. The canvas can be as narrow as 0.4 × its height, a close-up where her face fills the width and her hair
+  runs off the sides. Only on screens taller still does the spare height go to the counter, which then holds
+  bigger tools in two rows of four, the colours in wrapping rows of bigger swatches, and in review Retry above
+  the Next row (the same size as the Next arrow). Create and review keep the same counter, so her face doesn't
+  move.
 - **The daily pop-up** shrinks below the scale when the screen is too short for it.
 - **The mirror** follows her head (`placeMirror` in `game/main.js`), never the screen's percentages.
 - **Making a look and review** keep the same counter, so the face doesn't move.
