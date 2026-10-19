@@ -134,6 +134,8 @@ export class Session {
   // today's offer (a new day brings a new one)
   refreshDaily() { this.update(G.withPick(this.state, this.today())); }
   openedDaily() { this.update(G.markSeen(this.state, this.today())); }
+  // the daily button: shown while there is a colour left to earn with a video
+  get dailyOffered() { return this.host.rewardedSupported && !G.ownsEveryColour(this.state); }
   // the dot on the daily button: once a day, while today's colour is waiting
   get dailyWaiting() {
     const s = this.state, day = this.today();

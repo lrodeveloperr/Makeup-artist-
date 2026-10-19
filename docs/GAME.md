@@ -196,6 +196,8 @@ This follows the pattern of Haircut's daily pick (`src/game/daily.js`):
   `tests/makeup.mjs` checks that every pair of colours within a tool, base included, is tellable apart (CIELAB
   ΔE ≥ 8 for the same finish, ≥ 4 across matte, gloss and shimmer).
 - **Rotation:** the tool families take turns day by day.
+- **All earned (owner, 19 October 2026):** once every colour of the day is the player's, the gift button goes away
+  for good (on earning the last one, when its card closes). Nothing is left to offer, so nothing asks for a video.
 - **Timing:** a countdown runs to local midnight, when the next colour replaces the offer. A red dot on the
   daily button shows once a day while today's colour is waiting.
 - **Clock:** the day comes from the device clock. Changing it can show another day's offer, but each colour

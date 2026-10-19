@@ -8,6 +8,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { serve } from '../tools/serve.mjs';
+import * as G from '../src/game/game.js';
+import { DAILY } from '../src/makeup/palette.js';
 
 const SDK_URL = 'https://www.youtube.com/game_api/v1';
 const fixture = fs.readFileSync(new URL('../tools/fake-ytgame.js', import.meta.url), 'utf8');
@@ -125,6 +127,27 @@ try {
     await page.reload(); await ready(page);
     const back = await state(page);
     for (const k of ['id', 'phase', 'seed', 'next', 'completions', 'owned', 'selection']) assert.deepEqual(back[k], saved[k], k);
+    await ctx.close();
+  });
+
+  await check('every colour of the day earned: the daily button goes away (on earning the last, once its card closes)', async () => {
+    const all = Object.values(DAILY).flat().map((c) => c.id), base = G.newGame(21);
+    // one colour left to earn
+    let { ctx, page } = await open({ save: G.serialise({ ...base, owned: all.slice(0, -1) }) });
+    await ready(page);
+    assert.ok(await page.isVisible('#daily'), 'a colour is left: the button shows');
+    await page.click('#daily');
+    await page.click('#panel .get'); // the test SDK completes the video
+    await page.waitForFunction((n) => game.session.state.owned.length === n, all.length);
+    assert.ok(await page.isVisible('#panel .get.owned'), 'the card shows the tick');
+    await page.click('#panel .get'); // "use it now" closes the card
+    assert.ok(await page.isHidden('#daily'), 'the last colour earned: no daily button');
+    await ctx.close();
+    // a save that already has every colour: no daily button from the start
+    ({ ctx, page } = await open({ save: G.serialise({ ...base, owned: all }) }));
+    await ready(page);
+    assert.ok(await page.isHidden('#daily'));
+    assert.ok(await page.isVisible('#done'));
     await ctx.close();
   });
 

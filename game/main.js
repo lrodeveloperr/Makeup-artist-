@@ -279,7 +279,6 @@ async function main() {
   // ---- the colour of the day ----
   const daily = $('daily'), panel = $('panel'), card = panel.querySelector('.card');
   daily.innerHTML = `${ICON.gift}<span class="dot" hidden></span>`;
-  daily.hidden = !host.rewardedSupported; // no rewarded videos here: nothing to offer
   card.querySelector('.x').innerHTML = ICON.close;
   let panelTimer = 0;
   const RING_C = 2 * Math.PI * 62;
@@ -326,7 +325,8 @@ async function main() {
     if (h > room) card.style.zoom = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')) * room / h).toFixed(3);
   };
   addEventListener('resize', fitCard);
-  const closePanel = () => { panelOpen = false; panel.hidden = true; clearInterval(panelTimer); render(); daily.focus(); };
+  // (once the last colour is earned the daily button goes away: focus moves to Done)
+  const closePanel = () => { panelOpen = false; panel.hidden = true; clearInterval(panelTimer); render(); (daily.hidden ? $('done') : daily).focus(); };
   daily.onclick = openPanel;
   card.querySelector('.x').onclick = closePanel;
   panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
@@ -351,6 +351,8 @@ async function main() {
     for (const b of [$('next'), $('redo'), $('done')]) b.disabled = session.busy;
     for (const b of toolbar.children) b.setAttribute('aria-pressed', String(b.dataset.tool === s.selection.tool));
     renderSwatches();
+    // no rewarded videos here, or every colour already earned: nothing to offer, no daily button
+    if (!panelOpen) daily.hidden = !session.dailyOffered;
     daily.querySelector('.dot').hidden = !session.dailyWaiting;
     $('notice').hidden = !session.saveFailed;
     if (panelOpen) renderPanel();

@@ -94,6 +94,8 @@ export function grantDaily(s, colour) {
   return { ...s, owned, selection: { tool: c.target, colour: { ...s.selection.colour, [c.target]: colour } } };
 }
 export const markSeen = (s, day) => (s.seen === day ? s : { ...s, seen: day });
+// every colour of the day is the player's: there is nothing left to offer, and the daily button goes away
+export const ownsEveryColour = (s) => s.owned.length >= DAILY_COUNT;
 
 // ---- saved form ----
 export function serialise(s) {

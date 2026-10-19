@@ -102,6 +102,12 @@ test('game rules: replay is the same face, clean, as a new attempt; colours of t
   s = G.grantDaily(s, id);
   assert.ok(G.canUse(s, id));
   assert.deepEqual(s.selection, { tool, colour: { ...s.selection.colour, [tool]: id } }, 'the new colour is ready to use');
+  // every colour earned: no offer is left, and the daily button goes away
+  assert.equal(G.ownsEveryColour(s), false);
+  const every = Object.values(DAILY).flat().map((c) => c.id).reduce((x, c) => G.grantDaily(x, c), s);
+  assert.ok(G.ownsEveryColour(every));
+  assert.equal(G.withPick(every, '2026-10-21').pick, null, 'nothing left to offer');
+  assert.deepEqual(G.parseSave(G.serialise(every)).state, every, 'a save with every colour loads');
   assert.ok(coloursFor(tool, s.owned).some((c) => c.id === id));
   assert.equal(G.grantDaily(s, id), s, 'granted once');
   assert.equal(G.grantDaily(s, 'brush-rose'), s, 'base colours are not granted');
