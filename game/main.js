@@ -70,6 +70,20 @@ document.querySelector('#error .oops').innerHTML = ICON.oops;
 $('retry').innerHTML = ICON.redo;
 $('notice').innerHTML = ICON.cloud;
 
+// the loading screen's compact: it fills and empties in a loop until the game can measure its loading (the face's
+// download, where its size is known); then it fills with it, never backwards: the download (10 to 85 %), the face set
+// up (95 %), and it completes as the game starts, measured or not
+let filled = 0, measured = false;
+const loading = (p, measure = false) => {
+  measured ||= measure;
+  if (!measured || p <= filled) return;
+  filled = p;
+  const cover = $('cover');
+  cover.classList.remove('wait');
+  cover.style.setProperty('--p', p);
+  cover.firstChild.setAttribute('aria-valuenow', Math.round(p * 100));
+};
+
 function fail(code, error) {
   $('cover').hidden = true;
   $('error').hidden = false;
@@ -95,10 +109,11 @@ async function main() {
   let view, raw;
   try {
     [view, raw] = await Promise.all([
-      FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true }),
+      FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true }, (f) => loading(0.1 + 0.75 * f, true), typeof HEAD_BYTES === 'number' ? HEAD_BYTES : 0),
       host.load(),
     ]);
   } catch (e) { return fail('LOAD', e); }
+  loading(0.95);
   const parsed = G.parseSave(raw);
   // unknown, damaged or newer saves are protected: the game stops rather than overwrite them
   if (parsed.error) return fail(`SAVE-${parsed.error.toUpperCase()}`);
@@ -424,7 +439,11 @@ async function main() {
   render();
   view.render();
   placeMirror();
-  $('cover').hidden = true;
+  // the compact completes and the cover fades over the game, which can be played at once
+  loading(1, true);
+  const cover = $('cover');
+  cover.classList.add('done');
+  setTimeout(() => { cover.hidden = true; }, 300);
   prepare();
   await host.gameReady();
   Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits } }); // for tests and debugging

@@ -14,10 +14,27 @@ export async function inflate(buffer) {
   const out = gunzipSync(new Uint8Array(buffer));
   return out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);
 }
-export async function loadHead(url) {
+// onProgress (optional): called with the fraction downloaded (0 to 1), for a loading screen. The size comes from the
+// server, or else `size` (the file's size, known when the game is built); where a server compresses it on the way, it
+// never claims more than it knows
+export async function loadHead(url, onProgress, size = 0) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`head asset: HTTP ${res.status}`);
-  return parseHead(await inflate(await res.arrayBuffer()));
+  const total = +res.headers.get('content-length') || size;
+  if (!onProgress || !res.body?.getReader || !total) return parseHead(await inflate(await res.arrayBuffer()));
+  const reader = res.body.getReader(), parts = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value); got += value.length;
+    onProgress(Math.min(got / total, 0.99));
+  }
+  const bytes = new Uint8Array(got);
+  let at = 0;
+  for (const p of parts) { bytes.set(p, at); at += p.length; }
+  onProgress(1);
+  return parseHead(await inflate(bytes.buffer));
 }
 
 // undo the build's predictive coding: each value was stored minus the one `stride` before it

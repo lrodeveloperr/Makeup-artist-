@@ -16,7 +16,7 @@ export function serve(dir = root, p = port) {
     if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     fs.readFile(file, (err, data) => {
       if (err) { res.writeHead(404).end('not found'); return; }
-      res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+      res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'content-length': data.length, 'cache-control': 'no-store' });
       res.end(data);
     });
   });

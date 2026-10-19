@@ -59,6 +59,9 @@ try {
     let s = await state(page);
     assert.deepEqual(s.sdk.slice(0, 3), ['firstFrameReady', 'loadData', 'gameReady'], 'readiness after the face is on screen');
     assert.equal(s.phase, 'create');
+    // the loading screen's compact filled to the end, and the cover clears off the game
+    assert.equal(await page.getAttribute('#cover .blush', 'aria-valuenow'), '100');
+    await page.waitForFunction(() => document.getElementById('cover').hidden);
     assert.equal(await words(page), '', 'no words on the create screen');
     const nextSeed = s.next;
     // look 1: a stroke (it plays the brush's recording), Done, Next (no ad yet)

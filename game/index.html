@@ -202,14 +202,26 @@
 
   /* ---- loading and recovery ---- */
   #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; padding: 24px; background: var(--wall); }
-  .spin { width: 46px; height: 46px; border-radius: 50%; border: var(--outline); background: conic-gradient(var(--accent) 0 30%, var(--panel) 0); box-shadow: 0 4px 0 var(--ink); animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* the loading screen: a blush compact whose pan fills round as the game loads (--p, 0 to 1, from main.js), with a
+     soft shine sweeping over it. Until the game can measure its loading (and all the way where it cannot), the pan
+     fills and empties round in a loop (.wait). Sized by the UI scale like every control (the cover's zoom), so it is
+     the same on every phone and in proportion on tiny embeds and big screens */
+  @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --a { syntax: '<number>'; inherits: true; initial-value: 0; }
+  #cover { --p: 0; --a: 0; transition: --p .35s ease-out, opacity .25s; }
+  #cover.wait { animation: wait 1.8s ease-in-out infinite; }
+  @keyframes wait { 0% { --a: 0; --p: 0; } 50% { --a: 0; --p: 1; } 100% { --a: 1; --p: 1; } }
+  #cover.done { opacity: 0; pointer-events: none; }
+  .blush { position: relative; width: 104px; height: 104px; border-radius: 50%; border: var(--outline); box-sizing: border-box; box-shadow: 0 5px 0 var(--ink), inset 0 0 0 8px #f6dc96;
+    background: radial-gradient(circle at 35% 30%, #fff8 0 14%, #0000 30%), conic-gradient(var(--panel) calc(var(--a) * 360deg), #e48a98 0 calc(var(--p) * 360deg), var(--panel) 0); }
+  .blush::after { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: linear-gradient(115deg, #0000 40%, #fff7 50%, #0000 60%) -120px 0 / 300% 100% no-repeat; animation: shine 1.6s linear infinite; }
+  @keyframes shine { to { background-position: 120px 0; } }
   #error .oops { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: var(--outline); box-shadow: var(--edge); }
   #error .oops svg { width: 46px; height: 46px; }
   #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
   #retry svg { width: 40px; height: 40px; }
   #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
-  @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #next .hint, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { #cover.wait, .blush::after, .nope, #notice svg, #redo, #review > *, #next .hint, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
   /* landscape: the counter is a column at the side (tools beside a grid of colours); the top buttons sit over the
      scene's corners */
   .land #app { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: minmax(0, 1fr); }
@@ -248,7 +260,7 @@
     <div class="time" role="timer"></div>
   </div>
 </div>
-<div id="cover" aria-label="Loading"><div class="spin"></div></div>
+<div id="cover" class="wait"><div class="blush" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100"></div></div>
 <div id="error" role="alert" aria-label="Something went wrong. Your saved looks are safe." hidden><div class="oops"></div><button id="retry" class="ctl" aria-label="Retry"></button><small id="error-code"></small></div>
 <script type="module" src="main.js"></script>
 </body>

@@ -16,6 +16,8 @@ for (const [dir, host] of [['build/game', SDK], ['build/game-dev', DEV]]) {
   // the tools' CC0 recordings (tools/make-sounds.py)
   for (const f of fs.readdirSync('assets/sounds')) fs.copyFileSync(`assets/sounds/${f}`, `${dir}/snd-${f}`);
 }
-await esbuild.build({ entryPoints: ['game/main.js'], bundle: true, format: 'esm', minify: process.argv.includes('--minify'), outfile: 'build/game/main.js', logLevel: 'warning', target: 'es2022' });
+// the face's download size, for the loading screen's progress where a server does not send it
+const define = { HEAD_BYTES: String(fs.statSync('assets/head.bin.gz').size) };
+await esbuild.build({ entryPoints: ['game/main.js'], bundle: true, format: 'esm', define, minify: process.argv.includes('--minify'), outfile: 'build/game/main.js', logLevel: 'warning', target: 'es2022' });
 fs.copyFileSync('build/game/main.js', 'build/game-dev/main.js');
 fs.copyFileSync('tools/fake-ytgame.js', 'build/game-dev/fake-ytgame.js');

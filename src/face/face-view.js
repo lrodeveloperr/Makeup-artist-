@@ -32,9 +32,11 @@ export class FaceView {
     this.camera.lookAt(CAMERA.target);
   }
 
-  static async load(url, options) {
+  // onProgress (optional): the download's progress, 0 to 1; size: the file's size if the server may not say (see
+  // loadHead)
+  static async load(url, options, onProgress, size) {
     const view = new FaceView(options);
-    view.init(await loadHead(url));
+    view.init(await loadHead(url, onProgress, size));
     return view;
   }
 
