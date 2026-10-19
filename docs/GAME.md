@@ -28,8 +28,10 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 - a rose accent for the active tool and for Next
 
 The customer sits behind a vanity counter that carries the controls, in front of a blush salon wall with a lit
-vanity mirror (the 3D canvas is transparent). Create and review keep the same counter height, so the face never
-moves.
+vanity mirror (the 3D canvas is transparent). The mirror is hung just behind her and sized from her head, so it
+keeps the same size beside her and the same shape on every screen. On a phone the camera is closer, so the arch
+and its bulbs show above her head and the sides run off the edges. Create and review keep the same counter
+height, so the face never moves.
 
 Nothing on screen is a word:
 - The colour of the day shows the product in that colour, drawn to look real (`game/reward.js`): a lipstick, an
@@ -57,6 +59,7 @@ on each screen.
 - **Narrow, tall screens:** the canvas is never narrower than 0.56 × its height, so her head and hair always fit
   across. Spare height becomes salon wall above her head; the canvas stands on the counter.
 - **The daily pop-up** shrinks below the scale when the screen is too short for it.
+- **The mirror** follows her head (`placeMirror` in `game/main.js`), never the screen's percentages.
 - **Making a look and review** keep the same counter, so the face doesn't move.
 - **`npm run test:layout`** (`tests/layout.mjs`) runs Haircut's 30-viewport matrix, from 225×400 to 3840×1080,
   portrait and landscape, live-resized. It covers making a look, the colour of the day and review, and checks:
@@ -190,7 +193,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - the dev page without ads
 - no visible words on any screen
 
-**Size:** the game page is 408 KB (`tests/size-budget.mjs`, game budget 1 MB).
+**Size:** the game page is 438 KB (`tests/size-budget.mjs`, game budget 1 MB).
 
 ## Not built yet
 

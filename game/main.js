@@ -316,15 +316,29 @@ async function main() {
   requestAnimationFrame(tick);
   setInterval(() => { if (!paused) { session.refreshDaily(); render(); } }, 60000); // the daily dot at midnight
 
+  // the salon mirror hangs behind her head, sized from her: its box in the face's space (decimetres, a little
+  // behind her), projected to the screen. It keeps its size beside her on every screen: on a phone the camera is
+  // closer, so the arch shows above her head and the sides run off the edges, as in a close-up photo.
+  const mirror = document.querySelector('#backdrop .mirror');
+  const placeMirror = () => {
+    const P = view.makeup.picker, c = canvas.getBoundingClientRect(), z = -0.8;
+    const [x0, y0] = P.project([-1.3, 1.6, z]), [x1, y1] = P.project([1.3, -2.6, z]);
+    Object.assign(mirror.style, { left: `${c.left + x0}px`, top: `${c.top + y0}px`, width: `${x1 - x0}px`, height: `${y1 - y0}px` });
+    mirror.style.setProperty('--u', `${(x1 - x0) / 2.6}px`);
+    mirror.classList.add('placed');
+  };
+
   // the canvas fills the stage (window size, orientation, bars)
   new ResizeObserver(() => {
     const [w, h] = fit();
-    if (w === W && h === H) return;
-    input.interrupt(); // a resize ends the stroke; its applied part is kept
-    [W, H] = [w, h];
-    view.setSize(W, H);
-    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
-    redraw();
+    if (w !== W || h !== H) {
+      input.interrupt(); // a resize ends the stroke; its applied part is kept
+      [W, H] = [w, h];
+      view.setSize(W, H);
+      canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+      redraw();
+    }
+    placeMirror(); // the canvas may also have moved
   }).observe(stage);
 
   // ---- ready ----
@@ -332,6 +346,7 @@ async function main() {
   sync();
   render();
   view.render();
+  placeMirror();
   $('cover').hidden = true;
   prepare();
   await host.gameReady();

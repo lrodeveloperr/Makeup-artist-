@@ -41,12 +41,17 @@
   /* the salon behind the customer: a blush wall and a lit vanity mirror */
   #backdrop { position: absolute; inset: 0; overflow: hidden; z-index: -1; background: var(--wall); }
   #backdrop > * { position: absolute; }
-  .mirror { left: 7%; right: 7%; top: 5%; bottom: 20%; border-radius: 46% 46% 22px 22px / 26% 26% 22px 22px;
-    background: linear-gradient(160deg, #fdf3f0 0, #f3dcd8 45%, #ecccc8 100%); border: 14px solid #fbefe4; box-shadow: inset 0 0 0 3px #e7cbb3, 0 8px 30px #9a5b5b33; filter: blur(1px); }
-  .bulbs { --b: radial-gradient(circle, #fffdf3 0 5px, #ffe2a6 6px, #ffd78a55 11px, #0000 17px); }
-  .bulbs.l, .bulbs.r { top: 16%; bottom: 24%; width: 36px; background: var(--b) center 0 / 36px 54px repeat-y; }
-  .bulbs.l { left: calc(7% - 11px); } .bulbs.r { right: calc(7% - 11px); }
-  .bulbs.t { top: 3%; left: 22%; right: 22%; height: 36px; background: var(--b) 0 center / 54px 36px repeat-x; }
+  /* the mirror is hung behind her: main.js places it from where her head is and sets --u (pixels per decimetre at
+     the mirror), so the arch, frame and bulbs keep their proportions on every screen */
+  .mirror { visibility: hidden; border-radius: 50% 50% 0 0 / 30% 30% 0 0; border: calc(var(--u, 4px) * 0.14) solid #fbefe4; border-bottom: 0;
+    background: linear-gradient(160deg, #fdf3f0 0, #f3dcd8 45%, #ecccc8 100%);
+    box-shadow: inset 0 0 0 calc(var(--u, 4px) * 0.03) #e7cbb3, 0 calc(var(--u, 4px) * 0.08) calc(var(--u, 4px) * 0.3) #9a5b5b33; filter: blur(1px); }
+  .mirror.placed { visibility: visible; }
+  .bulbs { position: absolute; --d: calc(var(--u, 4px) * 0.34);
+    --b: radial-gradient(circle closest-side, #fffdf3 0 32%, #ffe2a6 38%, #ffd78a55 64%, #0000 100%); }
+  .bulbs.l, .bulbs.r { top: 24%; bottom: 6%; width: var(--d); background: var(--b) center 0 / var(--d) calc(var(--d) * 1.55) repeat-y; }
+  .bulbs.l { left: calc(var(--d) * -0.85); } .bulbs.r { right: calc(var(--d) * -0.85); }
+  .bulbs.t { top: calc(var(--d) * -0.85); left: 30%; right: 30%; height: var(--d); background: var(--b) 0 center / calc(var(--d) * 1.55) var(--d) repeat-x; }
 
   /* ---- controls ---- */
   #top { display: flex; align-items: flex-start; justify-content: space-between; padding: max(10px, env(safe-area-inset-top)) 12px 4px; min-height: 80px; box-sizing: border-box; }
@@ -181,7 +186,7 @@
 </head>
 <body>
 <div id="app">
-  <div id="backdrop" aria-hidden="true"><div class="mirror"></div><i class="bulbs l"></i><i class="bulbs r"></i><i class="bulbs t"></i></div>
+  <div id="backdrop" aria-hidden="true"><div class="mirror"><i class="bulbs l"></i><i class="bulbs r"></i><i class="bulbs t"></i></div></div>
   <header id="top">
     <button id="daily" class="ctl round" aria-label="Colour of the day" hidden></button>
     <button id="before" class="ctl round" aria-pressed="false" aria-label="Hold to see before"></button>
