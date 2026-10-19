@@ -1,7 +1,7 @@
 // Builds assets/head.bin.gz (and head.manifest.json) from the pinned CC0 MakeHuman base mesh and targets.
 // Usage: node tools/makehuman/fetch.mjs && node tools/makehuman/build-head.mjs
 //
-// Output: the head and neck of the hm08 base mesh as a young-adult neutral reference (equal blend of the
+// Output: the head, neck, shoulders and upper chest of the hm08 base mesh as a young-adult neutral reference (equal blend of the
 // three bundled ethnic macro targets at 25 years, female), helper vertices for the eyes and lash lines,
 // a repacked face-first UV layout, and one sparse delta per shape dimension (see dims.mjs).
 import fs from 'node:fs';
@@ -12,7 +12,9 @@ import { openSource, parseObj, parseTarget, MAKEHUMAN_COMMIT, MAKEHUMAN_REPO } f
 import { DIMS } from './dims.mjs';
 
 const OUT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../assets/head.bin.gz');
-const NECK_BELOW_EYES = 1.8; // keep faces whose every vertex is at most this far below the eyes (decimetres)
+// keep faces whose every vertex is at most this far below the eyes (decimetres): down to the upper chest, so
+// outfits are worn on the real body
+const NECK_BELOW_EYES = 2.6;
 const UV_PAD = 8 / 2048;
 const HELPERS = ['helper-l-eye', 'helper-r-eye', 'helper-l-eyelashes-1', 'helper-r-eyelashes-1', 'helper-l-eyelashes-2', 'helper-r-eyelashes-2'];
 

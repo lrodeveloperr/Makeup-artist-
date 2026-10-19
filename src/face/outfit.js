@@ -33,9 +33,10 @@ const AVOID = { olive: ['olive', 'sage', 'camel', 'mustard'], pink: ['orange', '
 // partners that go with anything (used for trims, stripes, dots and gingham)
 const NEUTRALS = new Set(['white', 'ivory', 'cream', 'navy', 'black', 'charcoal']);
 
+// necklines by garment (shapes in garment.js)
 export const NECKLINES = {
-  blouse: { boat: 3, scoop: 3, ruffle: 3, 'off-shoulder': 2 },
-  dress: { straps: 4, 'off-shoulder': 3, scoop: 2, boat: 1 },
+  blouse: { boat: 3, scoop: 3, 'v-neck': 3, ruffle: 2, 'off-shoulder': 2 },
+  dress: { straps: 3, sweetheart: 3, 'off-shoulder': 2, square: 2, 'v-neck': 1 },
 };
 export const PATTERNS = { solid: 4, 'two-tone': 2, stripes: 2, dots: 2, floral: 3, gingham: 1, geometric: 1.5 };
 
@@ -123,5 +124,7 @@ export function chooseOutfit(rng, tone, undertone) {
   if (pattern !== 'solid') picks.push(partner(rng, base, pool, RELATIONS[pattern], pattern === 'two-tone' ? 15 : 25, taken()));
   // flower centres and leaves, or the print's third colour
   if (pattern === 'floral' || pattern === 'geometric') picks.push(partner(rng, base, pool, { analogous: 1, complement: 1, neutral: 1 }, 15, taken()));
-  return { kind, neckline, pattern, names: picks.map((c) => c.name), colours: picks.map((c) => c.hex), seed: rng.int(0, 9999) };
+  // plain dresses and blouses are sometimes satin; prints are cotton
+  const fabric = (pattern === 'solid' || pattern === 'two-tone') && rng.chance(kind === 'dress' ? 0.45 : 0.25) ? 'satin' : 'cotton';
+  return { kind, neckline, pattern, fabric, names: picks.map((c) => c.name), colours: picks.map((c) => c.hex), seed: rng.int(0, 9999) };
 }

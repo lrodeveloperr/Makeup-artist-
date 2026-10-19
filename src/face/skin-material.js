@@ -3,6 +3,7 @@
 // carries them in the same anatomical places. Applied makeup arrives later through uPaint (UV space).
 import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
+import { NECK_GLSL, neckUniforms } from './garment.js';
 
 const vertexShader = /* glsl */ `
 attribute vec3 ref;
@@ -42,6 +43,7 @@ varying vec3 vPos, vNormal, vRef;
 varying vec2 vUv;
 varying float vCavity;
 varying vec4 vRA, vRB;
+${NECK_GLSL}
 
 float lipMask(vec3 r) {
   float t = abs(r.x) / uMouth.x;
@@ -153,6 +155,11 @@ void main() {
   // --- lighting ---
   float ao = 1.0 - 0.4 * smoothstep(0.005, 0.06, vCavity);
   ao *= 1.0 - 0.6 * interior;
+  // the outfit's edge shades the skin just above the neckline and beside the straps
+  if (r.y < -1.1) {
+    float edge = max(neckCover(r - vec3(0.0, 0.03, 0.0), 0.012), max(neckStrap(r + vec3(0.02, 0.0, 0.0), 0.01), neckStrap(r - vec3(0.02, 0.0, 0.0), 0.01)));
+    ao *= 1.0 - 0.35 * max(edge - neckCover(r, 0.002), 0.0);
+  }
   float NoV = max(dot(n, v), 1e-3);
   float rough = mix(0.6, 0.47, uOil * (vRB.x + 0.6 * smoothstep(0.35, 0.75, r.y) * (1.0 - scalpMask(r))));
   rough = mix(rough, 0.28, lip);
@@ -191,7 +198,7 @@ export function createSkinMaterial() {
     fragmentShader,
     side: GL.DoubleSide,
     uniforms: {
-      ...lightUniforms(),
+      ...lightUniforms(), ...neckUniforms(),
       uSkin: { value: new GL.Vector3(0.5, 0.3, 0.2) },
       uLip: { value: new GL.Vector3(0.4, 0.15, 0.13) },
       uLipInner: { value: new GL.Vector3(0.4, 0.15, 0.13) },

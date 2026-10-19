@@ -2,7 +2,7 @@
 
 Status: **prototype, locally verified**. It renders generated faces in the browser and passes the face audit and
 render smoke test listed below. It does not yet include makeup painting, the game screens, saves, ads or the
-YouTube adapter. Hair and the garment are procedural and work for every face, but they need an art pass before
+YouTube adapter. Hair and outfits are procedural and work for every face, but they need an art pass before
 release (see "Known limits").
 
 ![24 faces from the queue](face-gallery.jpg)
@@ -12,11 +12,11 @@ release (see "Known limits").
 | Decision | Value |
 | --- | --- |
 | Engine | WebGL2 through a small purpose-built renderer (`src/gl/mini.js`, Three.js-style names). Three.js was the first choice; it was replaced on 18 October 2026 under the owner's load-time priority because the face scene used only a sliver of it (the bundle fell from 558 KB to 95 KB). No Unity or Godot web build. |
-| Presentation | One 3D head, seen by a fixed front camera ("2.5D"). There is no orbit control. A hidden debug orbit exists in the preview only. |
+| Presentation | One 3D head and upper body, seen by a fixed front camera ("2.5D") framed from the hair to the upper chest, so the face stays large and the outfit reads as worn. There is no orbit control. A hidden debug orbit exists in the preview only. |
 | Base asset | MakeHuman's CC0 base mesh and shape targets, at a pinned commit. No paid scans, no non-commercial academic models (FLAME, BFM, SMPL-X), no MetaHuman, no AI-generated or photographed faces. |
 | Customers | Every face is a young woman with a clearly feminine face and head shape. No vitiligo, albinism or dyed hair. |
 | Hair | Always long and visible (players prefer long hair): no short cuts, updos or head coverings. Natural colours from a per-ancestry colour table. |
-| Outfit | Every customer wears a blouse or a dress, flat or patterned, in colours that flatter her complexion: never close to her skin colour, and never black or very dark shades on deeper skin. The outfit is part of the look the player works with. |
+| Outfit | Every customer wears a blouse or a dress, worn on her body (not a flat card), flat or patterned, in colours that flatter her complexion: never close to her skin colour, and never black or very dark shades on deeper skin. The outfit is part of the look the player works with. |
 | Diversity | All ancestries. Ancestry profiles mix MakeHuman's sculpted female base heads and add tendencies over individual feature controls, never "race buttons". Face shape, skin and natural hair texture and colour stay coherent with the ancestry; individual variation keeps faces from one profile different. |
 | Age | Young adults only (18–30). |
 | Textures | Procedural shaders, with no shipped photo textures. |
@@ -34,7 +34,8 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
 
 ### Head asset (`assets/head.bin.gz`)
 
-- The head and shoulders of MakeHuman's hm08 base mesh: 4,478 vertices and 4,452 quads, plus eye and lash
+- The head, neck, shoulders and upper chest of MakeHuman's hm08 base mesh (cut 2.6 dm below the eyes, so outfits
+  are worn on the real body): 4,766 vertices and 4,726 quads, plus eye and lash
   helper geometry. Its reference shape is a 25-year-old blend of MakeHuman's female macro targets, with the three
   ethnic macro targets weighted equally.
 - 96 dimensions (`tools/makehuman/dims.mjs`): MakeHuman's three sculpted young-female base heads (African, Asian,
@@ -57,7 +58,7 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
   deltas are stored as differences from their neighbours, and the file is gzipped. The browser inflates it with its
   native `DecompressionStream`, or with fflate (about 4 KB) where that is missing. Provenance (source file hashes,
   targets per dimension) is in `assets/head.manifest.json`, which is not loaded at runtime.
-- Size: **243,991 bytes** (700,070 bytes inflated), down from 1,193,728 bytes in version 1. Building twice gives
+- Size: **250,571 bytes** (715,734 bytes inflated), down from 1,193,728 bytes in version 1. Building twice gives
   byte-identical output.
 
 ### Rendering (`src/face/`)
@@ -70,7 +71,7 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
 | `eyes.js` | Eyeballs placed from MakeHuman's eye helpers and aimed at the camera. Procedural iris, set per eye (ready for contact lenses) |
 | `brows.js`, `lashes.js`, `strands.js` | Short, groomed brow hairs rooted on the skin over a soft brow fill, and upper and lower lashes rooted on MakeHuman's lash helper lines. Upper lashes fan out and gather into small clumps; lower lashes are fewer and lighter. Each lash keeps its own parameters, ready for mascara |
 | `hair.js`, `hair-material.js` | Procedural long hairstyles built from the morphed head (see below) |
-| `garment.js` | The blouse or dress: one geometry per neckline (with straps or a frill where needed) and a shader for the patterns |
+| `garment.js` | The blouse or dress, built from the body surface (see "Outfits on the body") with a shader for folds, hem, fabric and prints. Its neckline also drives a soft shadow on the skin |
 | `lighting.js` | One fixed "makeup station" light rig shared by every material |
 
 ### Generator (`src/face/generator.js`, `profiles.js`, `hair-styles.js`, `colors.js`)
@@ -131,8 +132,9 @@ seed, so a save can store the record or just `{version, seed}`.
   - **Patterns.** Solid, two-tone (a contrasting neckline band and straps), stripes, dots, florals, gingham or a
     bold geometric print. The second colour is a neutral, a neighbouring hue or (for small motifs) the
     complementary hue, with enough lightness difference to read; two equally vivid mid-tones are never paired.
-  - **Necklines.** Blouses: boat, scoop, ruffle or off-the-shoulder. Dresses: straps, off-the-shoulder, scoop or
-    boat. Every neckline leaves the neck bare and follows where each face's body mesh ends.
+  - **Necklines.** Blouses: boat, scoop, V-neck, ruffle or off-the-shoulder. Dresses: camisole straps, sweetheart
+    with straps, off-the-shoulder, square neck with wide straps, or V-neck. Every neckline leaves the neck bare.
+  - **Fabric.** Prints are cotton; plain blouses and dresses are sometimes satin (a broad soft gloss).
 - **Presentation.** Every face is feminine. Makeup tools work the same on every face.
 - **Labels.** Profile ids are internal. Players never see them, and they never decide tools, colours, difficulty,
   scores or a "suggested look". The dev preview shows them for review only.
@@ -170,9 +172,27 @@ Building blocks:
 - **Tubes** for box braids, locs and cornrow braids; a thin **cap** layer for the cornrows on the scalp.
 - **Two-pass drawing.** Hair is drawn once for its solid parts (writing depth) and again for its soft fringes
   (blended, not writing depth), so nearly transparent edges never punch see-through holes in the hair behind.
-- The outfit (`garment.js`) sits at the bottom of the frame. Below the end of the body mesh, the shoulders are
-  continued outwards so the garment fills the frame. Patterns are laid out as seen from the front and
-  anti-aliased, so they stay crisp at phone size.
+
+## Outfits on the body
+
+The garment is made from the face's own body, so it is worn rather than pasted on:
+
+- **Cut.** Each neckline is a curve on the reference body (eyes at 0; sternal notch about −1.6 dm; shoulder tops
+  from −1.3 near the neck to −1.7 at the shoulder point): a dip at the front, the line over the shoulders or along
+  wide straps, the bodice's sides, and either sleeves or a bare arm. Camisole straps leave the bodice near the
+  chest and run out over the middle of the shoulder. The cut is exact per pixel and anti-aliased, and the same
+  curve shades the skin softly along the fabric's edge and beside the straps.
+- **Drape.** The covered body surface is lifted off the skin, then smoothed so the fabric bridges hollows
+  (collarbones, cleavage, armpits) instead of shrink-wrapping them, and pushed back out wherever it would sink
+  to the skin. A rolled hem along the neckline stands slightly proud, with a highlight on its crest and a
+  shadow line under it.
+- **Folds and shading.** A soft drape everywhere, elastic gathers under an off-the-shoulder edge, tension folds from
+  the chest towards the arms, darkening where the fabric turns away (so the body under it reads as round) and
+  occlusion under the arms. Cotton has a soft sheen at grazing angles; satin adds a broad gloss.
+- **Prints** are projected from the front, the side and above and blended by the surface's direction, so dots,
+  flowers and stripes stay undistorted where the body turns. They are anti-aliased, so they stay crisp at phone
+  size.
+
 
 ## Commands
 
@@ -195,11 +215,11 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 
 - Building a face (morph, subdivision, brows, lashes, hair, outfit) takes about 60 ms on the CPU (50–96 ms over
   ten faces). This happens once per Next, not per frame.
-- **Download:** 349,946 bytes in total: `head.bin.gz` 243,991, `main.js` 104,980 (minified, renderer included),
+- **Download:** 360,942 bytes in total: `head.bin.gz` 250,571, `main.js` 109,396 (minified, renderer included),
   `index.html` 975. That is down from about 1.75 MB, and every file is under the platform's recommended 512 KiB.
   The budget test fails above 400 KB for the face system. The whole-game target is 1 MB, against the contract's
   5 MB studio limit and the platform's 15 MiB recommendation. For comparison, Haircut's YouTube build is 1.09 MB.
-- **Time to first face:** 2.4 s after navigation from a local server, with software WebGL (shader compilation
+- **Time to first face:** 2.8 s after navigation from a local server, with software WebGL (shader compilation
   dominates). This is a desktop
   container, not a phone, and it excludes network time.
 - These numbers are not phone measurements. Physical mid-range Android frame-time and first-playable checks
@@ -224,7 +244,8 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 - Hair is procedural and reads well at phone size, but strand detail, curl clumping and the hanging lengths (which
   are a few layered sheets) need an art pass, or replacement with authored hair cards using the same building
   blocks.
-- Outfits are flat-shaded fabric with procedural patterns; folds, sleeves and fabric texture need an art pass.
+- Outfits are procedural: folds are shading only (the silhouette does not wrinkle), there are no seams or
+  buttons, and sleeves end at the frame. An art pass could add authored details on the same body-based garment.
 - The makeup palettes are not built yet. The outfit gives the player a colour cue to work with; it must never become
   a required target or a score (contract: freestyle, no scoring rubric or required target).
 - No blink or idle animation yet. A procedural upper-lid blink around the eye centre is the planned approach, and

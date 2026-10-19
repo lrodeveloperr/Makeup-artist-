@@ -49,13 +49,11 @@ export class HeadFrame {
     this.depth = zmax - zmin;
     this.TH = 90; this.Y0 = -2.6; this.DY = 0.04; this.NY = Math.ceil((top + 0.1 - this.Y0) / this.DY);
     const r = (this.r = new Float32Array(this.TH * this.NY));
-    const low = (this.low = new Float32Array(this.TH).fill(Infinity)); // where the body mesh ends, by angle
     for (let i = 0; i < this.count; i++) {
       if (R[i * nc + iIn] > 0.5) continue;
       const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2] - this.cz;
       const th = Math.atan2(x, z), rad = Math.hypot(x, z);
       const ti = ((Math.round((th / (2 * Math.PI)) * this.TH) % this.TH) + this.TH) % this.TH;
-      if (y < low[ti]) low[ti] = y;
       const yi = Math.round((y - this.Y0) / this.DY);
       if (yi < 0 || yi >= this.NY) continue;
       for (const dt of [-1, 0, 1]) {
@@ -77,13 +75,6 @@ export class HeadFrame {
     return mix(mix(r[t0 * NY + y0], r[t1 * NY + y0], a), mix(r[t0 * NY + y1], r[t1 * NY + y1], a), b);
   }
   point(theta, y, rad) { return [rad * Math.sin(theta), y, this.cz + rad * Math.cos(theta)]; }
-  // lowest point of the body mesh around angle theta (it varies from face to face with the neck shape)
-  lowest(theta) {
-    const t = Math.round((theta / (2 * Math.PI)) * this.TH);
-    let y = Infinity;
-    for (const d of [-1, 0, 1]) y = Math.min(y, this.low[(((t + d) % this.TH) + this.TH) % this.TH]);
-    return Number.isFinite(y) ? y : -1.8;
-  }
   interior(i) { return this.R[i * this.nc + this.iIn] > 0.5; }
   ear(i) { return this.R[i * this.nc + this.iEar]; }
 }

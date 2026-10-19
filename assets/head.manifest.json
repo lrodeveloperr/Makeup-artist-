@@ -1,7 +1,7 @@
 {
  "asset": "head.bin.gz",
- "sha256": "fbccc951f7254bac7cd0e965ff5bd8d5dda605281334d91ff6853ba39b324ecd",
- "uncompressedBytes": 700070,
+ "sha256": "346c349c174554832586288b7f06cd4663d71f4917015f39d17b8a2cbc1e8fc9",
+ "uncompressedBytes": 715734,
  "source": {
   "project": "MakeHuman",
   "repo": "https://github.com/makehumancommunity/makehuman",

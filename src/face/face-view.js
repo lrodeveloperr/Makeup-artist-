@@ -8,11 +8,12 @@ import { Brows, BROW_SHAPES } from './brows.js';
 import { Lashes } from './lashes.js';
 import { SurfaceSampler } from './surface.js';
 import { Hair } from './hair.js';
-import { Garment } from './garment.js';
+import { Garment, setNeckUniforms } from './garment.js';
 import { skinAlbedo, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
 import { createRng } from './rng.js';
 
-export const CAMERA = { fov: 20, target: new GL.Vector3(0, -0.28, 0), distance: 9.4 };
+// fixed front camera: the face large for painting, with the neckline and upper chest in view so the outfit reads
+export const CAMERA = { fov: 20, target: new GL.Vector3(0, -0.38, 0), distance: 10 };
 
 export class FaceView {
   constructor({ canvas, width = 600, height = 800, pixelRatio = 1 } = {}) {
@@ -115,7 +116,8 @@ export class FaceView {
     const centres = { left: this.eyes.meshes[0].position, right: this.eyes.meshes[1].position };
     this.lashes.build(profile.lashes, hg, centres);
     this.hair.build(profile, hg);
-    this.garment.build(profile.outfit, this.hair.frame);
+    this.garment.build(profile.outfit, hg);
+    setNeckUniforms(u, profile.outfit.neckline); // the fabric's soft shadow on the skin
     this.garment.mesh.visible = !this.hideGarment; // debugging aid
   }
 
