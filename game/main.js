@@ -62,7 +62,8 @@ async function main() {
   host.firstFrameReady(); // the loading screen is showing
 
   const stage = $('stage');
-  const fit = () => [Math.min(stage.clientWidth, 900), stage.clientHeight];
+  // the canvas fills the stage, but never narrower than 0.56 × its height, so her head and hair always fit across
+  const fit = () => { const w = Math.min(stage.clientWidth, 1200); return [w, Math.min(stage.clientHeight, Math.round(w / 0.56))]; };
   let [W, H] = fit();
   const canvas = document.createElement('canvas');
   canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
@@ -263,8 +264,17 @@ async function main() {
     renderPanel();
     clearInterval(panelTimer);
     panelTimer = setInterval(() => { if (!paused) { session.refreshDaily(); renderPanel(); } }, 1000); // midnight brings the next colour
+    fitCard();
     card.querySelector('.get').focus();
   };
+  // the card shrinks below the UI scale when the screen is too short for it
+  const fitCard = () => {
+    if (!panelOpen) return;
+    card.style.zoom = '';
+    const h = card.getBoundingClientRect().height, room = innerHeight - 28;
+    if (h > room) card.style.zoom = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')) * room / h).toFixed(3);
+  };
+  addEventListener('resize', fitCard);
   const closePanel = () => { panelOpen = false; panel.hidden = true; clearInterval(panelTimer); render(); daily.focus(); };
   daily.onclick = openPanel;
   card.querySelector('.x').onclick = closePanel;

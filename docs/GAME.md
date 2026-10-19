@@ -48,6 +48,22 @@ Nothing on screen is a word:
 Every control has a spoken English label (`aria-label`). `tests/game-smoke.mjs` checks there is no visible text
 on each screen.
 
+**Screens (Haircut's scaling):**
+- **UI scale:** every control is drawn at one scale, taken from the screen's short side. It's 1 on phones, up to
+  2.4 on big screens and down to 0.6 in tiny embeds. It's capped by the height (portrait: height / 700;
+  landscape: height / 380), so the controls never crowd out the face.
+- **Landscape** (wider than 1.15 × tall): the counter becomes a column at the side, with tools beside a grid of
+  colours and review stacked. The top buttons sit over the scene's corners.
+- **Narrow, tall screens:** the canvas is never narrower than 0.56 × its height, so her head and hair always fit
+  across. Spare height becomes salon wall above her head; the canvas stands on the counter.
+- **The daily pop-up** shrinks below the scale when the screen is too short for it.
+- **Making a look and review** keep the same counter, so the face doesn't move.
+- **`npm run test:layout`** (`tests/layout.mjs`) runs Haircut's 30-viewport matrix, from 225×400 to 3840×1080,
+  portrait and landscape, live-resized. It covers making a look, the colour of the day and review, and checks:
+  - every control is on screen, at least 30 px, and apart from the others
+  - no control covers her eyes or mouth
+  - the face fits its canvas and stays put between making and review
+
 There is no eraser, undo or free reset. Redo is the rewarded replay the contract promises. An untouched
 Done/Next is allowed, but counts nothing.
 
