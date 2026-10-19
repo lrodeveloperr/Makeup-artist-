@@ -74,9 +74,17 @@ part of every face at any screen size.
   is not stored.
 - **Face gems.** Select a gem and tap the skin: the gem sticks there, facing out from the skin and upright to the
   face, and catches the salon lights in its facets (glass, iridescent glass, pearl or metal). A drag, the eyes, the
-  outfit and empty space place nothing. Each tap is one gem; a face holds up to 200.
+  outfit and empty space place nothing. Each tap is one gem; a face holds up to 200. On a phone the gem is aimed
+  (below).
 - **Contact lenses.** Select a lens colour and tap an iris. Each eye is independent. A tap anywhere else, or a
-  drag, does nothing. A lens never changes the makeup.
+  drag, does nothing. A lens never changes the makeup. On a phone the lens is aimed (below).
+- **The tool in hand on a phone (owner, 19 October 2026: "as you are moving your hand, you are seeing the tool
+  actually work").** A finger covers what it touches, so on touch every tool works at its tip, held a little above
+  the finger (72 px, at most 12 % of the face's height, as Haircut's clipper), and is drawn there in its colour
+  while the finger is down: the brush's tuft, the fan brush, the pencil's point, the liner's felt tip, the mascara
+  wand, the lipstick's bullet, the gem in tweezers, the lens. Strokes paint at the tip. A gem or a lens shows at the
+  tip from the touch and goes on where the finger lifts (press, aim, release), since a tap under a finger cannot be
+  aimed. A mouse or a pen works right at the pointer, as before, with no tool drawn.
 
 ### Colours (base catalogue, all available from the start)
 
@@ -128,6 +136,8 @@ Rose (contract §3).
 
 - One captured primary pointer applies at a time. Other fingers and non-primary mouse buttons are ignored. The
   canvas has `touch-action: none` and no context menu, so a stroke never scrolls, zooms or opens a menu.
+- A finger works at the tool's tip, above it (see the tool in hand, above); the game draws the tool there through
+  `attachInput`'s `aim` hook.
 - The tool and colour are captured at pointer-down and kept for the whole gesture.
 - Pointer-up commits. Cancel, lost capture, resize or an interrupt (`input.interrupt()`, for a host pause or an
   opening panel) ends the gesture at its last applied sample and keeps that work. A new pointer-down is needed to

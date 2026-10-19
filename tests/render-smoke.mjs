@@ -182,8 +182,8 @@ async function lipOrderCheck(page, errors) {
   console.log(`lip order: ${r.map((x) => `${x.pair}: ${x.differ} paint values and ${x.pixels} pixels differ (max ${x.most})`).join('; ')}`);
 }
 
-// Touch: one finger paints; a second finger during the stroke adds nothing; a lens and a gem apply on a tap, not a
-// drag.
+// Touch: one finger paints, at the tool's tip a little above it (as Haircut's clipper); a second finger during the
+// stroke adds nothing; a lens or a gem is aimed at the tip and goes on where the finger lifts.
 async function touchCheck(browser, errors) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
@@ -193,12 +193,14 @@ async function touchCheck(browser, errors) {
   const cdp = await ctx.newCDPSession(page);
   const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y, id]) => ({ x, y, id, radiusX: 4, radiusY: 4, force: 1 })) });
   const box = await page.locator('#stage canvas').boundingBox();
-  // canvas points: the middle of each cheek, a point beside it, and each iris
+  // where the tool works: this far above the finger (input.js)
+  const tip = Math.min(72, box.height * 0.12);
+  // canvas points: the middle of each cheek, a point beside it, and each iris (the finger goes `tip` below them)
   const [a, a1, b, b1, irisR, irisL] = (await page.evaluate(() => {
     const v = window.view, [L, R] = v.eyes.meshes.map((m) => m.position), r = v.eyes.meshes[0].scale[0];
     return [[L[0] + 0.08, L[1] - 0.42, L[2]], [L[0] + 0.2, L[1] - 0.47, L[2]], [R[0] - 0.08, R[1] - 0.42, R[2]], [R[0] - 0.2, R[1] - 0.47, R[2]],
       [R[0], R[1], R[2] + r], [L[0], L[1], L[2] + r]].map((p) => v.makeup.picker.project(p));
-  })).map(([x, y]) => [box.x + x, box.y + y]);
+  })).map(([x, y]) => [box.x + x, box.y + y + tip]);
   const lerp = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   const state = () => page.evaluate(() => { const m = window.view.makeup.makeup; return { n: m.strokes.length, last: m.strokes.at(-1), lenses: m.lenses }; });
   await touch('touchStart', [[...a, 1]]);
@@ -221,13 +223,15 @@ async function touchCheck(browser, errors) {
   await page.getByRole('radio', { name: 'Pearl', exact: true }).tap();
   await touch('touchStart', [[...b, 5]]); await touch('touchEnd', []);
   await touch('touchStart', [[...a, 6]]); for (let k = 1; k <= 8; k++) await touch('touchMove', [[...lerp(a, a1, k / 8), 6]]); await touch('touchEnd', []);
-  const gem = await state(), scroll = await page.evaluate(() => [scrollX, scrollY, visualViewport.scale, visualViewport.offsetLeft, visualViewport.offsetTop]);
+  const gem = await state(), aimed = await page.evaluate(() => window.view.makeup.makeup.strokes.at(-1).segments[0]), scroll = await page.evaluate(() => [scrollX, scrollY, visualViewport.scale, visualViewport.offsetLeft, visualViewport.offsetTop]);
   if (one.n !== 1 || one.last.tool !== 'brush') errors.push(`touch: a one-finger drag did not paint (${one.n} strokes)`);
   if (two.n !== 2 || !leftCheek(two.last)) errors.push('touch: a second finger added marks');
-  if (lens.lenses.right !== 'lens-grey' || lens.lenses.left !== null) errors.push(`touch: lens tap/drag wrong (${JSON.stringify(lens.lenses)})`);
-  if (gem.n !== 3 || gem.last.tool !== 'gem' || gem.last.colour !== 'gem-pearl') errors.push(`touch: gem tap/drag wrong (${gem.n} strokes)`);
+  // the left lens was aimed off the iris before the finger lifted: no lens
+  if (lens.lenses.right !== 'lens-grey' || lens.lenses.left !== null) errors.push(`touch: lens tap/aim wrong (${JSON.stringify(lens.lenses)})`);
+  // a tap puts a gem at the tip; an aimed gem goes on where the finger lifts (beside the left cheek's middle)
+  if (gem.n !== 4 || gem.last.tool !== 'gem' || gem.last.colour !== 'gem-pearl' || !(aimed[0] > 0)) errors.push(`touch: gem tap/aim wrong (${gem.n} strokes)`);
   if (scroll.join() !== '0,0,1,0,0') errors.push(`touch: the page scrolled, panned or zoomed (${scroll})`);
-  console.log(`touch: one finger paints, a second finger is ignored, lens and gem on tap only: ${errors.length ? 'see errors' : 'ok'}`);
+  console.log(`touch: one finger paints at the tool's tip, a second finger is ignored, lens and gem aimed at the tip: ${errors.length ? 'see errors' : 'ok'}`);
   await ctx.close();
 }
 

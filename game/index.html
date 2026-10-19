@@ -200,6 +200,10 @@
   .nope { animation: nope .4s; }
   @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
+  /* the tool in hand: drawn at a finger's working tip while it paints (main.js), never in the way of a touch */
+  #hand { position: fixed; left: 0; top: 0; width: 100px; height: 100px; pointer-events: none; z-index: 2; transform-origin: 8px 8px;
+    filter: drop-shadow(0 4px 3px #2a1d1544); will-change: transform; }
+
   /* ---- loading and recovery ---- */
   #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; padding: 24px; background: var(--wall); }
   /* the loading screen: a blush compact whose pan fills round as the game loads (--p, 0 to 1, from main.js), with a
@@ -252,6 +256,7 @@
     <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="hint"></span><span class="go"></span></button>
   </footer>
 </div>
+<div id="hand" aria-hidden="true" hidden></div>
 <div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>
   <div class="card">
     <button class="x ctl round" aria-label="Close"></button>

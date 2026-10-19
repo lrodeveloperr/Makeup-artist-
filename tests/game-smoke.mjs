@@ -20,8 +20,8 @@ const errors = [];
 let n = 0;
 const check = (name, fn) => fn().then(() => { n++; console.log('ok -', name); });
 
-async function open({ sdk = 'fake', path = 'game/index.html', save } = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 400, height: 780 } });
+async function open({ sdk = 'fake', path = 'game/index.html', save, phone = false } = {}) {
+  const ctx = await browser.newContext({ viewport: { width: 400, height: 780 }, ...(phone && { hasTouch: true, isMobile: true }) });
   if (sdk === 'fake') await ctx.route(SDK_URL, (r) => r.fulfill({ contentType: 'text/javascript', body: fixture }));
   else await ctx.route(SDK_URL, (r) => r.abort());
   await ctx.addInitScript((save) => {
@@ -151,6 +151,32 @@ try {
     await ready(page);
     assert.ok(await page.isHidden('#daily'));
     assert.ok(await page.isVisible('#done'));
+    await ctx.close();
+  });
+
+  await check('on a phone the tool is held in hand: drawn at its working tip above the finger, gone when it lifts', async () => {
+    const { ctx, page } = await open({ phone: true });
+    await ready(page);
+    await page.waitForFunction(() => document.getElementById('cover').hidden);
+    const cdp = await ctx.newCDPSession(page);
+    const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1, radiusX: 6, radiusY: 6, force: 1 })) });
+    const [x, y, tip] = await page.evaluate(() => {
+      const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, [px, py] = v.makeup.picker.project([L[0] + 0.08, L[1] - 0.42, L[2]]);
+      return [c.left + px, c.top + py, Math.min(72, c.height * 0.12)];
+    });
+    assert.ok(await page.isHidden('#hand'));
+    await touch('touchStart', [[x, y + tip]]);
+    for (let k = 1; k <= 6; k++) await touch('touchMove', [[x + k * 4, y + tip]]);
+    const at = await page.evaluate(() => { const h = document.getElementById('hand'); return { shown: !h.hidden, m: new DOMMatrix(getComputedStyle(h).transform) }; });
+    assert.ok(at.shown, 'the brush shows while the finger is down');
+    assert.ok(Math.abs(at.m.e + 8 - (x + 24)) < 2 && Math.abs(at.m.f + 8 - y) < 2, `its tip is at the working point (${at.m.e + 8}, ${at.m.f + 8})`);
+    await touch('touchEnd', []);
+    assert.ok(await page.isHidden('#hand'), 'gone when the finger lifts');
+    assert.equal((await state(page)).strokes, 1, 'it painted');
+    // a mouse works right at the pointer, with no tool drawn
+    await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 20, y, { steps: 4 });
+    assert.ok(await page.isHidden('#hand'));
+    await page.mouse.up();
     await ctx.close();
   });
 

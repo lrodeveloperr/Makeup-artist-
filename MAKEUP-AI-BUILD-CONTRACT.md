@@ -101,7 +101,7 @@ The reusable Haircut structure reduces navigation and integration work. The diff
 | Lip applicator | Apply lip colour with the shared lipstick/gloss interaction | Same tool, colour choices; no separate lipstick/gloss tool or mandatory finish panel. Lipstick and gloss mix the same whichever goes on first: lipstick is the colour, a gloss a clear tinted coat over it (owner, 19 October 2026) |
 | Highlighter | A sheer glow on the high points (cheekbones, nose, brow bone, cupid's bow) | The path determines where the light catches; passes build the glow |
 | Liquid liner | Crisp, opaque lines, wings and flicks that taper to a point at both ends | Not restricted to a preset wing or eyeliner template |
-| Face gems | Stick one gem (stone, drop, heart, star, flower or pearl) where the player taps the skin | One tap, one gem, wherever the player taps; no preset positions or patterns |
+| Face gems | Stick one gem (stone, drop, heart, star, flower or pearl) where the player taps the skin | One tap, one gem, wherever the player taps (on a phone: aimed at the tool's tip, placed where the finger lifts); no preset positions or patterns |
 
 **O:** Each tool is always available. Select a colour, then apply. No size, opacity, intensity or pressure settings are required or exposed; use fixed, suitable tool behavior. Repeated passes and where/how the player moves determine the result. A basic touch device and mouse must both provide the full mechanic: pressure-sensitive hardware is not required.
 
@@ -122,6 +122,7 @@ The player can revisit any tool and use any available colour in any order. Both 
 - A face stays stable throughout an active gesture. Blinks or incidental movement cannot move the target under the pointer. No orbit/360 control or user-operated precision zoom.
 - Map input to persistent face-relative coordinates. Reflow changes screen layout, not the stored marks. Interpolate fast movement so it does not leave unintended gaps or jump across the opposite side.
 - One captured primary pointer applies at a time. Additional fingers do not add marks or transform the camera. Ignore non-primary mouse buttons.
+- **Owner, 19 October 2026: the tool in hand on phones.** A finger covers what it touches, so on touch every tool works at its tip, a little above the finger (as Haircut's clipper), and is drawn there in its colour while it works; a gem or lens is aimed at the tip and goes on where the finger lifts. A mouse or pen works at the pointer.
 - Tool/colour changes occur between gestures. A tool or colour captured at pointer-down remains the gesture's tool/colour; an expiry or UI event does not change it mid-stroke.
 - Pointer-up commits; cancellation, lost capture, host pause or resize ends the gesture at the last valid applied sample. Preserve that valid work, discard unapplied input, release capture and require a fresh pointer-down after resuming.
 - UI taps, palette gestures and swatch previews never draw on the face. The tap that closes an overlay or activates Next cannot become a stroke on the surface beneath it.
