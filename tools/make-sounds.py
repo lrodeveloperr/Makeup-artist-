@@ -10,7 +10,8 @@ units are kept (about 2.2 s a tool), each evened to the same level. They are sav
 silence between them, so the game finds each unit in the decoded sound however much silence an MP3 decoder adds at
 the start. The game plays one unit per sweep of the hand (game/sound.js). Taps (gems, lenses) are trimmed one-shots.
 
-Writes assets/sounds/*.mp3 (mono, 56 kbit/s). Needs python3 with numpy, ffmpeg and network access to freesound.org.
+Writes assets/sounds/*.mp3 (mono, 56 kbit/s). Needs python3 with numpy, ffmpeg and network access to freesound.org
+(each recording is downloaded once, paced and patient with Freesound's rate limit, and kept in build/freesound).
 Usage: python3 tools/make-sounds.py
 """
 import os, re, subprocess, tempfile, time, urllib.error, urllib.request
@@ -44,13 +45,22 @@ SHOTS = {
 }
 
 
+PACE = 6  # seconds between any two requests to Freesound
+last_request = 0.0
+
+
 def fetch(url):
-    """Freesound turns away quick runs of requests (403, 429) for a while: wait and try again."""
-    for wait in (0, 10, 30, 60, 120, 240):
-        time.sleep(wait)
+    """A polite client: Freesound answers a quick run of requests with a bare 403 (or a 429) for a while, so every
+    request waits PACE seconds after the last one, and a refused one is tried again after longer and longer waits
+    (up to ten minutes) before giving up."""
+    global last_request
+    for wait in (0, 15, 45, 90, 180, 300, 600):
+        time.sleep(max(wait, PACE - (time.time() - last_request)))
+        last_request = time.time()
         try: return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=60).read()
         except urllib.error.HTTPError as e:
             if e.code not in (403, 429): raise
+            print(f'  {url}: {e.code}, waiting', flush=True)
     raise SystemExit(f'{url}: refused')
 
 

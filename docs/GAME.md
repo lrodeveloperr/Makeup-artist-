@@ -123,8 +123,10 @@ No CC0 recording of lipstick going onto lips was found; the creamy rub is the cl
   moves, makes no sound (before, that slip started a fresh unit that was cut off at once: a short, sharp burst). A
   stroke's end fades gently, never cut. The recordings' sharp transients (gloss's sticky pops, lip smacks, the
   highlighter's and mascara's sharpest ticks) are softened when the units are cut (`declick` in
-  `tools/make-sounds.py`), leaving only each tool's even texture: no sharp spot is left in lipstick, gloss or brush,
-  and mascara keeps only the soft tick of its bristles. `tests/sound.mjs` checks that nothing starts as the finger
+  `tools/make-sounds.py`), leaving only each tool's even texture: lipstick, brush, pencil and liner have no sharp
+  spot left, gloss and highlighter two faint ones (gloss had 44), and mascara keeps only the soft tick of its
+  bristles (37, from 124). Each recording is downloaded once from Freesound, paced and patient with its rate limit,
+  and kept in `build/freesound` for rebuilds. `tests/sound.mjs` checks that nothing starts as the finger
   lifts or for a barely-moving touch.
 - **Speed and stopping.** The hand's speed is measured on the face (decimetres a second, the same on every
   screen): faster plays the unit louder and brighter, as friction does. The sound fades when the hand stops or
