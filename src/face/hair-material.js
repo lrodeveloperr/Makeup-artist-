@@ -1,10 +1,9 @@
-// Hair shading (and the cloth of the garment). Surfaces carry a flow direction (the way the hair lies) and a
-// root-to-tip coordinate; the pattern (strands, waves, curls, braids, locs, cornrows or cloth) is procedural,
-// so no hair textures are shipped.
+// Hair shading. Surfaces carry a flow direction (the way the hair lies) and a root-to-tip coordinate; the pattern
+// (strands, waves, curls, braids, locs or cornrows) is procedural, so no hair textures are shipped.
 import * as GL from '../gl/mini.js';
 import { LIGHT_GLSL, lightUniforms } from './lighting.js';
 
-export const HAIR_MODE = { strands: 0, wavy: 1, curly: 2, braid: 3, loc: 4, cornrows: 5, cloth: 6 };
+export const HAIR_MODE = { strands: 0, wavy: 1, curly: 2, braid: 3, loc: 4, cornrows: 5 };
 
 const vertexShader = /* glsl */ `
 attribute vec3 flow;
@@ -110,12 +109,6 @@ void main() {
     base *= (0.4 + 0.7 * roundness) * (0.7 + 0.3 * weave);
     alpha *= ridge;
     bump = roundness * weave;
-  } else if (uMode == 6) {
-    // cloth: soft folds and a woven sheen
-    float fold = fbm(vec3(along * 0.7, dot(perp, B) * 5.0, uSeed));
-    bump = fold * 2.0;
-    base *= 0.85 + 0.25 * fold;
-    spec *= 0.25;
   }
   // soft, slightly broken silhouettes for curly hair
   if (uMode == 2) alpha *= smoothstep(0.05, 0.35, abs(dot(n, v)) + 0.25 * vnoise(p * 160.0));
@@ -128,22 +121,15 @@ void main() {
   for (int i = 0; i < 3; i++) {
     vec3 l = uLightDir[i];
     vec3 h = normalize(l + v);
-    float diff;
-    float s;
-    if (uMode == 6) {
-      diff = max(dot(nb, l), 0.0) * 0.85 + 0.15;
-      s = pow(1.0 - max(dot(nb, v), 0.0), 3.0) * 0.25 * max(dot(nb, l) + 0.3, 0.0);
-    } else {
-      // Kajiya-Kay: diffuse and two shifted highlights along the strand direction; the second
-      // highlight is tinted by the hair colour, the first is kept faint so dark hair stays dark
-      float TL = dot(T, l);
-      diff = mix(max(dot(nb, l), 0.0), sqrt(max(1.0 - TL * TL, 0.0)), 0.35) * 0.9 + 0.1;
-      vec3 T1 = normalize(T + nb * 0.1), T2 = normalize(T - nb * 0.1);
-      float th1 = dot(T1, h), th2 = dot(T2, h);
-      float lit = max(dot(nb, l) + 0.25, 0.0);
-      s = (pow(sqrt(max(1.0 - th1 * th1, 0.0)), 70.0) * 0.035) * lit;
-      col += uLightCol[i] * pow(sqrt(max(1.0 - th2 * th2, 0.0)), 18.0) * 0.35 * lit * spec * min(base * 3.0, vec3(1.0)) * shade;
-    }
+    // Kajiya-Kay: diffuse and two shifted highlights along the strand direction; the second
+    // highlight is tinted by the hair colour, the first is kept faint so dark hair stays dark
+    float TL = dot(T, l);
+    float diff = mix(max(dot(nb, l), 0.0), sqrt(max(1.0 - TL * TL, 0.0)), 0.35) * 0.9 + 0.1;
+    vec3 T1 = normalize(T + nb * 0.1), T2 = normalize(T - nb * 0.1);
+    float th1 = dot(T1, h), th2 = dot(T2, h);
+    float lit = max(dot(nb, l) + 0.25, 0.0);
+    float s = (pow(sqrt(max(1.0 - th1 * th1, 0.0)), 70.0) * 0.035) * lit;
+    col += uLightCol[i] * pow(sqrt(max(1.0 - th2 * th2, 0.0)), 18.0) * 0.35 * lit * spec * min(base * 3.0, vec3(1.0)) * shade;
     col += uLightCol[i] * (base * diff + s * spec) * shade;
   }
   gl_FragColor = vec4(clamp(col, 0.0, 8.0), clamp(alpha, 0.0, 1.0));

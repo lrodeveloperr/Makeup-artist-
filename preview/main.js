@@ -3,7 +3,7 @@
 //   ?seed=N        start the queue / sheet at N
 //   ?sheet&n=16    contact sheet of N faces (&cols, &w, &h, &label)
 //   ?style=a,b     force hairstyles (debugging), &texture=coily
-//   ?zoom=k&zx&zy, ?orbit=rad, ?nohair, ?nocape, ?scalp   debugging views
+//   ?zoom=k&zx&zy, ?orbit=rad, ?nohair, ?nogarment, ?scalp   debugging views
 import { FaceView } from '../src/face/face-view.js';
 import { generateFace } from '../src/face/generator.js';
 import { createQueueState, nextFace } from '../src/face/queue.js';
@@ -18,7 +18,7 @@ canvas.width = W; canvas.height = H;
 const view = await FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: sheet ? 1 : Math.min(devicePixelRatio, 2) });
 if (q.has('scalp')) { view.debugScalp = true; view.hair.group.visible = false; }
 if (q.has('nohair')) view.hair.group.visible = false;
-if (q.has('nocape')) view.hideCape = true;
+if (q.has('nogarment')) view.hideGarment = true;
 if (q.has('orbit')) view.orbit(+q.get('orbit'));
 if (q.has('zoom')) view.zoom(+q.get('zoom'), +(q.get('zy') || 0), +(q.get('zx') || 0));
 
@@ -33,7 +33,7 @@ function override(face, i) {
   }
   return face;
 }
-const describe = (f) => `#${f.seed} · ${f.origin.parts.map((p) => `${p.id}${p.weight < 1 ? ' ' + Math.round(p.weight * 100) + '%' : ''}`).join(' + ')} · ${f.presentation}, ${f.age} · ${f.hair.style} (${f.hair.texture}, ${f.hair.colour}) · ${f.eyes.iris} eyes${f.skin.freckles.density ? ' · freckles' : ''}`;
+const describe = (f) => `#${f.seed} · ${f.origin.parts.map((p) => `${p.id}${p.weight < 1 ? ' ' + Math.round(p.weight * 100) + '%' : ''}`).join(' + ')} · ${f.presentation}, ${f.age} · ${f.hair.style} (${f.hair.texture}, ${f.hair.colour}) · ${f.eyes.iris} eyes${f.skin.freckles.density ? ' · freckles' : ''} · ${f.outfit.names.join('/')} ${f.outfit.pattern} ${f.outfit.kind} (${f.outfit.neckline})`;
 
 if (sheet) {
   ui?.remove();

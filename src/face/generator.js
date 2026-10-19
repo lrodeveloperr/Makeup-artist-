@@ -3,10 +3,11 @@
 import { createRng } from './rng.js';
 import { PROFILES, BLENDS, ORIGIN_WEIGHTS, TRAITS, BASE_HEADS, STYLES, PROFILE_SHAPE_SCALE } from './profiles.js';
 import { HAIR_STYLES } from './hair-styles.js';
-import { HAIR_COLOURS } from './colors.js';
+import { BLONDE } from './colors.js';
+import { chooseOutfit } from './outfit.js';
 import { DIM_IMPACT } from './dim-impact.js';
 
-export const GENERATOR_VERSION = 4;
+export const GENERATOR_VERSION = 5;
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 const r3 = (x) => Math.round(x * 1000) / 1000 || 0; // never -0, so records survive a JSON round trip
 
@@ -79,8 +80,10 @@ function drawOrigin(rng) {
 }
 // one step lighter natural shade, for subtle highlights
 const LIGHTER = {
-  'jet-black': 'dark-brown', 'soft-black': 'dark-brown', 'dark-brown': 'medium-brown', 'medium-brown': 'light-brown',
-  'light-brown': 'dark-blonde', 'dark-blonde': 'golden-blonde', 'golden-blonde': 'light-blonde', 'light-blonde': 'light-blonde',
+  'jet-black': 'dark-brown', 'soft-black': 'dark-brown', 'darkest-brown': 'dark-brown', 'dark-brown': 'medium-brown',
+  chestnut: 'light-brown', 'medium-brown': 'light-brown', 'ash-brown': 'light-brown', 'light-brown': 'dark-blonde',
+  'dark-blonde': 'honey-blonde', 'ash-blonde': 'light-blonde', 'honey-blonde': 'golden-blonde', 'golden-blonde': 'light-blonde',
+  'light-blonde': 'platinum-blonde', 'platinum-blonde': 'platinum-blonde',
   auburn: 'copper', copper: 'strawberry-blonde', 'strawberry-blonde': 'golden-blonde',
 };
 // pick a parent profile in proportion to its weight
@@ -180,19 +183,22 @@ export function generateFace(seed) {
     thickness: r3(br.range(0.65, 1.0)),
     density: r3(br.range(0.75, 1.0)),
     length: r3(br.range(0.95, 1.08)),
-    colour: natural, shade: r3(['light-blonde', 'golden-blonde', 'strawberry-blonde'].includes(natural) ? br.range(0.55, 0.8) : br.range(0.8, 1.0)),
+    colour: natural, shade: r3(BLONDE.has(natural) && natural !== 'dark-blonde' ? br.range(0.55, 0.8) : br.range(0.8, 1.0)),
     seed: br.int(0, 99999),
   };
   const lashes = {
     length: r3(br.range(1.0, 1.35)), density: r3(br.range(0.95, 1.2)), curl: r3(br.range(0.45, 0.85)),
-    colour: ['light-blonde', 'golden-blonde', 'strawberry-blonde', 'dark-blonde'].includes(natural) ? 'light-brown' : 'jet-black',
+    colour: BLONDE.has(natural) ? 'light-brown' : 'jet-black',
     seed: br.int(0, 99999),
   };
+
+  // ---- outfit: a blouse or dress in colours that flatter the complexion ----
+  const outfit = chooseOutfit(root.fork(8), skin.tone, skin.undertone);
 
   return {
     version: GENERATOR_VERSION, seed,
     origin, presentation, age: Math.round(33 - 27 * shape.youth),
-    shape, skin, eyes, brows, lashes, hair,
+    shape, skin, eyes, brows, lashes, hair, outfit,
   };
 }
 
@@ -200,5 +206,5 @@ export function generateFace(seed) {
 export function signature(face) {
   const toneBin = Math.min(4, Math.floor(face.skin.tone * 5));
   const main = face.origin.parts.reduce((a, b) => (b.weight > a.weight ? b : a)).id;
-  return [main, face.presentation, face.hair.style, face.hair.colour, face.eyes.iris, toneBin, face.brows.shape, face.hair.part].join('|');
+  return [main, face.presentation, face.hair.style, face.hair.colour, face.eyes.iris, toneBin, face.brows.shape, face.hair.part, face.outfit.names[0]].join('|');
 }

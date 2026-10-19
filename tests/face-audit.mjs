@@ -10,6 +10,7 @@ import { PROFILES } from '../src/face/profiles.js';
 import { HAIR_STYLES } from '../src/face/hair-styles.js';
 import { HAIR_COLOURS, IRIS, UNDERTONES } from '../src/face/colors.js';
 import { lidMargins } from '../src/face/lashes.js';
+import { GARMENT_COLOURS, PALETTES, NECKLINES, PATTERNS, colourInfo, skinInfo, nearSkin, tooDark, complexion } from '../src/face/outfit.js';
 
 const N = +(process.argv[2] || 2000), GEO = +(process.argv[3] || 300);
 const failures = [];
@@ -19,7 +20,9 @@ const finite = (x) => typeof x === 'number' && Number.isFinite(x);
 
 // ---------------- profile validity, determinism and coverage ----------------
 const cov = { origin: new Map(), kind: new Map(), presentation: new Map(), style: new Map(), texture: new Map(), colour: new Map(),
-  iris: new Map(), undertone: new Map(), tone: new Map(), brows: new Map(), age: new Map() };
+  iris: new Map(), undertone: new Map(), tone: new Map(), brows: new Map(), age: new Map(),
+  outfitColour: new Map(), pattern: new Map(), neckline: new Map(), garment: new Map() };
+const byComplexion = {}; // complexion group -> Map(main outfit colour -> faces)
 let freckles = 0, moles = 0, highlights = 0;
 const sigs = new Set();
 for (let seed = 1; seed <= N; seed++) {
@@ -47,6 +50,14 @@ for (let seed = 1; seed <= N; seed++) {
   if (f.hair.colour !== f.hair.natural) fail(seed, 'dyed hair');
   if (f.presentation !== 'feminine') fail(seed, 'not feminine');
   if (f.hair.highlights) highlights++;
+  // outfit: catalogue values, colours from the complexion's palette, never dark on deeper skin, never close to the skin
+  const o = f.outfit, group = complexion(f.skin.tone, f.skin.undertone);
+  if (!NECKLINES[o.kind] || !NECKLINES[o.kind][o.neckline] || !PATTERNS[o.pattern]) fail(seed, `outfit ${o.kind}/${o.neckline}/${o.pattern}`);
+  if (!o.names.length || o.names.some((n, i) => GARMENT_COLOURS[n] !== o.colours[i] || !PALETTES[group].includes(n))) fail(seed, `outfit colours ${o.names}`);
+  if (o.names.some((n) => tooDark(colourInfo(n), f.skin.tone))) fail(seed, `dark outfit colour on deep skin (${o.names})`);
+  if (nearSkin(colourInfo(o.names[0]), skinInfo(f.skin.tone, f.skin.undertone))) fail(seed, `outfit ${o.names[0]} too close to the skin`);
+  count(cov.outfitColour, o.names[0]); count(cov.pattern, o.pattern); count(cov.neckline, o.neckline); count(cov.garment, o.kind);
+  count(byComplexion[group] || (byComplexion[group] = new Map()), o.names[0]);
   sigs.add(signature(f));
 }
 
@@ -128,12 +139,13 @@ ${failures.length ? '\n' + failures.map((f) => '- ' + f).join('\n') + '\n' : ''}
 
 - Every profile is deterministic (same seed → identical record), uses only catalogue values, keeps every shape value in [-1, 1], ages 18–30, and never places a beauty mark on the eyes or lips.
 - Every face is feminine, with natural (undyed) hair in a long style from the catalogue that suits her natural hair texture.
+- Every outfit uses catalogue values; its colours come from the palette for the face's complexion; deeper skin (tone ≥ 0.45) never wears very dark colours (black, navy, charcoal, burgundy, plum); and the main colour is never close to the skin's own colour.
 - The queue (\`src/face/queue.js\`) never shows the same complete face twice in a row, and its state survives a JSON save/load.
 - For the geometry sample: finite vertices, symmetric eyes, open eyelids (lash lines apart) and a usable mouth on every face.
 
 ## Variety
 
-- Distinct face signatures (origin · presentation · hairstyle · hair colour · iris · tone band · brow shape · parting) seen in ${N} faces: **${lowerBound}**. This is a lower bound on visibly different configurations; it ignores the ${SHAPE_DIMS.length} continuous shape dimensions, freckles, marks and lip/brow detail that also differ per face. It is not a "millions of faces" claim.
+- Distinct face signatures (origin · presentation · hairstyle · hair colour · iris · tone band · brow shape · parting · outfit colour) seen in ${N} faces: **${lowerBound}**. This is a lower bound on visibly different configurations; it ignores the ${SHAPE_DIMS.length} continuous shape dimensions, freckles, marks and lip/brow detail that also differ per face. It is not a "millions of faces" claim.
 - Queue neighbours: ${adjacentSame} identical, ${(100 * report.queue.adjacentSameStyle).toFixed(1)}% same hairstyle, ${(100 * report.queue.adjacentSameOrigin).toFixed(1)}% same main origin, ${(100 * report.queue.adjacentSameToneBin).toFixed(1)}% same skin-tone band; ${repeats4} signature repeats within four faces.
 - Freckles ${pct(freckles)}, beauty marks ${pct(moles)}, subtle natural highlights ${pct(highlights)}. Every face has long, visible hair (no short cuts, updos or head coverings), and no vitiligo, albinism or dyed colours (owner decisions).
 
@@ -158,6 +170,16 @@ ${table(cov.colour, 'Hair colour')}
 ${table(cov.iris, 'Iris')}
 
 ${table(cov.brows, 'Brow shape')}
+
+${table(cov.garment, 'Garment')}
+
+${table(cov.neckline, 'Neckline')}
+
+${table(cov.pattern, 'Outfit pattern')}
+
+| Complexion | faces | main outfit colours (most worn first) |
+| --- | ---: | --- |
+${Object.entries(byComplexion).sort().map(([g, m]) => `| ${g} | ${[...m.values()].reduce((a, b) => a + b, 0)} | ${[...m.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k).join(', ')} |`).join('\n')}
 
 ## Geometry (decimetres, ${GEO} faces)
 

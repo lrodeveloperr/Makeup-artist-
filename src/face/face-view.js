@@ -7,8 +7,8 @@ import { Eyes } from './eyes.js';
 import { Brows, BROW_SHAPES } from './brows.js';
 import { Lashes } from './lashes.js';
 import { SurfaceSampler } from './surface.js';
-import { Hair, buildCape, Builder as CapeBuilder } from './hair.js';
-import { createHairMaterial, HAIR_MODE } from './hair-material.js';
+import { Hair } from './hair.js';
+import { Garment } from './garment.js';
 import { skinAlbedo, lipColours, IRIS, HAIR_COLOURS } from './colors.js';
 import { createRng } from './rng.js';
 
@@ -43,7 +43,8 @@ export class FaceView {
     this.brows = new Brows();
     this.lashes = new Lashes(head);
     this.hair = new Hair();
-    this.scene.add(this.headMesh, this.eyes.group, this.brows.mesh, this.lashes.mesh, this.hair.group);
+    this.garment = new Garment();
+    this.scene.add(this.headMesh, this.eyes.group, this.brows.mesh, this.lashes.mesh, this.hair.group, this.garment.mesh);
     this.updateViewport();
   }
 
@@ -114,25 +115,8 @@ export class FaceView {
     const centres = { left: this.eyes.meshes[0].position, right: this.eyes.meshes[1].position };
     this.lashes.build(profile.lashes, hg, centres);
     this.hair.build(profile, hg);
-    this.buildCape(this.hair.frame);
-  }
-
-  // frame: the HeadFrame of the current face (shared with the hair)
-  buildCape(frame) {
-    if (!this.cape) {
-      this.cape = new GL.Mesh(new GL.BufferGeometry(), createHairMaterial());
-      const u = this.cape.material.uniforms;
-      u.uMode.value = HAIR_MODE.cloth;
-      this.cape.material.side = GL.FrontSide;
-      this.cape.renderOrder = 0;
-      for (const k of ['uRoot', 'uMid', 'uTip']) u[k].value.set(0.6, 0.31, 0.35); // dusty rose
-      this.scene.add(this.cape);
-    }
-    this.cape.visible = !this.hideCape; // debugging aid
-    const b = new CapeBuilder();
-    buildCape(frame, b);
-    this.cape.geometry.dispose();
-    this.cape.geometry = b.geometry();
+    this.garment.build(profile.outfit, this.hair.frame);
+    this.garment.mesh.visible = !this.hideGarment; // debugging aid
   }
 
   render() {

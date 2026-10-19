@@ -1,5 +1,5 @@
 {
- "generatorVersion": 4,
+ "generatorVersion": 5,
  "faces": 2000,
  "geometrySample": 300,
  "failures": [],
@@ -45,17 +45,23 @@
    "wavy": 452
   },
   "colour": {
-   "auburn": 13,
-   "copper": 9,
-   "dark-blonde": 33,
-   "dark-brown": 304,
-   "golden-blonde": 23,
-   "jet-black": 859,
-   "light-blonde": 13,
-   "light-brown": 44,
-   "medium-brown": 101,
-   "soft-black": 598,
-   "strawberry-blonde": 3
+   "ash-blonde": 17,
+   "ash-brown": 25,
+   "auburn": 17,
+   "chestnut": 45,
+   "copper": 8,
+   "dark-blonde": 28,
+   "dark-brown": 203,
+   "darkest-brown": 348,
+   "golden-blonde": 22,
+   "honey-blonde": 11,
+   "jet-black": 647,
+   "light-blonde": 10,
+   "light-brown": 27,
+   "medium-brown": 51,
+   "platinum-blonde": 5,
+   "soft-black": 534,
+   "strawberry-blonde": 2
   },
   "iris": {
    "blue": 78,
@@ -105,6 +111,69 @@
    "27": 174,
    "28": 190,
    "29": 82
+  },
+  "outfitColour": {
+   "berry": 9,
+   "black": 30,
+   "blush": 35,
+   "burgundy": 21,
+   "charcoal": 16,
+   "cobalt": 70,
+   "coral": 109,
+   "cornflower": 25,
+   "cream": 58,
+   "emerald": 101,
+   "fuchsia": 90,
+   "gold": 33,
+   "golden-yellow": 88,
+   "grey-blue": 8,
+   "hot-pink": 108,
+   "ivory": 73,
+   "lavender": 97,
+   "leaf-green": 52,
+   "lilac": 48,
+   "mint": 52,
+   "mustard": 68,
+   "navy": 41,
+   "olive": 24,
+   "orange": 24,
+   "peach": 27,
+   "plum": 29,
+   "powder-blue": 14,
+   "raspberry": 12,
+   "red": 105,
+   "rose": 8,
+   "royal-blue": 57,
+   "royal-purple": 19,
+   "rust": 53,
+   "sky-blue": 43,
+   "teal": 70,
+   "terracotta": 4,
+   "tomato": 43,
+   "turquoise": 93,
+   "violet": 40,
+   "warm-pink": 7,
+   "white": 96
+  },
+  "pattern": {
+   "dots": 260,
+   "floral": 361,
+   "geometric": 196,
+   "gingham": 144,
+   "solid": 526,
+   "stripes": 279,
+   "two-tone": 234
+  },
+  "neckline": {
+   "boat": 371,
+   "off-shoulder": 481,
+   "ruffle": 267,
+   "scoop": 459,
+   "straps": 422
+  },
+  "garment": {
+   "blouse": 979,
+   "dress": 1021
   }
  },
  "rates": {
@@ -112,12 +181,12 @@
   "moles": 0.4435,
   "highlights": 0.1145
  },
- "distinctSignatures": 1771,
+ "distinctSignatures": 1995,
  "queue": {
   "adjacentIdentical": 0,
-  "adjacentSameStyle": 0.0030015007503751876,
+  "adjacentSameStyle": 0.003501750875437719,
   "adjacentSameOrigin": 0,
-  "adjacentSameToneBin": 0.013506753376688344,
+  "adjacentSameToneBin": 0.011005502751375688,
   "repeatsWithinFour": 0
  },
  "geometry": {

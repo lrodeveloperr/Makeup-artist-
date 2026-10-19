@@ -39,20 +39,29 @@ export function lipColours(skin, tone, rng) {
   return { outer, inner };
 }
 
-// Natural hair colours (linear albedo of the hair's mid-length)
+// Natural hair colours (linear albedo of the hair's mid-length), darkest to lightest. Which ones a face can have,
+// and how often, is set per ancestry profile (`hair` in profiles.js).
 export const HAIR_COLOURS = {
   'jet-black': [0.012, 0.011, 0.012],
   'soft-black': [0.02, 0.017, 0.016],
+  'darkest-brown': [0.027, 0.019, 0.014],
   'dark-brown': [0.035, 0.024, 0.017],
+  chestnut: [0.06, 0.03, 0.016],
   'medium-brown': [0.07, 0.045, 0.028],
+  'ash-brown': [0.075, 0.058, 0.045],
   'light-brown': [0.14, 0.085, 0.045],
   'dark-blonde': [0.24, 0.14, 0.06],
+  'ash-blonde': [0.32, 0.25, 0.15],
+  'honey-blonde': [0.38, 0.22, 0.08],
   'golden-blonde': [0.42, 0.25, 0.09],
   'light-blonde': [0.62, 0.43, 0.2],
+  'platinum-blonde': [0.74, 0.62, 0.44],
   'strawberry-blonde': [0.4, 0.2, 0.1],
   auburn: [0.13, 0.04, 0.018],
   copper: [0.3, 0.09, 0.03],
 };
+// fair shades that take lighter brows and brown lashes
+export const BLONDE = new Set(['dark-blonde', 'ash-blonde', 'honey-blonde', 'golden-blonde', 'light-blonde', 'platinum-blonde', 'strawberry-blonde']);
 
 // Iris colours: four stops from the pupil edge to the limbal ring (sRGB hex, as in Haircut)
 export const IRIS = {

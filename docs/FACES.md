@@ -15,7 +15,8 @@ release (see "Known limits").
 | Presentation | One 3D head, seen by a fixed front camera ("2.5D"). There is no orbit control. A hidden debug orbit exists in the preview only. |
 | Base asset | MakeHuman's CC0 base mesh and shape targets, at a pinned commit. No paid scans, no non-commercial academic models (FLAME, BFM, SMPL-X), no MetaHuman, no AI-generated or photographed faces. |
 | Customers | Every face is a young woman with a clearly feminine face and head shape. No vitiligo, albinism or dyed hair. |
-| Hair | Always long and visible (players prefer long hair): no short cuts, updos or head coverings. |
+| Hair | Always long and visible (players prefer long hair): no short cuts, updos or head coverings. Natural colours from a per-ancestry colour table. |
+| Outfit | Every customer wears a blouse or a dress, flat or patterned, in colours that flatter her complexion: never close to her skin colour, and never black or very dark shades on deeper skin. The outfit is part of the look the player works with. |
 | Diversity | All ancestries. Ancestry profiles mix MakeHuman's sculpted female base heads and add tendencies over individual feature controls, never "race buttons". Face shape, skin and natural hair texture and colour stay coherent with the ancestry; individual variation keeps faces from one profile different. |
 | Age | Young adults only (18–30). |
 | Textures | Procedural shaders, with no shipped photo textures. |
@@ -28,7 +29,7 @@ MakeHuman (CC0, pinned commit)      tools/makehuman/fetch.mjs        sparse git 
                                                                      │
 src/face/generator.js  seed ──▶ face record (plain JSON)            │
 src/face/queue.js      variety director over seeds                  ▼
-src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, brows, lashes, hair, wrap ─▶ src/gl/mini.js (WebGL2)
+src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, brows, lashes, hair, outfit ─▶ src/gl/mini.js (WebGL2)
 ```
 
 ### Head asset (`assets/head.bin.gz`)
@@ -68,7 +69,8 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
 | `skin-material.js` | Wrapped diffuse with a red shift (a subsurface stand-in) and two specular lobes. Per pixel: natural lips, flush, under-eye tone, freckles, beauty marks, brow fill, a lash line, a painted hairline (matte, so it never shines through the hair), pores, and the `uPaint` hook for makeup |
 | `eyes.js` | Eyeballs placed from MakeHuman's eye helpers and aimed at the camera. Procedural iris, set per eye (ready for contact lenses) |
 | `brows.js`, `lashes.js`, `strands.js` | Short, groomed brow hairs rooted on the skin over a soft brow fill, and upper and lower lashes rooted on MakeHuman's lash helper lines. Upper lashes fan out and gather into small clumps; lower lashes are fewer and lighter. Each lash keeps its own parameters, ready for mascara |
-| `hair.js`, `hair-material.js` | Procedural long hairstyles built from the morphed head (see below), plus the off-shoulder wrap |
+| `hair.js`, `hair-material.js` | Procedural long hairstyles built from the morphed head (see below) |
+| `garment.js` | The blouse or dress: one geometry per neckline (with straps or a frill where needed) and a shader for the patterns |
 | `lighting.js` | One fixed "makeup station" light rig shared by every material |
 
 ### Generator (`src/face/generator.js`, `profiles.js`, `hair-styles.js`, `colors.js`)
@@ -108,9 +110,29 @@ seed, so a save can store the record or just `{version, seed}`.
 - **Eyes, brows, lashes.** Iris colour comes from the profile. Brows use five shapes with varied thickness, density
   and colour (derived from natural hair colour). Lash length, density and curl vary.
 - **Hair.**
-  - The profile sets natural texture (straight, wavy, curly, coily) and natural colour.
+  - The profile sets natural texture (straight, wavy, curly, coily) and natural colour. Colour is a table of
+    17 natural shades (jet black to platinum blonde, plus auburn, copper and strawberry blonde) with a weight per
+    profile, for example: West African mostly jet black, soft black and darkest brown; Mediterranean mostly dark
+    brown, chestnut and medium brown with some light brown, blonde and auburn; Northern European spread across
+    browns, ash, honey, golden and light blonde, with some platinum, strawberry blonde, copper and auburn.
   - The style is drawn from the profile's long styles (`STYLES`), keeping only those that suit that texture.
   - No dyed colours. About 10% of faces have subtle highlights one natural shade lighter.
+- **Outfit** (`outfit.js`). A blouse or a dress, chosen by complexion (skin depth and undertone), not by ancestry
+  label:
+  - **Palettes.** Fair skin with a cool undertone gets clear cool colours (navy, berry, cornflower, emerald,
+    lavender, black, white…); fair skin with a warm undertone gets warm ones (coral, warm pink, teal, leaf green,
+    rust, golden yellow…); medium skin gets rich colours (cobalt, terracotta, mustard, teal, fuchsia, burgundy…);
+    deep skin gets saturated, bright and light colours (white, gold, cobalt, fuchsia, emerald, sky blue,
+    lavender…). A few colours that make an undertone look sallow are dropped (olive and camel on olive skin,
+    orange on pink skin).
+  - **Rules.** Very dark colours (black, navy, charcoal, burgundy, plum) are never worn on deeper skin. No colour
+    within a perceptual distance of 30 (CIELAB) of the skin is used, so the outfit never melts into the skin.
+    Loud colours (lime, lemon) are accents only.
+  - **Patterns.** Solid, two-tone (a contrasting neckline band and straps), stripes, dots, florals, gingham or a
+    bold geometric print. The second colour is a neutral, a neighbouring hue or (for small motifs) the
+    complementary hue, with enough lightness difference to read; two equally vivid mid-tones are never paired.
+  - **Necklines.** Blouses: boat, scoop, ruffle or off-the-shoulder. Dresses: straps, off-the-shoulder, scoop or
+    boat. Every neckline leaves the neck bare and follows where each face's body mesh ends.
 - **Presentation.** Every face is feminine. Makeup tools work the same on every face.
 - **Labels.** Profile ids are internal. Players never see them, and they never decide tools, colours, difficulty,
   scores or a "suggested look". The dev preview shows them for review only.
@@ -118,7 +140,7 @@ seed, so a save can store the record or just `{version, seed}`.
 ### Variety director (`src/face/queue.js`)
 
 This picks each next face from up to 8 deterministic candidates. It scores each candidate against the last four
-faces on origin, hairstyle, parting, skin-tone band, hair colour, iris and brow shape. Its state is
+faces on origin, hairstyle, parting, skin-tone band, hair colour, outfit colour, iris and brow shape. Its state is
 `{version, cursor, recent}` and survives a JSON save. It never stalls: after 8 candidates it takes the most
 different one.
 
@@ -148,8 +170,9 @@ Building blocks:
 - **Tubes** for box braids, locs and cornrow braids; a thin **cap** layer for the cornrows on the scalp.
 - **Two-pass drawing.** Hair is drawn once for its solid parts (writing depth) and again for its soft fringes
   (blended, not writing depth), so nearly transparent edges never punch see-through holes in the hair behind.
-- **Wrap.** An off-the-shoulder garment at the bottom of the frame leaves the whole neck and the line into the
-  shoulders bare. Its neckline follows where each face's body mesh ends.
+- The outfit (`garment.js`) sits at the bottom of the frame. Below the end of the body mesh, the shoulders are
+  continued outwards so the garment fills the frame. Patterns are laid out as seen from the front and
+  anti-aliased, so they stay crisp at phone size.
 
 ## Commands
 
@@ -170,9 +193,9 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 
 ## Measured (local, headless Chromium with SwiftShader software WebGL)
 
-- Building a face (morph, subdivision, brows, lashes, hair, wrap) takes about 60 ms on the CPU (50–96 ms over ten
-  faces). This happens once per Next, not per frame.
-- **Download:** 338,546 bytes in total: `head.bin.gz` 243,991, `main.js` 93,580 (minified, renderer included),
+- Building a face (morph, subdivision, brows, lashes, hair, outfit) takes about 60 ms on the CPU (50–96 ms over
+  ten faces). This happens once per Next, not per frame.
+- **Download:** 349,946 bytes in total: `head.bin.gz` 243,991, `main.js` 104,980 (minified, renderer included),
   `index.html` 975. That is down from about 1.75 MB, and every file is under the platform's recommended 512 KiB.
   The budget test fails above 400 KB for the face system. The whole-game target is 1 MB, against the contract's
   5 MB studio limit and the platform's 15 MiB recommendation. For comparison, Haircut's YouTube build is 1.09 MB.
@@ -201,7 +224,9 @@ Open `http://localhost:8130/` after `node tools/serve.mjs build/preview` and use
 - Hair is procedural and reads well at phone size, but strand detail, curl clumping and the hanging lengths (which
   are a few layered sheets) need an art pass, or replacement with authored hair cards using the same building
   blocks.
-- The off-shoulder wrap is a simple garment; it needs an art pass.
+- Outfits are flat-shaded fabric with procedural patterns; folds, sleeves and fabric texture need an art pass.
+- The makeup palettes are not built yet. The outfit gives the player a colour cue to work with; it must never become
+  a required target or a score (contract: freestyle, no scoring rubric or required target).
 - No blink or idle animation yet. A procedural upper-lid blink around the eye centre is the planned approach, and
   it must freeze during a stroke (contract §2).
 - Profile shape tendencies are directional and qualitative, not fitted measurements. Have people from the

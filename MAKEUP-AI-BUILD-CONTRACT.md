@@ -35,6 +35,8 @@ The owner asked for minimalism with substantial creative agency, using Haircut a
 | Face age | Young adults only (18–30) | O, 18 Oct 2026 | Generator bound; audited |
 | Customers | Every face is a young woman with a clearly feminine face and head shape; no vitiligo, albinism or dyed hair (subtle natural highlights only) | O, 18 Oct 2026 (replaces the earlier mixed-presentation default) | Generator; the audit fails on anything else |
 | Hair length | Always long and visible: long straight, layered, wavy, silk press, long curls, box braids, locs or cornrow braids, chosen to suit the natural texture. No short cuts, updos or head coverings, because players prefer long hair | O, 18 Oct 2026 | `src/face/hair-styles.js`; audited |
+| Hair colour | Natural shades only, drawn from a per-ancestry colour table (17 shades, jet black to platinum blonde, plus auburn, copper, strawberry blonde) | O, 19 Oct 2026 | `hair` weights in `src/face/profiles.js`; audited |
+| Outfits | Each customer wears a blouse or a dress, flat or patterned (two-tone, stripes, dots, florals, gingham, geometric), in colours that flatter her complexion and go together; never close to her skin colour, and never black or very dark shades on deeper skin. The outfit colours inform the player's makeup choices but are never a required target | O, 19 Oct 2026 | `src/face/outfit.js`; audited in [docs/FACE-AUDIT.md](docs/FACE-AUDIT.md) |
 
 One daily slot means one offered tool–colour pair, not one offer for every tool. The tool itself is never the reward. The earlier daily-video-count ambiguity is resolved: **one video**, with no 1/2 credit system. Haircut's Android policy is not authoritative for this makeup game.
 
@@ -420,7 +422,7 @@ Build the core using the selected reusable foundation, then native-input validat
 The following are remaining engineering/content/release data, not unresolved core product choices:
 
 1. Enumerated face-generator bounds, valid configurations, tool application constants and base/daily colour catalogues. Make them finite, testable and consistent with this contract; no new player settings.
-2. Final art pass for procedural hair and the off-shoulder wrap garment. The base face assets (CC0), customer presentation and long-hair direction are chosen (decision record above).
+2. Final art pass for procedural hair and the outfits. The base face assets (CC0), customer presentation, long-hair direction and outfit colour rules are chosen (decision record above).
 3. Final public title, declared locales and portal listing, after the implemented behavior can support the claims.
 4. Verified publisher monetization access, reporting fields, inventory test route and commercial terms.
 5. Named physical devices, exact runtime representation and release performance/evidence results.

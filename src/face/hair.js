@@ -445,33 +445,3 @@ export class Hair {
 }
 
 const mixC = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
-
-// ---------------- garment ----------------
-// A soft off-the-shoulder wrap at the bottom of the frame: it leaves the whole neck and the line into the
-// shoulders bare and hides where the body mesh ends, which moves with each face's neck shape. Below the
-// mesh the shoulders are continued outwards so the wrap fills the bottom of the frame.
-export function buildCape(frame, b) {
-  const NT = 96, NY = 24, rows = [];
-  for (let i = 0; i <= NT; i++) {
-    const theta = (i / NT) * 2 * Math.PI;
-    const c = Math.cos(theta), s2 = Math.sin(theta) ** 2;
-    const end = frame.lowest(theta);
-    // neckline: straight across the chest, rising a little over the shoulders, always above the mesh end
-    const yTop = Math.max(c > 0 ? mix(-1.66, -1.63, s2) : -1.63, end + 0.06);
-    const row = [];
-    for (let j = 0; j <= NY; j++) {
-      const t = j / NY;
-      const y = yTop - t * t * 0.9 - t * 0.1;
-      const yb = Math.max(y, end);
-      const roll = j === 0 ? 0.02 : j === 1 ? 0.04 : 0.03; // a rolled top edge
-      // enclose the body a little below this height too, so the top edge sits in front of the chest's curve
-      const body = Math.max(frame.radius(theta, yb), frame.radius(theta, Math.max(yb - 0.06, end)), frame.radius(theta, end));
-      let p = frame.point(theta, yb, body + roll);
-      const below = Math.max(end - y, 0);
-      if (below > 0) p = [p[0] * Math.min(1 + 1.6 * below, 1.5), y, p[2] + Math.max(c, 0) * 0.35 * below];
-      row.push(b.vert(p, norm([Math.sin(theta), 0.35, c]), [Math.sin(theta) * 0.2, -1, 0], [0.5, 1, 0, j === 0 ? 0.85 : 1]));
-    }
-    rows.push(row);
-  }
-  for (let i = 0; i < NT; i++) for (let j = 0; j < NY; j++) b.quad(rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j]);
-}
