@@ -340,12 +340,34 @@ async function main() {
   // the salon mirror hangs behind her head, sized from her: its box in the face's space (decimetres, a little
   // behind her), projected to the screen. It keeps its size beside her on every screen: on a phone the camera is
   // closer, so the arch shows above her head and the sides run off the edges, as in a close-up photo.
-  const mirror = document.querySelector('#backdrop .mirror');
+  const mirror = document.querySelector('#backdrop .mirror'), MW = 2.6, MH = 4.2; // its size in decimetres
+  // The bulbs: evenly spaced along the frame, up the left side, round the arch and down the right side (the arch
+  // is CSS's border-radius 50% / 30%: half an ellipse across the whole width, 30 % of the height tall). Each is
+  // placed as a fraction of the mirror, so the lights are the same, in the same places, on every screen; where a
+  // screen crops the mirror, the arch above her head still carries its run of bulbs.
+  {
+    const on = 0.07, a = MW / 2 - on, b = 0.3 * MH - on, cy = 0.3 * MH, foot = 0.94 * MH, path = [];
+    for (let k = 0; k <= 60; k++) path.push([on, foot + (cy - foot) * (k / 60)]);
+    for (let k = 1; k <= 240; k++) { const t = Math.PI * (1 - k / 240); path.push([MW / 2 + a * Math.cos(t), cy - b * Math.sin(t)]); }
+    for (let k = 1; k <= 60; k++) path.push([MW - on, cy + (foot - cy) * (k / 60)]);
+    const at = [0];
+    for (let k = 1; k < path.length; k++) at.push(at[k - 1] + Math.hypot(path[k][0] - path[k - 1][0], path[k][1] - path[k - 1][1]));
+    const length = at.at(-1), count = Math.round(length / 0.5), bulbs = [];
+    for (let n = 0, k = 1; n < count; n++) {
+      const s = (length * (n + 0.5)) / count;
+      while (at[k] < s) k++;
+      const f = (s - at[k - 1]) / (at[k] - at[k - 1]), x = path[k - 1][0] + (path[k][0] - path[k - 1][0]) * f, y = path[k - 1][1] + (path[k][1] - path[k - 1][1]) * f;
+      const i = document.createElement('i');
+      i.style.cssText = `left:${((x / MW) * 100).toFixed(3)}%;top:${((y / MH) * 100).toFixed(3)}%`;
+      bulbs.push(i);
+    }
+    mirror.querySelector('.bulbs').replaceChildren(...bulbs);
+  }
   const placeMirror = () => {
     const P = view.makeup.picker, c = canvas.getBoundingClientRect(), z = -0.8;
-    const [x0, y0] = P.project([-1.3, 1.6, z]), [x1, y1] = P.project([1.3, -2.6, z]);
+    const [x0, y0] = P.project([-MW / 2, 1.6, z]), [x1, y1] = P.project([MW / 2, 1.6 - MH, z]);
     Object.assign(mirror.style, { left: `${c.left + x0}px`, top: `${c.top + y0}px`, width: `${x1 - x0}px`, height: `${y1 - y0}px` });
-    mirror.style.setProperty('--u', `${(x1 - x0) / 2.6}px`);
+    mirror.style.setProperty('--u', `${(x1 - x0) / MW}px`);
     mirror.classList.add('placed');
   };
 

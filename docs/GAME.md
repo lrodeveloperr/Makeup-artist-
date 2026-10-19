@@ -30,7 +30,9 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 The customer sits behind a vanity counter that carries the controls, in front of a blush salon wall with a lit
 vanity mirror (the 3D canvas is transparent). The mirror is hung just behind her and sized from her head, so it
 keeps the same size beside her and the same shape on every screen. On a phone the camera is closer, so the arch
-and its bulbs show above her head and the sides run off the edges. Create and review keep the same counter
+and its bulbs show above her head and the sides run off the edges. The bulbs are evenly spaced along the
+whole frame (up the sides and round the arch) and placed as fractions of the mirror, so every screen shows the
+same lights in the same places. Create and review keep the same counter
 height, so the face never moves.
 
 Nothing on screen is a word:
