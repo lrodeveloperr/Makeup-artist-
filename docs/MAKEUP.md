@@ -93,7 +93,7 @@ complexion and matches every natural hair and eye colour in the game (`src/makeu
 
 Every other coherent colour each tool can carry (coral, plum and mauve, a white pencil, honey lenses, coloured and
 glitter liners, pink to opal highlighters, stones, drops, hearts, stars, flowers and pearls, and the shimmers,
-glosses, metallics, brights and fantasy shades) is one of the 233 colours of the day (`DAILY`). One is
+glosses, metallics, brights and fantasy shades) is one of the 365 colours of the day (`DAILY`). One is
 offered each day and kept for good once earned ([GAME.md](GAME.md)), and a tool lists the player's earned ones
 first. The swatches show gloss and shimmer; a gem's swatch is the gem.
 The selected colour of each tool is remembered while switching tools. A new save starts with the soft brush in

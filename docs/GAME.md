@@ -176,16 +176,22 @@ No CC0 recording of lipstick going onto lips was found; the creamy rub is the cl
 This follows the pattern of Haircut's daily pick (`src/game/daily.js`):
 - **Offer:** one special colour for one tool (or the lenses) per local calendar day. It's the same for every
   player who doesn't own it yet, and never one the player owns.
-- **Catalogue:** 233 colours of the day (`DAILY` in `src/makeup/palette.js`): every coherent colour each tool
-  can carry beyond the basic base (owner decisions, 19 October 2026). That's over seven months of daily offers.
-  - 49 brush: pinks, reds, corals, purples, blues, greens, neutrals, and 16 shimmers and metallics
-  - 12 highlighter: rose gold, pink, peach, champagne pink, topaz, copper, lilac, amethyst, opal, icy blue, aqua, mint
-  - 30 pencil
-  - 25 liquid liner: brights and darks, 4 metallics and 5 glitters
+- **Catalogue:** 365 colours of the day (`DAILY` in `src/makeup/palette.js`), a full year of daily offers: every
+  coherent colour each tool can carry beyond the basic base (owner decisions, 19 October 2026). Mascara, lenses and
+  highlighter are near their natural limits (colour on thin lashes blurs; iris colours and highlighters are narrow
+  families); the year's depth is in lips, gems, eyeshadow and liners, where real products span almost every colour
+  and finish. Beyond about this many, new colours would be near-duplicates of old ones, not worth a video.
+  - 84 brush: pinks, reds, corals, purples, blues, greens, earthy and cool mattes, neons, and 31 shimmers, metallics,
+    pearls and glitters
+  - 16 highlighter: rose gold, rose, pink, peach, coral, champagne pink, sunbeam, topaz, copper, deep bronze, lilac,
+    amethyst, opal, icy blue, aqua, mint
+  - 36 pencil
+  - 38 liquid liner: brights and darks, 6 metallics and 9 glitters
   - 22 mascara
-  - 44 lip: brights, mauves and fantasy shades, 9 glosses, and metallics and glitters
-  - 33 face gems: coloured and iridescent stones, drops, hearts, stars, flowers and pearls
-  - 18 lens
+  - 79 lip: nudes, deeps, brights and fantasy shades, metallics, 18 tinted glosses and glitter top coats
+  - 68 face gems: coloured and iridescent stones and metal studs, drops, hearts, stars, flowers and pearls in glass,
+    iridescent glass, pearl and metal
+  - 22 lens
 
   `tests/makeup.mjs` checks that every pair of colours within a tool, base included, is tellable apart (CIELAB
   ΔE ≥ 8 for the same finish, ≥ 4 across matte, gloss and shimmer).
