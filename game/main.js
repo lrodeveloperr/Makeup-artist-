@@ -7,7 +7,10 @@ import { attachInput } from '../src/makeup/input.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
 import { chime, hush } from './sound.js';
-import { toolArt } from './art.js';
+import { tryOn, productShot, skinSwatch, skinHex } from './reward.js';
+
+// how the colour of the day is pictured (three options for the owner; see reward.js)
+const REWARD = { tryon: 1, product: 1, swatch: 1 }[new URLSearchParams(location.search).get('reward')] ? new URLSearchParams(location.search).get('reward') : 'tryon';
 import { createHost } from '../src/game/youtube.js';
 import * as G from '../src/game/game.js';
 import { Session } from '../src/game/session.js';
@@ -146,27 +149,43 @@ async function main() {
     swatches.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
-  // ---- the next customer's picture (a small second view that only draws faces) ----
-  const thumbs = new Map();
-  let thumbView = null;
+  // ---- a second, small view: the next customer's picture, and the customer trying on the colour of the day ----
+  let side = null, showing = ''; // what the side canvas shows
+  const sideView = () => {
+    if (!side) {
+      side = new FaceView({ canvas: document.createElement('canvas'), width: 240, height: 240, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true, paintSize: 512 });
+      side.init(view.head);
+    }
+    return side;
+  };
+  const thumbs = new Map(); // seed -> a copy of the render (a few at a time)
   const thumb = (face) => {
     if (thumbs.has(face.seed)) return thumbs.get(face.seed);
-    if (!thumbView) {
-      thumbView = new FaceView({ canvas: document.createElement('canvas'), width: 168, height: 168, transparent: true, makeup: false });
-      thumbView.init(view.head);
-      thumbView.zoom(1.75, 0.08); // the head
-    }
-    thumbView.setFace(face);
-    thumbView.render();
-    const url = thumbView.renderer.domElement.toDataURL('image/png');
-    thumbs.set(face.seed, url);
+    const v = sideView(), src = v.renderer.domElement;
+    v.setFace(face);
+    v.zoom(1.75, 0.08); // the head
+    v.render();
+    showing = '';
+    const copy = document.createElement('canvas');
+    copy.width = src.width; copy.height = src.height;
+    copy.getContext('2d').drawImage(src, 0, 0);
+    thumbs.set(face.seed, copy);
     if (thumbs.size > 4) thumbs.delete(thumbs.keys().next().value);
-    return url;
+    return copy;
   };
-  // drawn while the player works on the current face, so review shows it at once
-  const prepareThumb = () => {
-    const face = session.state.next;
-    (globalThis.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => { if (session.state.next === face) thumb(face); });
+  // the side canvas itself, showing the customer wearing the colour
+  const tryOnCanvas = (face, colour) => {
+    const key = `${face.seed}:${colour}`;
+    if (showing !== key) { tryOn(sideView(), face, colour); showing = key; }
+    return sideView().renderer.domElement;
+  };
+  // drawn in idle time, so review and the daily panel show their pictures at once
+  const prepare = () => {
+    const s = session.state, face = s.face, next = s.next, colour = s.pick?.colour;
+    (globalThis.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => {
+      if (session.state.next === next) thumb(next);
+      if (REWARD === 'tryon' && colour && session.state.face === face && !session.state.owned.includes(colour) && !panelOpen) tryOnCanvas(face, colour);
+    });
   };
 
   // ---- create, the finish, and review ----
@@ -206,7 +225,7 @@ async function main() {
     setTimeout(() => { finishing = false; $('done').classList.remove('pop'); session.finish(); }, 380);
   };
   // a request marks the session busy straight away, so the buttons are disabled while it runs
-  $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); prepareThumb(); };
+  $('next').onclick = async () => { input.interrupt(); const p = session.next(); render(); await p; sync(); render(); prepare(); };
   $('redo').onclick = async () => {
     const p = session.reward('replay');
     render();
@@ -235,7 +254,10 @@ async function main() {
     const t = timeLeft(), art = card.querySelector('.art'), get = card.querySelector('.get'), time = card.querySelector('.time');
     if (art.dataset.colour !== `${c?.id}:${owned}`) {
       art.dataset.colour = `${c?.id}:${owned}`;
-      art.innerHTML = c ? `${toolArt(c)}${owned ? `<span class="tick">${ICON.check}</span>` : ''}` : `<span class="tick">${ICON.check}</span>`;
+      art.replaceChildren();
+      if (c && REWARD === 'tryon') art.appendChild(tryOnCanvas(s.face, c.id));
+      else if (c) art.innerHTML = REWARD === 'product' ? productShot(c) : skinSwatch(c, skinHex(s.face));
+      if (owned || !c) art.insertAdjacentHTML('beforeend', `<span class="tick">${ICON.check}</span>`);
     }
     art.setAttribute('aria-label', c ? `${TOOL_NAME[c.target]} in ${c.name}` : 'You have every colour');
     get.hidden = !c;
@@ -276,7 +298,7 @@ async function main() {
     document.body.classList.toggle('review', review);
     $('create').hidden = review;
     $('review').hidden = !review;
-    if (review) { const img = $('next').querySelector('img'), url = thumb(s.next); if (img.getAttribute('src') !== url) img.src = url; }
+    if (review) { const slot = $('next').querySelector('.pic'), pic = thumb(s.next); if (slot.firstChild !== pic) slot.replaceChildren(pic); }
     $('redo').hidden = !host.rewardedSupported;
     for (const b of [$('next'), $('redo'), $('done')]) b.disabled = session.busy;
     for (const b of toolbar.children) b.setAttribute('aria-pressed', String(b.dataset.tool === s.selection.tool));
@@ -314,7 +336,7 @@ async function main() {
   render();
   view.render();
   $('cover').hidden = true;
-  prepareThumb();
+  prepare();
   await host.gameReady();
   Object.assign(globalThis, { game: { session, view, host, input } }); // for tests and debugging
 }

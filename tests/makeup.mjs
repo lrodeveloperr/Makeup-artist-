@@ -12,7 +12,7 @@ import { Lashes } from '../src/face/lashes.js';
 import { IRIS, hexToLinear } from '../src/face/colors.js';
 import { CAMERA } from '../src/face/face-view.js';
 import { TOOLS, SURFACE_TOOLS, falloff, dabRate, DabWalker } from '../src/makeup/tools.js';
-import { PALETTE, TOOL_IDS, colourById, DEFAULT_SELECTION } from '../src/makeup/palette.js';
+import { PALETTE, DAILY, TOOL_IDS, colourById, DEFAULT_SELECTION } from '../src/makeup/palette.js';
 import { createMakeup, addStroke, setLens, isChanged, validStroke, validMakeup, encodeMakeup, decodeMakeup, pointCount, LIMITS, Q, toQ } from '../src/makeup/makeup.js';
 import { StrokePainter } from '../src/makeup/paint.js';
 import { Picker } from '../src/makeup/picker.js';
@@ -46,6 +46,35 @@ test('palette: stable unique ids, valid colours, every tool and the lenses have 
   }
   assert.deepEqual(TOOL_IDS, ['brush', 'pencil', 'mascara', 'lip']);
   for (const [tool, id] of Object.entries(DEFAULT_SELECTION.colour)) assert.equal(colourById(id).target, tool);
+});
+
+// sRGB hex to CIELAB, for telling colours apart
+function lab(hex) {
+  const v = [1, 3, 5].map((i) => { const c = parseInt(hex.slice(i, i + 2), 16) / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  const [x, y, z] = [(0.4124 * v[0] + 0.3576 * v[1] + 0.1805 * v[2]) / 0.95047, 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2], (0.0193 * v[0] + 0.1192 * v[1] + 0.9505 * v[2]) / 1.08883];
+  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+}
+const deltaE = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
+
+test('colours of the day: every colour of a tool is tellable apart from every other, base included', () => {
+  const finish = (c) => `${c.gloss ? 'g' : ''}${c.shimmer ? 's' : ''}`;
+  const colour = (c) => (c.iris ? c.iris[1] : c.hex);
+  const bad = [];
+  let total = 0;
+  for (const tool of Object.keys(PALETTE)) {
+    const all = [...PALETTE[tool], ...DAILY[tool]];
+    total += DAILY[tool].length;
+    for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
+      const a = all[i], b = all[j], d = deltaE(colour(a), colour(b));
+      // the same finish needs a clear colour difference; a different finish (matte vs gloss vs shimmer) a smaller one
+      const need = finish(a) === finish(b) ? 8 : 4;
+      if (d < need) bad.push(`${a.id} vs ${b.id}: ${d.toFixed(1)} < ${need}`);
+    }
+    for (const c of DAILY[tool]) assert.ok(colourById(c.id).daily && colourById(c.id).target === tool, c.id);
+  }
+  assert.deepEqual(bad, []);
+  console.log(`  ${total} colours of the day`);
 });
 
 test('tools: fixed constants, no size or strength settings', () => {

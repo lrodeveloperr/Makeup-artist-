@@ -80,7 +80,8 @@
   #redo .vbadge svg { width: 19px !important; height: 19px !important; }
   @keyframes breathe { 50% { transform: scale(1.06); } }
   #next { display: flex; align-items: center; gap: 10px; height: 96px; padding: 0 10px 0 6px; border-radius: 26px; }
-  #next img { width: 84px; height: 84px; border-radius: 20px; border: 2.5px solid var(--ink); background: radial-gradient(circle at 50% 35%, #fff6e6, #ecd2c4); object-fit: cover; }
+  #next .pic { display: block; width: 84px; height: 84px; border-radius: 20px; border: 2.5px solid var(--ink); background: radial-gradient(circle at 50% 35%, #fff6e6, #ecd2c4); overflow: hidden; }
+  #next .pic canvas { display: block; width: 100%; height: 100%; }
   #next .go { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); border: var(--outline); box-shadow: 0 3px 0 var(--ink); }
   #next .go svg { width: 30px; height: 30px; }
   /* the finish: sparkles burst from the face */
@@ -99,15 +100,15 @@
 
   /* ---- the colour of the day: the tool in the new colour, one button, the time left ---- */
   #panel { position: fixed; inset: 0; background: #2a1d1566; display: grid; place-items: center; padding: 16px; }
-  #panel .card { position: relative; width: min(270px, 100%); box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 28px;
+  #panel .card { position: relative; width: min(290px, 100%); box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 28px;
     box-shadow: 0 6px 0 var(--ink); padding: 22px 20px 18px; text-align: center; }
   #panel .x { position: absolute; right: -14px; top: -14px; width: 48px; height: 48px; }
   #panel .x svg { width: 22px; height: 22px; }
-  #panel .art { position: relative; width: 180px; height: 180px; margin: 0 auto 16px; border-radius: 50%; background: radial-gradient(circle, #fff 0, #fff 45%, #fde3e3 70%, #fde3e300 71%); }
-  #panel .art svg { width: 100%; height: 100%; animation: float 2.4s ease-in-out infinite; }
-  @keyframes float { 50% { transform: translateY(-5px) rotate(-2deg); } }
-  #panel .art .tick { position: absolute; right: 6px; bottom: 6px; width: 48px; height: 48px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
-  #panel .art .tick svg { width: 26px; height: 26px; animation: none; }
+  #panel .art { position: relative; width: 224px; height: 224px; margin: 0 auto 16px; border-radius: 30px; border: var(--outline); box-shadow: 0 4px 0 var(--ink); overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 20%, #fbe4de 0, #e9bdb9 100%); }
+  #panel .art > svg, #panel .art > canvas { display: block; width: 100%; height: 100%; }
+  #panel .art .tick { position: absolute; right: 8px; bottom: 8px; width: 48px; height: 48px; border-radius: 50%; background: var(--seal); border: var(--outline); display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); }
+  #panel .art .tick svg { width: 26px; height: 26px; }
   #panel .get { width: 100%; height: 70px; border-radius: 35px; background: var(--accent); }
   #panel .get .vb { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--badge); border: var(--outline); }
   #panel .get .vb svg { width: 28px; height: 28px; }
@@ -131,7 +132,7 @@
   @media (prefers-reduced-motion: reduce) { .spin, .nope, #notice svg, #redo, #review > *, #panel .art svg, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
   @media (max-height: 560px) { #top { min-height: 64px; } footer { height: calc(118px + env(safe-area-inset-bottom)); } #swatches { padding-bottom: 4px; }
     .round { width: 46px; height: 46px; } #toolbar .ctl { width: 48px; height: 48px; } #done { width: 50px; height: 50px; }
-    #redo { width: 60px; height: 60px; } #next { height: 78px; } #next img { width: 66px; height: 66px; } #next .go { width: 48px; height: 48px; } }
+    #redo { width: 60px; height: 60px; } #next { height: 78px; } #next .pic { width: 66px; height: 66px; } #next .go { width: 48px; height: 48px; } }
 </style>
 </head>
 <body>
@@ -147,7 +148,7 @@
   <footer id="create"><div id="swatches" role="radiogroup" aria-label="Colours"></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
   <footer id="review" hidden>
     <button id="redo" class="ctl round" aria-label="Do this face again: watch a video" hidden></button>
-    <button id="next" class="ctl" aria-label="Next customer"><img alt=""><span class="go"></span></button>
+    <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="go"></span></button>
   </footer>
 </div>
 <div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>

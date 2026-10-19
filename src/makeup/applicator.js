@@ -18,7 +18,7 @@ export class Applicator {
   // view: FaceView (renderer, head geometry, eyes, lashes, camera)
   constructor(view) {
     this.view = view;
-    this.paint = new PaintLayer(view.renderer, view.headGeometry);
+    this.paint = new PaintLayer(view.renderer, view.headGeometry, view.paintSize);
     this.picker = new Picker();
     this.makeup = createMakeup();
     this.allowed = () => true; // the game sets which colours the player may use (colours of the day once earned)
