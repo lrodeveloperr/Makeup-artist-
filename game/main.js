@@ -200,8 +200,16 @@ async function main() {
   $('next').querySelector('.hint').innerHTML = ICON.chev;
   // Retry sits on the counter level with Next, or in the top-left corner in landscape and on screens too narrow
   // for both (the page's scale script decides: html.redo-top)
+  // a tall counter (tall, narrow screens, where the counter takes the height the face can't use) holds bigger
+  // controls; it is tall once it has room for them (360 px at the UI scale)
+  const tallCounter = () => {
+    const root = document.documentElement, s = parseFloat(getComputedStyle(root).getPropertyValue('--s')) || 1;
+    const foot = document.querySelector('footer:not([hidden])');
+    root.classList.toggle('tall', !root.classList.contains('land') && !!foot && foot.getBoundingClientRect().height / s >= 360);
+  };
+  tallCounter();
   const placeRedo = () => {
-    const home = document.documentElement.classList.contains('redo-top') ? $('top') : $('review'), redo = $('redo');
+    const root = document.documentElement, home = root.classList.contains('redo-top') && !root.classList.contains('tall') ? $('top') : $('review'), redo = $('redo');
     if (redo.parentElement !== home) home.prepend(redo);
   };
   placeRedo();
@@ -382,6 +390,7 @@ async function main() {
       redraw();
     }
     placeMirror(); // the canvas may also have moved
+    tallCounter();
     placeRedo();
   }).observe(stage);
 

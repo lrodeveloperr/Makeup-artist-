@@ -62,6 +62,11 @@
   #top { display: flex; align-items: flex-start; justify-content: space-between; padding: max(10px, env(safe-area-inset-top)) 12px 4px; min-height: 80px; box-sizing: border-box; }
   /* the face's canvas stands on the counter: any spare height becomes salon wall above her head */
   #stage { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: flex-end; overflow: hidden; position: relative; }
+  /* her face can't be bigger than the width allows (her hair spans it at 0.56 × the canvas's height), so on tall,
+     narrow screens the stage stops there and the counter takes the rest of the height (the stage starts at the
+     full height and shrinks to fit; the counter never shrinks below its height and grows into what is left) */
+  html:not(.land) #stage { flex: 1 1 100%; max-height: calc(min(100vw, 1200px) / 0.56); }
+  html:not(.land) footer { flex: 1 0 auto; }
   /* every control is drawn at the UI scale */
   #top, footer, #panel .card, #cover > *, #error > * { zoom: var(--s, 1); }
   canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -86,7 +91,7 @@
   #done:not(:disabled):active .seal { filter: drop-shadow(0 1px 0 var(--ink)); }
   /* the controls sit on the vanity counter in front of the customer (it hides where the body ends); create and review
      share one height, so the face never moves */
-  footer { height: calc(146px + env(safe-area-inset-bottom)); box-sizing: border-box; padding: 6px 8px env(safe-area-inset-bottom); position: relative;
+  footer { min-height: calc(146px + env(safe-area-inset-bottom)); box-sizing: border-box; padding: 6px 8px env(safe-area-inset-bottom); position: relative;
     background: linear-gradient(#fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: 0 -10px 18px -10px #6a3a3a55; }
   #swatches { display: flex; gap: 8px; overflow-x: auto; padding: 8px 10px 10px; justify-content: safe center; scrollbar-width: none; }
   #swatches button { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
@@ -96,10 +101,19 @@
   #toolbar .ctl { width: 43px; height: 43px; border-radius: 50%; }
   #toolbar .ctl svg { width: 23px; height: 23px; }
   /* tiny or narrow embeds: two rows of four bigger tools; review's counter grows with it, so the face never moves */
-  .two footer { height: calc(204px + env(safe-area-inset-bottom)); }
+  .two footer { min-height: calc(204px + env(safe-area-inset-bottom)); }
   .two #toolbar { grid-template-columns: repeat(4, 52px); gap: 6px 10px; }
   .two #toolbar .ctl { width: 52px; height: 52px; }
   .two #toolbar .ctl svg { width: 26px; height: 26px; }
+  /* a tall counter (tall, narrow screens; main.js sets html.tall): bigger tools in two rows of four, the colours in
+     wrapping rows of bigger swatches, spread over the counter; in review, Retry stands above the Next row */
+  .tall #create { display: flex; flex-direction: column; justify-content: space-evenly; }
+  .tall #swatches { flex-wrap: wrap; gap: 12px 10px; max-height: 210px; overflow: hidden auto; padding: 12px 6px; }
+  .tall #swatches button { width: 48px; height: 48px; }
+  .tall #toolbar { grid-template-columns: repeat(4, 62px); gap: 14px 10px; padding: 0; }
+  .tall #toolbar .ctl { width: 62px; height: 62px; }
+  .tall #toolbar .ctl svg { width: 30px; height: 30px; }
+  html.tall #review { flex-direction: column; justify-content: center; align-items: center; gap: 30px; padding: 6px 8px env(safe-area-inset-bottom); }
   /* a gem's swatch is the gem itself */
   #swatches button.gem { background: var(--panel); display: grid; place-items: center; }
   #swatches button.gem > svg:not(.star) { width: 30px; height: 30px; overflow: visible; }
