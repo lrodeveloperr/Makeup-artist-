@@ -1,25 +1,24 @@
 // Colour catalogue for the four tools and the contact lenses (contract §4: stable ids, per-tool availability).
 // Saved work stores the id, so once released an id's colour and finish never change and a retired colour stays
-// here (unoffered) for old saves. Every colour here is a base colour, available from the start; the daily
-// rotation will add one extra colour for one target.
+// here (unoffered) for old saves. A colour can move between the base and the colours of the day without breaking
+// saves: a look keeps its colours, and a selection the player can't use falls back to the default.
 //
 // hex: sRGB. Optional finish: gloss (wet shine, lips) and shimmer (fine sparkle) in 0..1. Optional sheer: a
 // lighter product (clear gloss, highlighter) whose colour builds more slowly while its shine does not; it is a
 // property of the colour, not a setting.
 const c = (id, name, hex, extra = {}) => ({ id, name, hex, ...extra });
 
-// The base colours: everyday shades, all available from the start (owner decision, 19 October 2026: basic colours
-// here; shimmers, glosses and fantasy shades are colours of the day, below).
+// The base colours, all available from the start: the basics only (owner decisions, 19 October 2026), a starter kit
+// that suits every complexion and matches every natural hair and eye colour in the game. Everything else, from
+// coral and plum to shimmers, glosses and fantasy shades, is a colour of the day, below.
 export const PALETTE = {
   // blush, bronzer and contour, eyeshadow and face colour
   brush: [
     c('brush-rose', 'Rose', '#e48a98'),
     c('brush-peach', 'Peach', '#f2a07b'),
-    c('brush-coral', 'Coral', '#ee7a6a'),
     c('brush-berry', 'Berry', '#b0476b'),
     c('brush-bronze', 'Bronze', '#a86a45'),
     c('brush-taupe', 'Taupe', '#8d7466'),
-    c('brush-plum', 'Plum', '#6f3a63'),
     c('brush-charcoal', 'Charcoal', '#3a3538'),
   ],
   // brows, eyeliner, fine marks and face art
@@ -27,33 +26,26 @@ export const PALETTE = {
     c('pencil-black', 'Black', '#141214'),
     c('pencil-espresso', 'Espresso', '#3a2a22'),
     c('pencil-brown', 'Brown', '#6b4c3a'),
-    c('pencil-taupe', 'Taupe', '#8a7468'),
     c('pencil-auburn', 'Auburn', '#7a3b25'),
     c('pencil-blonde', 'Blonde', '#b08a5a'),
-    c('pencil-white', 'White', '#f4f1ec'),
   ],
   mascara: [
     c('mascara-black', 'Black', '#0d0c0e'),
-    c('mascara-brown-black', 'Brown black', '#2a1d18'),
     c('mascara-brown', 'Brown', '#4a3226'),
   ],
   // lipsticks and glosses share the applicator (no separate gloss tool)
   lip: [
     c('lip-nude', 'Nude', '#c58f7f'),
-    c('lip-mauve', 'Mauve', '#a9686f'),
     c('lip-rose', 'Rose', '#cf6e7c'),
     c('lip-pink', 'Pink', '#e46d97'),
-    c('lip-coral', 'Coral', '#e86a58'),
     c('lip-red', 'Red', '#b8202e'),
     c('lip-berry', 'Berry', '#8c2346'),
-    c('lip-plum', 'Plum', '#5e2443'),
     c('lip-brown', 'Brown', '#7a4436'),
   ],
   // contact lenses: four iris stops from the pupil edge to the limbal ring (as IRIS in face/colors.js)
   lens: [
     c('lens-brown', 'Brown', '#8a6038', { iris: ['#8a6038', '#5a3a1e', '#3d2612', '#22150a'] }),
     c('lens-hazel', 'Hazel', '#8d7a45', { iris: ['#c9b27a', '#8d7a45', '#5f5a33', '#3a331c'] }),
-    c('lens-honey', 'Honey', '#c99a3c', { iris: ['#e0b65a', '#c99a3c', '#8a6020', '#4a300c'] }),
     c('lens-green', 'Green', '#6f8e55', { iris: ['#b5c49a', '#6f8e55', '#4d6b3a', '#2c3f22'] }),
     c('lens-blue', 'Blue', '#5d90b3', { iris: ['#a8c4d6', '#5d90b3', '#34688d', '#1d3c55'] }),
     c('lens-grey', 'Grey', '#8b9aa3', { iris: ['#c4cdd2', '#8b9aa3', '#5f6e78', '#36424a'] }),
@@ -121,6 +113,9 @@ export const DAILY = {
     c('brush-gunmetal', 'Gunmetal', '#6b6f7a', { shimmer: 0.9 }),
     c('brush-plum-shimmer', 'Plum shimmer', '#8a3f82', { shimmer: 0.9 }),
     c('brush-pink-glitter', 'Pink glitter', '#ff7acb', { shimmer: 1 }),
+    // everyday shades beyond the basics (moved from the base, owner decision, 19 October 2026)
+    c('brush-coral', 'Coral', '#ee7a6a'),
+    c('brush-plum', 'Plum', '#6f3a63'),
   ],
   // eyeliner, brows, fine lines and face art
   pencil: [
@@ -152,6 +147,9 @@ export const DAILY = {
     c('pencil-silver', 'Silver', '#c4c8d0', { shimmer: 0.9 }),
     c('pencil-icy-white', 'Icy white', '#eef4ff', { shimmer: 0.9 }),
     c('pencil-black-glitter', 'Black glitter', '#1c1a22', { shimmer: 1 }),
+    // everyday shades beyond the basics (moved from the base, owner decision, 19 October 2026)
+    c('pencil-taupe', 'Taupe', '#8a7468'),
+    c('pencil-white', 'White', '#f4f1ec'),
   ],
   mascara: [
     c('mascara-grey', 'Grey', '#7a7d85'),
@@ -175,6 +173,8 @@ export const DAILY = {
     c('mascara-copper', 'Copper', '#a0522a', { shimmer: 0.8 }),
     c('mascara-gold', 'Gold', '#c9982e', { shimmer: 0.8 }),
     c('mascara-silver', 'Silver', '#b8bcc6', { shimmer: 0.8 }),
+    // everyday shades beyond the basics (moved from the base, owner decision, 19 October 2026)
+    c('mascara-brown-black', 'Brown black', '#2a1d18'),
   ],
   // lipsticks, glosses and metallics (one applicator)
   lip: [
@@ -224,6 +224,10 @@ export const DAILY = {
     c('lip-silver', 'Silver', '#c0c4cc', { shimmer: 0.9 }),
     c('lip-pink-glitter', 'Pink glitter', '#f06aa8', { gloss: 1, shimmer: 1 }),
     c('lip-red-glitter', 'Red glitter', '#d81b4a', { gloss: 1, shimmer: 1 }),
+    // everyday shades beyond the basics (moved from the base, owner decision, 19 October 2026)
+    c('lip-mauve', 'Mauve', '#a9686f'),
+    c('lip-coral', 'Coral', '#e86a58'),
+    c('lip-plum', 'Plum', '#5e2443'),
   ],
   // contact lenses (four iris stops from the pupil edge to the limbal ring)
   lens: [
@@ -244,6 +248,8 @@ export const DAILY = {
     lens('lens-amethyst', 'Amethyst', ['#e0c4f2', '#a76fd6', '#7440a8', '#3d1f5c']),
     lens('lens-snow', 'Snow', ['#ffffff', '#e8ecf0', '#b0b8c0', '#60686f']),
     lens('lens-black', 'Black', ['#6a6a70', '#2a2a30', '#141418', '#050507']),
+    // everyday shades beyond the basics (moved from the base, owner decision, 19 October 2026)
+    c('lens-honey', 'Honey', '#c99a3c', { iris: ['#e0b65a', '#c99a3c', '#8a6020', '#4a300c'] }),
   ],
 };
 

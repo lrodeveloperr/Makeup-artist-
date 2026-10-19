@@ -54,10 +54,18 @@ part of every face at any screen size.
 
 ### Colours (base catalogue, all available from the start)
 
-The base catalogue is the everyday shades (owner decision, 19 October 2026): brush 8, pencil 7, mascara 3, lip 9,
-lenses 6 (`src/makeup/palette.js`). Every other coherent colour each tool can carry (shimmers, glosses, metallics,
-brights and fantasy shades) is one of the 154 colours of the day (`DAILY`). One is offered each day and kept for good once earned ([GAME.md](GAME.md)), and a tool lists the
-player's earned ones first. The swatches show gloss and shimmer.
+The base catalogue is the basics only (owner decisions, 19 October 2026): a starter kit that suits every
+complexion and matches every natural hair and eye colour in the game (`src/makeup/palette.js`):
+- brush 6: rose, peach, berry, bronze, taupe, charcoal
+- pencil 5: black, espresso, brown, auburn, blonde
+- mascara 2: black, brown
+- lip 6: nude, rose, pink, red, berry, brown
+- lenses 5: brown, hazel, green, blue, grey
+
+Every other coherent colour each tool can carry (coral, plum and mauve, a white pencil, honey lenses, and the
+shimmers, glosses, metallics, brights and fantasy shades) is one of the 163 colours of the day (`DAILY`). One is
+offered each day and kept for good once earned ([GAME.md](GAME.md)), and a tool lists the player's earned ones
+first. The swatches show gloss and shimmer.
 The selected colour of each tool is remembered while switching tools. A new save starts with the soft brush in
 Rose (contract §3).
 

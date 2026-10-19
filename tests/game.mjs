@@ -246,7 +246,7 @@ test('session: double taps do nothing twice; a change made during a write stays 
   s.select('lip', 'lip-red');
   const first = s.flush();
   await waitFor(() => release);
-  s.select('lip', 'lip-coral'); // during the write
+  s.select('lip', 'lip-nude'); // during the write
   release(); release = null; await first;
   assert.ok(s.dirty, 'the later change is still dirty');
   const second = s.flush();
@@ -254,7 +254,7 @@ test('session: double taps do nothing twice; a change made during a write stays 
   release(); await second;
   clearTimeout(s.timer);
   assert.ok(!s.dirty);
-  assert.equal(G.parseSave(h.saved).state.selection.colour.lip, 'lip-coral');
+  assert.equal(G.parseSave(h.saved).state.selection.colour.lip, 'lip-nude');
 });
 
 for (const [name, fn] of tests) { if (process.env.TRACE) console.log('..', name); await fn(); n++; console.log('ok -', name); }

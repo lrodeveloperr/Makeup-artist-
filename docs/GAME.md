@@ -104,13 +104,13 @@ Done/Next is allowed, but counts nothing.
 This follows the pattern of Haircut's daily pick (`src/game/daily.js`):
 - **Offer:** one special colour for one tool (or the lenses) per local calendar day. It's the same for every
   player who doesn't own it yet, and never one the player owns.
-- **Catalogue:** 154 colours of the day (`DAILY` in `src/makeup/palette.js`): every coherent colour each tool
-  can carry beyond the everyday base (owner decisions, 19 October 2026). That's five months of daily offers.
-  - 47 brush: pinks, reds, purples, blues, greens, neutrals, and 16 shimmers and metallics
-  - 28 pencil
-  - 21 mascara
-  - 41 lip: brights and fantasy shades, 9 glosses, and metallics and glitters
-  - 17 lens
+- **Catalogue:** 163 colours of the day (`DAILY` in `src/makeup/palette.js`): every coherent colour each tool
+  can carry beyond the basic base (owner decisions, 19 October 2026). That's over five months of daily offers.
+  - 49 brush: pinks, reds, corals, purples, blues, greens, neutrals, and 16 shimmers and metallics
+  - 30 pencil
+  - 22 mascara
+  - 44 lip: brights, mauves and fantasy shades, 9 glosses, and metallics and glitters
+  - 18 lens
 
   `tests/makeup.mjs` checks that every pair of colours within a tool, base included, is tellable apart (CIELAB
   ΔE ≥ 8 for the same finish, ≥ 4 across matte, gloss and shimmer).
