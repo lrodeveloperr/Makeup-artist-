@@ -6,7 +6,8 @@
 // - the lens selector and face gems apply on a tap (press and release without dragging), not on a drag
 // - a finger covers what it touches, so on touch the tool works at its tip, held a little above the finger (as
 //   Haircut's clipper): strokes paint there, and a lens or gem is aimed there and goes on where the finger lifts
-//   (press, aim, release); a mouse or a pen works right at the pointer
+//   (press, aim, release); a mouse or a pen works right at the pointer, where its tool is shown from the moment it is
+//   over the face
 const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move (mouse and pen)
 const TOUCH_TIP = 72; // CSS pixels above the finger where the tool works, at most 12 % of the face's height
 
@@ -16,8 +17,10 @@ const TOUCH_TIP = 72; // CSS pixels above the finger where the tool works, at mo
 // feedback (optional): follows each stroke as it happens, for its sound: down(selection), move(x, y, contact, time)
 // for every sample (contact: the tool is on the skin; the mascara wand: passing through lashes, coated or not;
 // time: when the sample was taken, ms, so samples delivered together on a busy frame keep their own timing), up()
-// aim (optional): where a finger's tool is working, for showing the tool in hand: aim(x, y, selection) in canvas CSS
-// pixels while a finger is down, aim(null) when it lifts or the gesture ends
+// aim (optional): where the tool is working, for showing the tool in hand: aim(x, y, selection, kind) in canvas CSS
+// pixels (kind: 'touch', or 'mouse' for a mouse or a pen) while a finger is down, and while a mouse or pen is over the
+// face, pressed or not, so the player aims before painting; aim(null) when it lifts or leaves, or the face takes no
+// input
 export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback, aim }) {
   let active = null;
   const local = (e, tip = 0) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - tip]; };
@@ -27,7 +30,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     const a = active;
     active = null;
     if (canvas.hasPointerCapture?.(a.id)) canvas.releasePointerCapture(a.id);
-    if (a.tip) aim?.(null);
+    if (a.kind === 'touch' || !commit) aim?.(null); // a mouse stays over the face: its tool stays in hand
     if (a.tap) {
       if (!commit || a.moved) return;
       if (a.tap.tool === 'lens' && applicator.tapLens(a.x, a.y, a.tap.colour)) { onChange(); onCommit({ lens: true }); }
@@ -45,21 +48,27 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     e.preventDefault();
     const sel = selection();
     if (!sel) return;
-    const tip = e.pointerType === 'touch' ? Math.min(TOUCH_TIP, canvas.clientHeight * 0.12) : 0;
+    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', tip = kind === 'touch' ? Math.min(TOUCH_TIP, canvas.clientHeight * 0.12) : 0;
     const [x, y] = local(e, tip);
     canvas.setPointerCapture(e.pointerId);
-    if (tip) aim?.(x, y, sel);
-    if (sel.tool === 'lens' || sel.tool === 'gem') { active = { id: e.pointerId, tap: sel, x, y, moved: false, tip }; return; }
+    aim?.(x, y, sel, kind);
+    if (sel.tool === 'lens' || sel.tool === 'gem') { active = { id: e.pointerId, tap: sel, x, y, moved: false, tip, kind }; return; }
     const g = applicator.begin(sel.tool, sel.colour);
     if (!g) return;
-    active = { id: e.pointerId, g, tip, sel };
+    active = { id: e.pointerId, g, tip, sel, kind };
     feedback?.down(sel);
     const changed = applicator.move(g, x, y);
     feedback?.move(x, y, g.painter ? !!g.seg : !!g.onLash, e.timeStamp);
     if (changed) onChange();
   };
+  // a mouse or pen over the face, not pressed: its tool follows it (a finger has no hover)
+  const hover = (e) => {
+    const sel = e.pointerType !== 'touch' && e.isPrimary && selection();
+    if (sel) aim?.(...local(e), sel, 'mouse'); else aim?.(null);
+  };
   const move = (e) => {
-    if (!active || e.pointerId !== active.id) return;
+    if (!active) { hover(e); return; }
+    if (e.pointerId !== active.id) return;
     const events = e.getCoalescedEvents?.().length ? e.getCoalescedEvents() : [e];
     let changed = false;
     for (const ev of events) {
@@ -73,22 +82,25 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
       feedback?.move(x, y, g.painter ? !!g.seg : !!g.onLash, ev.timeStamp);
       changed = moved || changed;
     }
-    if (active.tip) aim?.(...local(e, active.tip), active.tap || active.sel);
+    aim?.(...local(e, active.tip), active.tap || active.sel, active.kind);
     if (changed) onChange();
   };
   const up = (e) => { if (active && e.pointerId === active.id) finish(true); };
   const cancel = (e) => { if (active && e.pointerId === active.id) finish(false); };
+  const leave = () => { if (!active) aim?.(null); };
 
   canvas.addEventListener('pointerdown', down);
   canvas.addEventListener('pointermove', move);
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', cancel);
   canvas.addEventListener('lostpointercapture', cancel);
+  canvas.addEventListener('pointerleave', leave);
   const menu = (e) => e.preventDefault(); // a long press is a stroke, not a context menu
   canvas.addEventListener('contextmenu', menu);
   return {
-    // end any gesture now (host pause, resize, opening a panel); a new pointer-down is needed to continue
-    interrupt: () => finish(false),
+    // end any gesture now (host pause, resize, opening a panel); a new pointer-down is needed to continue. The tool in
+    // hand goes too (until the pointer moves over the face again)
+    interrupt: () => { finish(false); aim?.(null); },
     detach() {
       finish(false);
       canvas.removeEventListener('pointerdown', down);
@@ -96,6 +108,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
       canvas.removeEventListener('pointerup', up);
       canvas.removeEventListener('pointercancel', cancel);
       canvas.removeEventListener('lostpointercapture', cancel);
+      canvas.removeEventListener('pointerleave', leave);
       canvas.removeEventListener('contextmenu', menu);
     },
   };

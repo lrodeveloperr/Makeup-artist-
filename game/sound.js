@@ -161,6 +161,9 @@ const TOOL = {
 const TURN_PX = 3; // pixels of travel that set a sweep's direction
 const BACK_PX = 2; // pixels moved back against it that make a turn
 const LEGATO = 0.3; // how much of a unit's start a legato unit leaves out (its attack)
+// pixels a new movement (a stroke's start, a turn back) must really travel before its sound starts: a finger slipping
+// back as it lifts, or a touch that barely moves, makes no sound (owner, 19 October 2026: the process only)
+const MOVE_PX = 4;
 
 // A stroke's voice: stroke(tool, colour) at pointer-down, move() for every pointer sample, end() at pointer-up.
 // The sound keeps time with the hand, not with the recording: every sweep plays one of the tool's units, a fresh one
@@ -180,7 +183,7 @@ export function stroke(tool, colour) {
   let cur = null, last = -1, dir = null, ax = 0, ay = 0, back = 0, ended = false;
   // the hand's own clock (seconds, from its samples' times, so a busy frame never looks like a pause), its sweeps
   // (learnt as it goes), and when this sweep began on it
-  let hand = 0, moved = -1, sweep = 0.35, began = -1;
+  let hand = 0, moved = -1, sweep = 0.35, began = -1, waiting = false;
   // how far the hand's sweeps reach (pixels, learnt as it goes) and how far this one has come: with the time it has
   // taken, when it will turn
   let span = 0, travel = 0;
@@ -243,7 +246,10 @@ export function stroke(tool, colour) {
       }
       // learn the sweep's length from the hand turning back
       if (turned && began >= 0) sweep = Math.min(1.2, Math.max(0.12, 0.6 * sweep + 0.4 * (hand - began)));
-      if (turned || paused) began = hand;
+      if (turned || paused) { began = hand; waiting = true; }
+      // the new movement has really begun
+      const starts = waiting && !!dir && travel >= MOVE_PX;
+      if (starts) waiting = false;
       // when this sweep will turn: from how far the hand's sweeps reach and how quickly this one is going (or, until
       // it has swept once, from how long its sweeps take); one that has gone past it is a longer stroke, expected to
       // run on half as long again
@@ -252,19 +258,19 @@ export function stroke(tool, colour) {
       // a new movement: the first, after a pause, on turning back, or as a sweep runs on past its unit (near the
       // unit's end, or past it), fitted to the rest of the sweep; never just before the hand turns, as the turn
       // brings the next movement
-      const runsOn = cur && left > 0.15 && (at >= cur.end - 0.03 || (at >= cur.start + 0.85 * (cur.end - cur.start) && gone >= 0.8 * sweep));
+      const runsOn = cur && !waiting && !starts && left > 0.15 && (at >= cur.end - 0.03 || (at >= cur.start + 0.85 * (cur.end - cur.start) && gone >= 0.8 * sweep));
       // a unit that has only just begun is the new movement (but a turn always brings its own)
-      const fresh = cur && at - cur.start < 0.06 && !(turned && cur.legato);
-      if (!cur || ((paused || turned || runsOn) && !fresh)) play(at, k, runsOn ? left : sweep, runsOn && !paused && !turned);
-      else { hold(cur.g.gain, at); cur.g.gain.setTargetAtTime(level(k), at, 0.03); }
+      const fresh = cur && at - cur.start < 0.06 && !(starts && cur.legato);
+      if ((starts || runsOn) && !fresh) play(at, k, runsOn ? left : sweep, runsOn);
+      else if (cur) { hold(cur.g.gain, at); cur.g.gain.setTargetAtTime(level(k), at, 0.03); }
       lp.frequency.setTargetAtTime(r.lp * (0.6 + 0.4 * Math.min(k, 1)), at, 0.06);
       // the hand stops: the sound fades with it
-      cur.g.gain.setTargetAtTime(0, at + 0.09, 0.04);
+      cur?.g.gain.setTargetAtTime(0, at + 0.09, 0.04);
     },
     end(at = c.currentTime) {
       if (ended) return;
       ended = true;
-      fade(cur, at);
+      fade(cur, at, 0.06); // a gentle release, never a cut
       cur = null;
     },
   };

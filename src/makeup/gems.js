@@ -87,13 +87,16 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
+// the gems' material (also the gem held in the tweezers, makeup/tools3d.js)
+export const gemMaterial = () => new GL.ShaderMaterial({ vertexShader, fragmentShader, uniforms: lightUniforms() });
+
 export class Gems {
   // hg: HeadGeometry (current positions and normals of the face)
   constructor(hg) {
     this.hg = hg;
     // the whole front of the head, neck and shoulders: wherever the brush can paint, a gem can go
     this.sampler = new SurfaceSampler(hg.refSub, hg.sub.subQuads, { minX: -1.6, maxX: 1.6, minY: -3.2, maxY: 1.6, cell: 0.05 });
-    this.material = new GL.ShaderMaterial({ vertexShader, fragmentShader, uniforms: lightUniforms() });
+    this.material = gemMaterial();
     this.mesh = new GL.Mesh(new GL.BufferGeometry(), this.material);
     this.mesh.visible = false;
     this.list = [];
@@ -120,48 +123,53 @@ export class Gems {
   build(g, index, pos, nrm, col, kind) {
     const hit = this.locate(g.ref);
     if (!hit) return;
-    const c = g.colour, shape = SHAPES[c.shape], half = shape.size / 2;
     const p = evalPoint(hit, this.hg.subPos), n = evalPoint(hit, this.hg.subNrm);
     const nl = Math.hypot(...n);
     for (let k = 0; k < 3; k++) n[k] /= nl;
-    // upright on the face: "up" is the head's up, laid onto the skin
-    const up = [-n[1] * n[0], 1 - n[1] * n[1], -n[1] * n[2]], ul = Math.hypot(...up) || 1;
-    for (let k = 0; k < 3; k++) up[k] /= ul;
-    const right = [up[1] * n[2] - up[2] * n[1], up[2] * n[0] - up[0] * n[2], up[0] * n[1] - up[1] * n[0]];
-    const at = (u, v, w) => [0, 1, 2].map((k) => p[k] + n[k] * (LIFT + w * half) + (right[k] * u + up[k] * v) * half);
-    const lin = hexToLinear(c.hex), look = LOOKS[c.look], seed = (index * 0.618) % 1;
-    const emit = (a, b, d, na, nb, nd) => {
-      pos.push(...a, ...b, ...d);
-      if (na) nrm.push(...na, ...nb, ...nd);
-      else {
-        // a flat facet
-        const e1 = b.map((x, k) => x - a[k]), e2 = d.map((x, k) => x - a[k]);
-        const f = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], l = Math.hypot(...f) || 1;
-        for (let k = 0; k < 3; k++) nrm.push(f[0] / l, f[1] / l, f[2] / l);
-      }
-      for (let k = 0; k < 3; k++) { col.push(...lin); kind.push(look, seed); }
-    };
-    if (c.shape === 'pearl') {
-      // a half sphere with smooth normals
-      const R = 6, S = 16, pt = (j, i) => { const t = (j / R) * Math.PI / 2, a = (i / S) * 2 * Math.PI; return [Math.cos(t) * Math.cos(a), Math.cos(t) * Math.sin(a), Math.sin(t)]; };
-      const world = (q) => at(q[0], q[1], q[2]), normal = (q) => [0, 1, 2].map((k) => right[k] * q[0] + up[k] * q[1] + n[k] * q[2]);
-      for (let j = 0; j < R; j++) for (let i = 0; i < S; i++) {
-        const a = pt(j, i), b = pt(j, i + 1), d = pt(j + 1, i + 1), e = pt(j + 1, i);
-        emit(world(a), world(b), world(d), normal(a), normal(b), normal(d));
-        if (j < R - 1) emit(world(a), world(d), world(e), normal(a), normal(d), normal(e));
-      }
-      return;
+    addGem(g.colour, p, n, index, pos, nrm, col, kind);
+  }
+}
+
+// One gem's triangles (into pos, nrm, col, kind; the gem material's attributes): colour c (a palette entry with shape
+// and look) sat at point p facing out along the unit normal n, upright ("up" is the head's up, laid onto the surface)
+export function addGem(c, p, n, index, pos, nrm, col, kind) {
+  const shape = SHAPES[c.shape], half = shape.size / 2;
+  const up = [-n[1] * n[0], 1 - n[1] * n[1], -n[1] * n[2]], ul = Math.hypot(...up) || 1;
+  for (let k = 0; k < 3; k++) up[k] /= ul;
+  const right = [up[1] * n[2] - up[2] * n[1], up[2] * n[0] - up[0] * n[2], up[0] * n[1] - up[1] * n[0]];
+  const at = (u, v, w) => [0, 1, 2].map((k) => p[k] + n[k] * (LIFT + w * half) + (right[k] * u + up[k] * v) * half);
+  const lin = hexToLinear(c.hex), look = LOOKS[c.look], seed = (index * 0.618) % 1;
+  const emit = (a, b, d, na, nb, nd) => {
+    pos.push(...a, ...b, ...d);
+    if (na) nrm.push(...na, ...nb, ...nd);
+    else {
+      // a flat facet
+      const e1 = b.map((x, k) => x - a[k]), e2 = d.map((x, k) => x - a[k]);
+      const f = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], l = Math.hypot(...f) || 1;
+      for (let k = 0; k < 3; k++) nrm.push(f[0] / l, f[1] / l, f[2] / l);
     }
-    // a faceted dome: the outline on the skin, a ring of crown facets, then a flat table or a point
-    const o = OUTLINE[c.shape], [ws, wh] = shape.waist, top = shape.dome;
-    for (let i = 0; i < o.length; i++) {
-      const [x0, y0] = o[i], [x1, y1] = o[(i + 1) % o.length];
-      const a = at(x0, y0, 0), b = at(x1, y1, 0), d = at(x1 * ws, y1 * ws, wh), e = at(x0 * ws, y0 * ws, wh);
-      emit(a, b, d); emit(a, d, e);
-      if (!shape.table) { emit(e, d, at(0, 0, top)); continue; }
-      // the table: a second ring of facets up to a flat top
-      const f = at(x1 * 0.42, y1 * 0.42, top), g2 = at(x0 * 0.42, y0 * 0.42, top);
-      emit(e, d, f); emit(e, f, g2); emit(g2, f, at(0, 0, top));
+    for (let k = 0; k < 3; k++) { col.push(...lin); kind.push(look, seed); }
+  };
+  if (c.shape === 'pearl') {
+    // a half sphere with smooth normals
+    const R = 6, S = 16, pt = (j, i) => { const t = (j / R) * Math.PI / 2, a = (i / S) * 2 * Math.PI; return [Math.cos(t) * Math.cos(a), Math.cos(t) * Math.sin(a), Math.sin(t)]; };
+    const world = (q) => at(q[0], q[1], q[2]), normal = (q) => [0, 1, 2].map((k) => right[k] * q[0] + up[k] * q[1] + n[k] * q[2]);
+    for (let j = 0; j < R; j++) for (let i = 0; i < S; i++) {
+      const a = pt(j, i), b = pt(j, i + 1), d = pt(j + 1, i + 1), e = pt(j + 1, i);
+      emit(world(a), world(b), world(d), normal(a), normal(b), normal(d));
+      if (j < R - 1) emit(world(a), world(d), world(e), normal(a), normal(d), normal(e));
     }
+    return;
+  }
+  // a faceted dome: the outline on the skin, a ring of crown facets, then a flat table or a point
+  const o = OUTLINE[c.shape], [ws, wh] = shape.waist, top = shape.dome;
+  for (let i = 0; i < o.length; i++) {
+    const [x0, y0] = o[i], [x1, y1] = o[(i + 1) % o.length];
+    const a = at(x0, y0, 0), b = at(x1, y1, 0), d = at(x1 * ws, y1 * ws, wh), e = at(x0 * ws, y0 * ws, wh);
+    emit(a, b, d); emit(a, d, e);
+    if (!shape.table) { emit(e, d, at(0, 0, top)); continue; }
+    // the table: a second ring of facets up to a flat top
+    const f = at(x1 * 0.42, y1 * 0.42, top), g2 = at(x0 * 0.42, y0 * 0.42, top);
+    emit(e, d, f); emit(e, f, g2); emit(g2, f, at(0, 0, top));
   }
 }

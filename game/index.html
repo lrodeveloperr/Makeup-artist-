@@ -200,9 +200,10 @@
   .nope { animation: nope .4s; }
   @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
-  /* the tool in hand: drawn at a finger's working tip while it paints (main.js), never in the way of a touch */
-  #hand { position: fixed; left: 0; top: 0; width: 100px; height: 100px; pointer-events: none; z-index: 2; transform-origin: 8px 8px;
-    filter: drop-shadow(0 4px 3px #2a1d1544); will-change: transform; }
+  /* the tool in hand: drawn in 3D where it works (main.js), never in the way of a pointer; its soft shadow falls down
+     and to the right, as from the face's key light */
+  #hand { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 2; filter: drop-shadow(5px 8px 5px #3a201430); will-change: transform; }
+  #hand canvas { display: block; }
 
   /* ---- loading and recovery ---- */
   #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; padding: 24px; background: var(--wall); }

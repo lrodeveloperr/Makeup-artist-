@@ -52,6 +52,8 @@ try {
       const all = r.starts.filter((s) => s >= t && s < (r.turns[i + 1] ?? Infinity));
       for (let j = 1; j < all.length; j++) if (all[j] - all[j - 1] < 0.1 && inside.includes(all[j])) errors.push(`${name}: units stutter at ${all[j].toFixed(2)} s`);
     });
+    // nothing starts as the finger lifts (slipping back a little) or for a touch that barely moves
+    for (const st of r.starts) if (st >= r.slip - 0.001) errors.push(`${name}: a sound started as the finger lifted, at ${st.toFixed(2)} s`);
     // silent while the hand rests (after the fade)
     const rest = x.slice(Math.round((r.pause[0] + 0.3) * sr), Math.round(r.pause[1] * sr));
     const restDb = 10 * Math.log10(rest.reduce((s, v) => s + v * v, 0) / rest.length + 1e-15);

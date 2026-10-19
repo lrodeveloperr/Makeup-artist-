@@ -22,8 +22,15 @@ const TAKES = {
     const first = brush(v, 0.05, 6, 0.3, 1.4);               // brushing back and forth
     const pause = [first.t, first.t + 0.5];                 // the hand rests on the face
     const second = brush(v, first.t + 0.5, 2, 0.7, 0.8);    // two long, slow sweeps
-    v.end(second.t);
-    return { turns: [...first.turns, ...second.turns], pause, end: second.t + 0.4 };
+    // the finger slips back a couple of pixels as it lifts: no new sound (owner: the process only)
+    let t = second.t;
+    for (let k = 0; k < 3; k++, t += dt) v.move(0.8 * 0.7 / PX, dt, true, 0.7, 0, t);
+    v.end(t);
+    // a touch that barely moves: no sound at all
+    const touch = S.stroke(tool, colourById(id)), jiggle = t + 0.3;
+    for (let k = 0; k < 4; k++) touch.move(0.6 / PX, dt, true, k % 2 ? -0.6 : 0.6, 0, jiggle + k * dt);
+    touch.end(jiggle + 4 * dt);
+    return { turns: [...first.turns, ...second.turns], pause, slip: second.t, end: jiggle + 0.5 };
   },
   gems(t) { ['gem-crystal', 'gem-aurora', 'gem-pearl', 'gem-gold-star'].forEach((id, k) => S.tap('gem', colourById(id), t + k * 0.7)); return { end: t + 2.9 }; },
   lens(t) { S.tap('lens', null, t); S.tap('lens', null, t + 0.6); return { end: t + 1.1 }; },

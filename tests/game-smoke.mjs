@@ -154,7 +154,7 @@ try {
     await ctx.close();
   });
 
-  await check('on a phone the tool is held in hand: drawn at its working tip above the finger, gone when it lifts', async () => {
+  await check('the tool in hand: under a finger at its tip above it, gone when it lifts; under a mouse in place of the cursor, at the pointer', async () => {
     const { ctx, page } = await open({ phone: true });
     await ready(page);
     await page.waitForFunction(() => document.getElementById('cover').hidden);
@@ -167,16 +167,29 @@ try {
     assert.ok(await page.isHidden('#hand'));
     await touch('touchStart', [[x, y + tip]]);
     for (let k = 1; k <= 6; k++) await touch('touchMove', [[x + k * 4, y + tip]]);
-    const at = await page.evaluate(() => { const h = document.getElementById('hand'); return { shown: !h.hidden, m: new DOMMatrix(getComputedStyle(h).transform) }; });
+    // where the tool's tip is drawn on screen
+    const drawnTip = () => page.evaluate(() => {
+      const h = document.getElementById('hand'), m = new DOMMatrix(getComputedStyle(h).transform), [tx, ty] = h.dataset.tip.split(',').map(Number);
+      return { shown: !h.hidden, x: m.e + tx, y: m.f + ty, cursor: document.querySelector('#stage canvas').style.cursor };
+    });
+    let at = await drawnTip();
     assert.ok(at.shown, 'the brush shows while the finger is down');
-    assert.ok(Math.abs(at.m.e + 8 - (x + 24)) < 2 && Math.abs(at.m.f + 8 - y) < 2, `its tip is at the working point (${at.m.e + 8}, ${at.m.f + 8})`);
+    assert.ok(Math.abs(at.x - (x + 24)) < 1.5 && Math.abs(at.y - y) < 1.5, `its tip is at the working point, above the finger (${at.x}, ${at.y})`);
     await touch('touchEnd', []);
     assert.ok(await page.isHidden('#hand'), 'gone when the finger lifts');
     assert.equal((await state(page)).strokes, 1, 'it painted');
-    // a mouse works right at the pointer, with no tool drawn
-    await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 20, y, { steps: 4 });
-    assert.ok(await page.isHidden('#hand'));
+    // a mouse holds the tool in place of the cursor, its tip at the pointer, before and while it paints
+    await page.mouse.move(x, y + 30);
+    at = await drawnTip();
+    assert.ok(at.shown && Math.abs(at.x - x) < 1.5 && Math.abs(at.y - (y + 30)) < 1.5 && at.cursor === 'none', `hovering: the tool's tip at the pointer, no cursor (${JSON.stringify(at)})`);
+    await page.mouse.down(); await page.mouse.move(x + 20, y + 30, { steps: 4 });
+    at = await drawnTip();
+    assert.ok(at.shown && Math.abs(at.x - (x + 20)) < 1.5 && Math.abs(at.y - (y + 30)) < 1.5, 'painting: the tip follows the pointer');
     await page.mouse.up();
+    assert.equal((await state(page)).strokes, 2, 'the mouse painted at the pointer');
+    await page.mouse.move(2, 2); // off the face: the tool goes, the cursor comes back
+    at = await drawnTip();
+    assert.ok(!at.shown && at.cursor === '');
     await ctx.close();
   });
 

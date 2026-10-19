@@ -24,15 +24,16 @@ OUT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'sounds')
 # tool units: Freesound id (or ids), ffmpeg clean-up filter, the band whose energy is the tool moving, a unit's
 # shortest and longest length (s), the least time between two units' peaks (s), and how much of the quiet ends to
 # keep (a fraction of the energy range above the floor where a unit starts and ends); drive: how hard the sharpest
-# peaks are softened (crackly recordings, bristles and sticky gloss, harder, so no tick sounds like a click)
+# peaks are softened (crackly recordings, bristles and sticky gloss, harder, so no tick sounds like a click);
+# declick: (k, passes) for softening their pops and ticks (see declick; the crackly ones, more)
 UNITS = {
     'brush': dict(id=[489425, 575858], af='highpass=f=250,lowpass=f=11000', band=(2000, 9000), lo=0.2, hi=0.9, gap=0.12, edge=0.08),  # makeup brushes on skin
     'glow': dict(id=512288, af='highpass=f=300,lowpass=f=12000', band=(2000, 10000), lo=0.2, hi=1.0, gap=0.25, edge=0.25),        # a soft brush pass, airier
     'pencil': dict(id=809937, af='highpass=f=200,lowpass=f=5000', band=(1000, 6000), lo=0.25, hi=1.2, gap=0.3, edge=0.25),         # a soft pencil stroke
     'liner': dict(id=[321138, 351145], af='highpass=f=200,lowpass=f=3500', band=(800, 6000), lo=0.25, hi=1.2, gap=0.3, edge=0.25), # fine felt tips
-    'mascara': dict(id=410069, af='highpass=f=400,lowpass=f=12000', band=(2000, 10000), lo=0.12, hi=0.45, gap=0.1, edge=0.25, drive=3),    # a mascara wand's bristles
+    'mascara': dict(id=410069, af='highpass=f=400,lowpass=f=12000', band=(2000, 10000), lo=0.12, hi=0.45, gap=0.1, edge=0.25, drive=3, declick=(2.2, 3)),    # a mascara wand's bristles
     'lip': dict(id=740836, af='highpass=f=120,lowpass=f=8000', band=(500, 6000), lo=0.22, hi=0.8, gap=0.15, edge=0.25),            # a creamy rub on skin
-    'gloss': dict(id=[788343, 391887], af='highpass=f=150,lowpass=f=9000', band=(500, 8000), lo=0.2, hi=0.8, gap=0.2, edge=0.25, drive=3),     # lip gloss applied (swipes)
+    'gloss': dict(id=[788343, 391887], af='highpass=f=150,lowpass=f=9000', band=(500, 8000), lo=0.2, hi=0.8, gap=0.2, edge=0.25, drive=3, declick=(2.2, 3)),     # lip gloss applied (swipes)
 }
 # taps: Freesound id, clean-up filter, start (s), longest length (s)
 SHOTS = {
@@ -45,7 +46,7 @@ SHOTS = {
 
 def fetch(url):
     """Freesound turns away quick runs of requests (403, 429) for a while: wait and try again."""
-    for wait in (0, 5, 15, 30, 60):
+    for wait in (0, 10, 30, 60, 120, 240):
         time.sleep(wait)
         try: return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=60).read()
         except urllib.error.HTTPError as e:
@@ -53,12 +54,23 @@ def fetch(url):
     raise SystemExit(f'{url}: refused')
 
 
+CACHE = os.path.join(os.path.dirname(__file__), '..', 'build', 'freesound')  # downloaded once (build/ is not committed)
+
+
 def preview(sound_id):
-    """The HQ preview of a Freesound sound (an MP3 of the CC0 recording)."""
+    """The HQ preview of a Freesound sound (an MP3 of the CC0 recording), checked CC0 and kept in build/freesound."""
+    cached = os.path.join(CACHE, f'{sound_id}.mp3')
+    if os.path.exists(cached):
+        with open(cached, 'rb') as f:
+            return f.read()
     page = fetch(f'https://freesound.org/s/{sound_id}/').decode('utf8', 'replace')
     if 'Creative Commons 0' not in page:
         raise SystemExit(f'{sound_id} is not CC0')
-    return fetch(re.search(r'data-mp3="([^"]+)-lq\.mp3"', page)[1] + '-hq.mp3')
+    data = fetch(re.search(r'data-mp3="([^"]+)-lq\.mp3"', page)[1] + '-hq.mp3')
+    os.makedirs(CACHE, exist_ok=True)
+    with open(cached, 'wb') as f:
+        f.write(data)
+    return data
 
 
 def decode(data, af):
@@ -105,6 +117,25 @@ def units(x, spec):
     return out
 
 
+def declick(x, k=3.0):
+    """Soften sharp transients (a gloss's sticky pops, a bristle's tick, a lip smack) so only the tool's even
+    texture remains (owner, 19 October 2026: the sounds are the process only, nothing sharp): wherever the signal's
+    peak rises above k times its level over the surrounding 40 ms, it is turned down to that, with a gain that moves
+    smoothly over a few milliseconds so nothing new is added."""
+    n = len(x)
+    if n < 64: return x
+    w = int(0.04 * SR)
+    level = np.sqrt(np.convolve(x ** 2, np.ones(w) / w, mode='same')) + 1e-6
+    p = int(0.002 * SR)
+    peak = np.abs(x)
+    peak = np.max(np.stack([np.roll(peak, s) for s in range(-p, p + 1)]), axis=0)  # the peak over 4 ms
+    gain = np.minimum(1.0, k * level / (peak + 1e-9))
+    s = int(0.003 * SR)
+    gain = np.min(np.stack([np.roll(gain, t) for t in range(-s, s + 1, 4)]), axis=0)  # covering the whole spike
+    gain = np.convolve(gain, np.ones(s) / s, mode='same')
+    return x * np.minimum(gain, 1.0)
+
+
 def make_units(name, spec):
     ids = spec['id'] if isinstance(spec['id'], list) else [spec['id']]
     found = []
@@ -130,7 +161,10 @@ def make_units(name, spec):
     silence = np.zeros(int(GAP * SR), dtype=np.float32)
     parts = [silence]
     for i in keep:
-        u = found[i] * (0.1 / rms(found[i]))  # every unit at RMS -20 dBFS, its sharpest peaks softened
+        k, passes = spec.get('declick', (3.0, 1))
+        u = found[i]
+        for _ in range(passes): u = declick(u, k)
+        u = u * (0.1 / rms(u))  # every unit at RMS -20 dBFS, its sharpest peaks softened
         drive = spec.get('drive', 1.5)
         u = np.tanh(u * drive) / drive
         u *= min(0.1 / rms(u), 0.9 / np.abs(u).max())  # and the level they took back (a crackly unit loses most)

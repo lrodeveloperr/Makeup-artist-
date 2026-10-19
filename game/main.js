@@ -4,6 +4,7 @@
 // Rules and saving are in src/game; this file is the screen.
 import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
+import { ToolView } from '../src/makeup/tools3d.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
 import { chime, hush, setEnabled, stroke, tap, ui, preload, logUnits, stats as sounds } from './sound.js';
@@ -63,40 +64,6 @@ const gemSwatch = (c) => {
     : `<path d="${GEM_PATH[c.shape]}"${paint}`;
   const facets = c.shape === 'stone' ? '<path d="M8.6 8.6h6.8v6.8H8.6zM12 2.5v6.1M21.5 12h-6.1M12 21.5v-6.1M2.5 12h6.1" fill="none" stroke="#fff" stroke-width=".9" opacity=".7"/>' : '';
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${fill}${body}${facets}</svg>`;
-};
-
-// ---- the tool in hand (touch) ----
-// A finger covers what it touches, so on a phone each tool works at its tip, held a little above the finger, and is
-// drawn there in its colour as it works: the brush's tuft, the fan brush, the pencil's point, the liner's felt tip,
-// the mascara wand, the lipstick's bullet, the gem in tweezers, the lens. Each is drawn along the diagonal of a
-// 100 px box with its tip at (8, 8), the way a right hand holds it, and placed with that tip on the working point.
-const mix = (hex, to, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - t) + to * t).toString(16).padStart(2, '0')).join('');
-const INK = 'stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"';
-const METAL = '<linearGradient id="hm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a8f99"/><stop offset=".45" stop-color="#f4f6f8"/><stop offset="1" stop-color="#6d727c"/></linearGradient>';
-const GOLD = '<linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b58a3a"/><stop offset=".45" stop-color="#f6dc96"/><stop offset="1" stop-color="#a3742a"/></linearGradient>';
-const handle = (x0, x1, w0, w1, fill) => `<path d="M${x0} ${-w0}L${x1} ${-w1}Q${x1 + w1} 0 ${x1} ${w1}L${x0} ${w0}z" fill="${fill}" ${INK}/>`;
-const HAND = {
-  brush: (c) => `${handle(46, 120, 5.5, 3.5, '#3b2433')}<rect x="30" y="-6" width="17" height="12" rx="2" fill="url(#hg)" ${INK}/>
-    <path d="M1 0C5-9 21-10 31-6.5V6.5C21 10 5 9 1 0z" fill="${c.hex}" ${INK}/><path d="M6-2C11-6 19-7 25-5" stroke="#fff" stroke-width="2" opacity=".45" fill="none" stroke-linecap="round"/>`,
-  glow: (c) => `${handle(40, 120, 4.5, 3, '#f3e6ea')}<rect x="27" y="-5" width="14" height="10" rx="2" fill="url(#hg)" ${INK}/>
-    <path d="M2-17Q-3 0 2 17L28 4V-4z" fill="${mix(c.hex, 255, 0.25)}" ${INK}/>${[-9, -3, 3, 9].map((y) => `<circle cx="${6 + Math.abs(y) * 0.2}" cy="${y}" r="1.3" fill="#fff" opacity=".85"/>`).join('')}`,
-  pencil: (c) => `${handle(22, 116, 6, 6, c.hex)}<rect x="112" y="-6" width="10" height="12" rx="2" fill="url(#hg)" ${INK}/>
-    <path d="M22-6L6-1.5V1.5L22 6z" fill="#f3d7ad" ${INK}/><path d="M7-1.6L0 0 7 1.6z" fill="${mix(c.hex, 0, 0.15)}" ${INK}/><path d="M26-3H110" stroke="#fff" stroke-width="2" opacity=".35"/>`,
-  liner: (c) => `${handle(22, 120, 5.5, 5.5, '#1f1a1d')}<rect x="22" y="-5.5" width="9" height="11" fill="${c.hex}" ${INK}/>
-    <path d="M22-4L10-1.4V1.4L22 4z" fill="url(#hm)" ${INK}/><path d="M11-1.2L0 0 11 1.2z" fill="${c.hex}" ${INK}/>`,
-  mascara: (c) => `${handle(56, 120, 7, 7, mix(c.hex, 0, 0.35))}<rect x="56" y="-7.5" width="8" height="15" fill="url(#hg)" ${INK}/><rect x="24" y="-1.2" width="33" height="2.4" fill="url(#hm)"/>
-    <path d="M1-4.5Q13-7 26-4.5V4.5Q13 7 1 4.5z" fill="${mix(c.hex, 0, 0.2)}" ${INK}/>${Array.from({ length: 7 }, (_, k) => `<path d="M${3 + k * 3.4} -6.5V6.5" stroke="${c.hex}" stroke-width="1.4"/>`).join('')}`,
-  lip: (c) => `<rect x="40" y="-9.5" width="78" height="19" rx="3" fill="#221a1d" ${INK}/><rect x="74" y="-9.5" width="6" height="19" fill="url(#hg)" ${INK}/><rect x="25" y="-8.5" width="16" height="17" fill="url(#hg)" ${INK}/>
-    <path d="M1 7L12-7H26V7z" fill="${c.hex}" ${INK}/><path d="M13-4H23" stroke="#fff" stroke-width="2" opacity=".45" stroke-linecap="round"/>`,
-  gem: () => `<path d="M10-3L118-8L120-4L12 0z" fill="url(#hm)" ${INK}/><path d="M10 3L118 8L120 4L12 0z" fill="url(#hm)" ${INK}/>`,
-  lens: () => '',
-};
-const handSvg = (tool, c) => {
-  // the gem or the lens sits on the tip itself, upright and unrotated
-  const top = tool === 'gem' ? `<g transform="translate(-2.2 -2.2) scale(.85)">${gemSwatch(c).replace('<svg viewBox="0 0 24 24" aria-hidden="true">', '').replace('</svg>', '')}</g>`
-    : tool === 'lens' ? `<defs><radialGradient id="hl"><stop offset=".22" stop-color="#000" stop-opacity=".06"/><stop offset=".3" stop-color="${c.iris[0]}"/><stop offset=".6" stop-color="${c.iris[1]}"/><stop offset=".85" stop-color="${c.iris[2]}"/><stop offset="1" stop-color="${c.iris[3]}"/></radialGradient></defs>
-      <circle cx="8" cy="8" r="11" fill="url(#hl)" opacity=".92" ${INK}/><path d="M3 4.5Q6 1.5 10 1.8" stroke="#fff" stroke-width="1.8" fill="none" opacity=".8" stroke-linecap="round"/>` : '';
-  return `<svg viewBox="0 0 100 100" width="100" height="100" aria-hidden="true"><defs>${METAL}${GOLD}</defs><g transform="translate(8 8) rotate(45)">${HAND[tool](c)}</g>${top}</svg>`;
 };
 
 // visible text is none: the error screen and the save notice are icons too (their words are spoken labels)
@@ -171,17 +138,27 @@ async function main() {
   };
 
   // ---- input on the face ----
-  // the tool in hand follows a finger's working tip (see handSvg)
-  const hand = $('hand');
-  let handFor = '', handScale = 1;
-  const aim = (x, y, sel) => {
-    if (x === null) { hand.hidden = true; return; }
-    if (hand.hidden) handScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')) || 1;
-    const key = `${sel.tool}:${sel.colour}`;
-    if (handFor !== key) { handFor = key; hand.innerHTML = handSvg(sel.tool, colourById(sel.colour)); }
+  // ---- the tool in hand (owner, 19 October 2026) ----
+  // The selected tool is drawn in 3D where it works, lit like her and at her scale (makeup/tools3d.js): a mouse or a
+  // pen holds it in place of the cursor, its tip at the pointer, from the moment it is over her face; a finger holds
+  // it while it is down, its tip a little above the finger (input.js) and its handle running down to the finger.
+  const hand = $('hand'), tools = new ToolView();
+  hand.append(tools.canvas);
+  let handFor = '', tip = [0, 0];
+  const aim = (x, y, sel, kind) => {
+    if (x === null) { hand.hidden = true; canvas.style.cursor = ''; return; }
+    const P = view.makeup.picker, [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]), k = Math.abs(bx - ax) * 10; // pixels a decimetre
+    const dpr = Math.min(devicePixelRatio, 2), key = `${sel.tool}:${sel.colour}:${kind}:${k.toFixed(1)}:${dpr}`;
+    if (handFor !== key) {
+      handFor = key;
+      // a pen-like angle under a mouse; under a finger, the handle runs down to it
+      ({ tip } = tools.draw(sel.tool, colourById(sel.colour), { dir: kind === 'touch' ? [0.28, 1] : [1, 1.15] }, k, dpr));
+      hand.dataset.tip = tip.map((v) => v.toFixed(1)).join(','); // where its tip is in its picture (for tests)
+    }
     const r = canvas.getBoundingClientRect();
-    hand.style.transform = `translate(${(r.left + x - 8).toFixed(1)}px, ${(r.top + y - 8).toFixed(1)}px) scale(${handScale})`;
+    hand.style.transform = `translate(${(r.left + x - tip[0]).toFixed(1)}px, ${(r.top + y - tip[1]).toFixed(1)}px)`;
     hand.hidden = false;
+    canvas.style.cursor = kind === 'touch' ? '' : 'none'; // the tool is the cursor
   };
   const input = attachInput(canvas, view.makeup, {
     aim,
@@ -405,6 +382,7 @@ async function main() {
   // ---- the screen follows the state ----
   function render() {
     const s = session.state, review = s.attempt.phase === 'review';
+    if (review) aim(null); // the tool is put down for review
     document.body.classList.toggle('review', review);
     $('create').hidden = review;
     $('review').hidden = !review;

@@ -117,6 +117,15 @@ it is fitted to the rest of the sweep, and none starts just before a turn. The t
 
 No CC0 recording of lipstick going onto lips was found; the creamy rub is the closest real texture.
 
+- **The process only (owner, 19 October 2026: "the sound you can hear during the process is okay"; a sharp sound at
+  the end of a lipstick or gloss stroke was not).** A new movement (a stroke's start, or a turn back) only sounds once
+  the hand has really travelled 4 px in its direction, so a finger slipping back as it lifts, or a touch that barely
+  moves, makes no sound (before, that slip started a fresh unit that was cut off at once: a short, sharp burst). A
+  stroke's end fades gently, never cut. The recordings' sharp transients (gloss's sticky pops, lip smacks, the
+  highlighter's and mascara's sharpest ticks) are softened when the units are cut (`declick` in
+  `tools/make-sounds.py`), leaving only each tool's even texture: no sharp spot is left in lipstick, gloss or brush,
+  and mascara keeps only the soft tick of its bristles. `tests/sound.mjs` checks that nothing starts as the finger
+  lifts or for a barely-moving touch.
 - **Speed and stopping.** The hand's speed is measured on the face (decimetres a second, the same on every
   screen): faster plays the unit louder and brighter, as friction does. The sound fades when the hand stops or
   leaves the face. No two gems ring quite alike (a small random pitch).

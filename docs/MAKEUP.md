@@ -19,7 +19,8 @@ representation and limits).
 | `src/makeup/paint.js` | Paint textures in the head's UV layout; draws dabs; live and replayed strokes |
 | `src/makeup/applicator.js` | Turns pointer samples into stored points, paints them, records strokes, places gems, restores a saved look |
 | `src/makeup/gems.js` | Face gems: finds a gem's place on the current face and draws the gems as small faceted 3D pieces |
-| `src/makeup/input.js` | Pointer events: one captured primary pointer, coalesced samples, commit and cancel, lens and gem taps |
+| `src/makeup/input.js` | Pointer events: one captured primary pointer, coalesced samples, commit and cancel, lens and gem taps, where the tool works (a finger's tip above it; a mouse's pointer, hovering too) |
+| `src/makeup/tools3d.js` | The tool in hand: each tool as a 3D model lit like the face, at her scale, drawn where it works |
 | `src/face/lashes.js` | Mascara coats on the lashes (`coat`, `resetCoats`) |
 | `src/face/skin-material.js` | Shades the painted colour, the gloss coat over it, shimmer and glow on the skin (`uPaint`, `uCoat`, `uFinish`) |
 
@@ -78,13 +79,21 @@ part of every face at any screen size.
   (below).
 - **Contact lenses.** Select a lens colour and tap an iris. Each eye is independent. A tap anywhere else, or a
   drag, does nothing. A lens never changes the makeup. On a phone the lens is aimed (below).
-- **The tool in hand on a phone (owner, 19 October 2026: "as you are moving your hand, you are seeing the tool
-  actually work").** A finger covers what it touches, so on touch every tool works at its tip, held a little above
-  the finger (72 px, at most 12 % of the face's height, as Haircut's clipper), and is drawn there in its colour
-  while the finger is down: the brush's tuft, the fan brush, the pencil's point, the liner's felt tip, the mascara
-  wand, the lipstick's bullet, the gem in tweezers, the lens. Strokes paint at the tip. A gem or a lens shows at the
-  tip from the touch and goes on where the finger lifts (press, aim, release), since a tap under a finger cannot be
-  aimed. A mouse or a pen works right at the pointer, as before, with no tool drawn.
+- **The tool in hand (owner, 19 October 2026: "as you are moving your hand, you are seeing the tool actually
+  work"; the tool's graphics must match the face's, and how it is held must be right with a mouse and on a touch
+  screen).** The selected tool is drawn where it works as a 3D model (`src/makeup/tools3d.js`) in real proportions:
+  the brush's tuft, the fan brush, the pencil's lead, the liner's felt tip, the mascara's brush, the lipstick's
+  slanted bullet, tweezers holding the gem (the placed gems' own geometry and material), a contact lens. It is lit by
+  the face's three lights, sky and ground, with her tone mapping, colour space and camera perspective, at her scale,
+  so a brush's tuft is as wide as the stroke it paints and the lens as wide as an iris; a soft shadow falls down and
+  to the right, as from her key light. It is drawn once for each tool, colour and grip, then moved with the pointer.
+  - **Mouse or pen:** the tool takes the cursor's place over her face, its tip exactly at the pointer, from the
+    moment it is over her (so the player aims before pressing), held at a pen's angle; strokes, gems and lenses go on
+    at the pointer. Off her face the cursor comes back.
+  - **Finger:** a finger covers what it touches, so the tool works at its tip, held a little above the finger
+    (72 px, at most 12 % of the face's height, as Haircut's clipper), its handle running down to the finger, while
+    the finger is down. Strokes paint at the tip. A gem or a lens shows at the tip from the touch and goes on where
+    the finger lifts (press, aim, release), since a tap under a finger cannot be aimed.
 
 ### Colours (base catalogue, all available from the start)
 
