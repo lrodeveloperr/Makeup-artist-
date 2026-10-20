@@ -12,11 +12,14 @@
 //   tool works the moment it is dragged): each tool paints only in its own small zones of the face, a stroke stays in
 //   the zone it starts in, and a gem goes on only where gems sit (the applicator's `zones`); a mouse or a pen is free
 const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move (mouse and pen)
-// Where a finger's tool works: far enough above the finger that the tool shows beside it, held as a tool rather than
-// hidden under the fingertip (owner, 20 October 2026), and no further: the fingertip's half-height (from the touch's
-// contact size, so a thumb holds it higher than a forefinger) and 38 px more, from 60 to 90 px (60 where the device
-// gives no contact size), and at most 16 % of the face's height (a tiny embed)
-const touchTip = (e, height) => Math.min(Math.min(Math.max((e.height > 1 ? e.height / 2 : 0) + 38, 60), 90), height * 0.16);
+// Where a finger's tool works (owner, 20 October 2026: a one-finger game; the sweet spot is slightly above the
+// finger or thumb, where the tool is seen and felt in hand, and not too high). As an offset cursor (Potter et al.,
+// 1988; Vogel and Baudisch's Shift, 2007): just clear of the fingertip as the player sees it. The reported point is the
+// middle of the contact; the fingertip reaches about half the contact's height above it, the nail a little further,
+// then a small gap, so: half the contact's height + 30 px (about 5 mm on a phone), from 54 px (a forefinger, about
+// 9 mm) to 72 px (a thumb, about 11.5 mm); 58 px where the device gives no contact size; at most 16 % of the face's
+// height (a tiny embed)
+const touchTip = (e, height) => Math.min(Math.min(Math.max((e.height > 1 ? e.height / 2 : 28) + 30, 54), 72), height * 0.16);
 
 // canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses, 'gem' for gems), or null
 // while the face takes no input (review, an open panel, a pause);

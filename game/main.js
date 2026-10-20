@@ -183,8 +183,13 @@ async function main() {
   // assisted touch (zones.js): under a finger each tool works only in its zones, which light up faintly while it is down
   const mouth = view.head.header.landmarks.mouth, glow = new ZoneGlow(view);
   const guide = (hit) => toLashes(hit, view.makeup.picker, view.eyes);
-  const lift = (x, y, z) => { const h = view.sampler.locate(x, y, z); return h && evalPoint(h, view.headGeometry.refSub, []); };
-  view.makeup.zones = (tool, hit, locked) => assist(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, locked, guide, lift);
+  const lift = (x, y, z) => { const h = view.sampler.locate(x, y, z); return h && [evalPoint(h, view.headGeometry.refSub, []), evalPoint(h, view.headGeometry.subPos, [])]; };
+  view.makeup.zones = (tool, hit, locked) => {
+    const z = assist(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, locked, guide, lift);
+    // guided or captured paint lands away from the finger (up to about 11 mm): the patch redrawn covers where it went
+    if (z !== null && tool !== 'gem') { const [x, y] = view.makeup.picker.project(hit.pos); grow(x, y, x, y, tool); }
+    return z;
+  };
   const showZones = (tool) => {
     const was = glow.mesh.visible;
     glow.show(tool === 'lens' || tool === 'mascara' ? null : tool, view.profile.brows, mouth);
@@ -204,6 +209,12 @@ async function main() {
   // edge, and the mascara's wand with the lashes it lengthens
   const REACH = { brush: 0.2, glow: 0.13, pencil: 0.05, liner: 0.06, lip: 0.08, mascara: 0.3 };
   let patch = null;
+  // add a box (CSS pixels) and the tool's reach round it to the patch
+  const grow = (x0, y0, x1, y1, tool) => {
+    const P = view.makeup.picker, [px] = P.project([0, 0, 0.5]), [qx] = P.project([0.1, 0, 0.5]), r = (REACH[tool] ?? 0.2) * Math.abs(qx - px) * 10 + 14;
+    const b = [x0 - r, y0 - r, x1 + r, y1 + r];
+    patch = patch ? [Math.min(patch[0], b[0]), Math.min(patch[1], b[1]), Math.max(patch[2], b[2]), Math.max(patch[3], b[3])] : b;
+  };
   const input = attachInput(canvas, view.makeup, {
     aim,
     selection: () => {
@@ -225,10 +236,8 @@ async function main() {
       move(x, y, contact, time) {
         const t = (time ?? performance.now()) / 1000, P = view.makeup.picker;
         // the patch this sample may change, from the last sample to this one
-        const [px] = P.project([0, 0, 0.5]), [qx] = P.project([0.1, 0, 0.5]), k = Math.abs(qx - px) * 10;
-        const r = (REACH[this.tool] ?? 0.2) * k + 14, [lx, ly] = this.last || [x, y];
-        const b = [Math.min(x, lx) - r, Math.min(y, ly) - r, Math.max(x, lx) + r, Math.max(y, ly) + r];
-        patch = patch ? [Math.min(patch[0], b[0]), Math.min(patch[1], b[1]), Math.max(patch[2], b[2]), Math.max(patch[3], b[3])] : b;
+        const [lx, ly] = this.last || [x, y];
+        grow(Math.min(x, lx), Math.min(y, ly), Math.max(x, lx), Math.max(y, ly), this.tool);
         if (this.voice && this.last) {
           const [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]);
           const dx = x - this.last[0], dy = y - this.last[1];
@@ -663,7 +672,7 @@ async function main() {
   setTimeout(() => { cover.hidden = true; }, 300);
   prepare();
   await host.gameReady();
-  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits, glow, mouth, zoneAt } }); // for tests and debugging
+  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits, glow, mouth, zoneAt, regionsAt } }); // for tests and debugging
 }
 
 main().catch((e) => fail('START', e));

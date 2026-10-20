@@ -99,9 +99,13 @@ part of every face at any screen size.
     at the pointer. Off her face the cursor comes back.
   - **Finger:** a finger covers what it touches, so the tool works at its tip, held a little above the finger
     (owner, 20 October 2026: the balance between the finger and seeing the tool, part of the ASMR, so it feels held
-    rather than like painting with the finger): half the fingertip's contact height plus 38 px, from 60 to 90 px, so
-    a thumb holds it higher than a forefinger (60 px where the device gives no contact size), and at most 16 % of the
-    face's height in a tiny embed. (It was 72 px, then 44 px when paint landed away from the finger; the zones below
+    rather than like painting with the finger; a one-finger game, so the sweet spot is slightly above the finger or
+    thumb, not too high). As an offset cursor (Potter, Weldon and Shneiderman, 1988; Vogel and Baudisch's Shift,
+    2007, which notes that a fixed offset costs speed and reach, so it is kept as small as clears the finger): the
+    reported touch point is the middle of the contact, the fingertip reaches about half the contact's height above
+    it, so the tip sits at half the contact's height plus 30 px (about 5 mm on a phone: the nail and a small gap),
+    from 54 px (a forefinger, about 9 mm) to 72 px (a thumb, about 11.5 mm), 58 px where the device gives no contact
+    size, and at most 16 % of the face's height in a tiny embed. (It was 72 px, then 44 px when paint landed away from the finger; the zones below
     now keep the paint where it belongs, so the tool can stand clear of the finger again.) Its handle runs down to
     the finger, while the finger is down. Strokes paint at the tip from the moment the finger drags; a touch that
     lifts without sliding leaves one dab. A gem or a lens shows at the tip from the touch and goes on where the
@@ -125,6 +129,9 @@ part of every face at any screen size.
     | Lens | the iris (as with a mouse) |
     | Gems | her face, but not her lips, ears or neck |
 
+    The liner's wing is captured the same way (a stroke near its sharp tip slides along it rather than leaving a
+    dot). The highlighter's glow has a soft sheen from the room's light as well as the key light's lustre, so a
+    stroke shows even where the key light falls away (under the brow's tail).
     No tool is forced (owner, 20 October 2026: some tools felt as if they had to be forced to work): a finger that
     strays up to 6 mm outside the zone it is painting, or lands up to 6 mm outside one, is moved in to the zone's
     edge (towards a point inside it, such as the middle line of her brow or cheekbone), so the paint slides along
@@ -135,7 +142,13 @@ part of every face at any screen size.
     Along the lashes the liner and the pencil are guided: a finger within about 8 mm of the lashes draws on the lash
     line itself (`toLashes`: the lid's edge found on screen, then 3.2 mm onto the upper lid, where a line shows just
     above the lashes, or 1 mm below the lower lashes), so a line drawn roughly along the lashes follows them. While a
-    finger is down, the selected tool's zones light up faintly (`ZoneGlow`), so the rule needs no words. The stored
+    finger is down, the selected tool's zones light up faintly (`ZoneGlow`), so the rule needs no words. Painting
+    redraws only the patch round the stroke; the patch covers where guided or captured paint actually lands, so it
+    shows while the finger is still down on any screen.
+    `tests/zones.mjs` (`npm run test:zones`) checks the integrity on three faces, on a grid every 6 px over the face:
+    every point in a tool's zones paints under a finger, the paint shows (the picture changes where it went), and
+    nothing a finger stores lies outside the tool's zones; gems go on the face, never the lips. Run on 12 faces
+    while building it, the pencil painted every one of its zone points, visibly, on every face. The stored
     strokes are ordinary points, so a restored look replays exactly, and the save format is unchanged.
 
 ### Colours (base catalogue, all available from the start)

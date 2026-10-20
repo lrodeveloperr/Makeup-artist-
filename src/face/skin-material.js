@@ -227,8 +227,9 @@ void main() {
   glitter = mix(vec3(1.0), glitter / max(max(glitter.r, max(glitter.g, glitter.b)), 1e-3), 0.6);
   col += finish.a * glitter * (0.05 * sheen + 1.2 * sparkle);
   // glow (highlighter): the high points catch the light in a broad pearly lustre of the product's tint, with fine
-  // glints; where the light does not reach them, little shows
-  col += finish.b * tint * (0.55 * lustre + 0.35 * sparkle);
+  // glints, over a soft sheen from the room's light, so a stroke always shows, even where the key light falls away
+  // (owner, 20 October 2026: no tool may feel forced to work)
+  col += finish.b * tint * (0.55 * lustre + 0.35 * sparkle + 0.3 * ambient(n));
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

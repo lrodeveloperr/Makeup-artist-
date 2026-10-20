@@ -288,6 +288,7 @@ npm run build:game     # build/game (YouTube page, minified) and build/game-dev
 npm run serve:game     # the development page on http://localhost:8130/ (add ?testads for test ads)
 npm test               # includes tests/game.mjs (rules, pacing, daily colour, saves, ad ordering)
 npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with the SDK stand-in
+npm run test:zones     # tests/zones.mjs: assisted touch zones paint, visibly, everywhere they light up
 ```
 
 **`tests/game.mjs`** covers:
@@ -307,6 +308,11 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - assisted touch on three faces: every tool, by finger, paints in each of its zones and nowhere outside them, a long
   slip across her face keeps to the zone it started in, gems go on her forehead but not her lips, the zones light
   up only while a finger is down, and a mouse paints anywhere; a thumb holds the tool higher than a forefinger
+- on a tablet-sized screen, guided liner and pencil lines and captured highlighter show while the finger is still
+  down (what is on screen mid-stroke is the whole picture)
+
+**`tests/zones.mjs`** (`npm run test:zones`): assisted touch integrity on three faces (every zone point of every
+tool paints and shows; nothing lands outside the zones; gems on the face, not the lips).
 - Next and an untouched Next
 - the interstitial on the second look
 - a refused, then an earned, colour of the day

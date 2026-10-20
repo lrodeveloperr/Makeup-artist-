@@ -53,7 +53,7 @@ function onBrow(ax, y, brows, margin) {
 function onLashLine(ax, y, reg) {
   if (reg[7] > 0.5) return null;
   const w = ax - EYE.outer + 0.01; // the wing, up to 0.09 beyond the corner
-  if (w > 0 && w < 0.1 && y > -0.012 + 0.25 * w && y < 0.03 + 0.9 * w) return 'wing';
+  if (ax > EYE.outer && w < 0.1 && y > -0.012 + 0.25 * w && y < 0.03 + 0.9 * w) return 'wing'; // (at the corner, guided)
   return ax >= EYE.inner - 0.02 && ax <= EYE.outer && reg[1] < 0.14 ? 'lashes' : null;
 }
 
@@ -66,7 +66,8 @@ export function toLashes(hit, picker, eyes) {
   const m = eyes.meshes[hit.pos[0] < 0 ? 1 : 0], [cx, cy] = picker.project(m.position), [hx, hy] = picker.project(hit.pos);
   const [px] = picker.project([m.position[0] + 0.1, m.position[1], m.position[2]]), k = Math.abs(px - cx) * 10; // pixels a dm
   const out = (hy < cy ? 0.032 : 0.01) * k;
-  // the distance to the eye along (dx, dy), up to `max` pixels, or 0 if no eye is met
+  // the distance to the eye along (dx, dy), up to `max` pixels (0: the point is already at the lid's edge, as where a
+  // touch on the eye was moved out to it), or -1 if no eye is met
   const edge = (dx, dy, max) => {
     let last = 0;
     for (let t = 0.5; t < max; t += 0.5) {
@@ -74,11 +75,11 @@ export function toLashes(hit, picker, eyes) {
       if (h?.kind === 'eye') return last;
       if (h?.kind === 'skin') last = t;
     }
-    return 0;
+    return -1;
   };
   let dx = 0, dy = Math.sign(cy - hy) || 1, t = edge(dx, dy, Math.abs(cy - hy));
-  if (!t) { const l = Math.hypot(cx - hx, cy - hy) || 1; dx = (cx - hx) / l; dy = (cy - hy) / l; t = edge(dx, dy, l); }
-  const h = t ? picker.pick(hx + dx * (t - out), hy + dy * (t - out)) : null;
+  if (t < 0) { const l = Math.hypot(cx - hx, cy - hy) || 1; dx = (cx - hx) / l; dy = (cy - hy) / l; t = edge(dx, dy, l); }
+  const h = t >= 0 ? picker.pick(hx + dx * (t - out), hy + dy * (t - out)) : null;
   if (h?.kind === 'skin') { hit.ref = h.ref; hit.pos = h.pos; }
 }
 
@@ -119,7 +120,7 @@ export function zoneAt(tool, hit, reg, brows, mouth, guide) {
 // the pencil are guided onto it from 8 mm away.
 const CAPTURE = 0.06;
 // a point inside each zone to move towards, for a stray point at (ax, y) (|x|, y): its middle, or the nearest point
-// of its middle line for a long, thin one
+// of its middle line for a long, thin one (null: no capture there)
 const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 const INSIDE = {
   lips: (ax, y, m) => { const t = Math.min(ax / m.halfWidth, 0.8); return [t * m.halfWidth, m.lineCentre + (m.lineCorner - m.lineCentre) * t * t]; },
@@ -129,6 +130,8 @@ const INSIDE = {
   nose: (ax, y) => [0, clamp(y, -0.3, 0.07)],
   arch: (ax) => [clamp(ax, 0.32, 0.45), 0.1325],
   bow: (ax, y, m) => [Math.min(ax, 0.04), m.lineCentre + m.upperCentre + 0.012],
+  // the liner's wing (beside the outer corner; along the lashes the liner is guided onto them instead)
+  lash: (ax) => (ax > EYE.outer ? [clamp(ax, EYE.outer, EYE.outer + 0.08), 0.009 + 0.575 * (clamp(ax, EYE.outer, EYE.outer + 0.08) - EYE.outer + 0.01)] : null),
   brow: (ax, y, m, brows) => {
     const sh = BROW_SHAPES[brows.shape] || BROW_SHAPES['soft-arch'], end = 0.49 * brows.length, u = clamp((ax - 0.115) / (end - 0.115), 0.05, 0.95);
     const a = u < sh.pu ? Math.sin((Math.PI / 2) * (u / sh.pu)) ** sh.k1 : 1 - (1 - sh.tail) * ((u - sh.pu) / (1 - sh.pu)) ** sh.k2;
@@ -136,12 +139,12 @@ const INSIDE = {
   },
 };
 // the zones a tool's stroke can be captured by (with the side of the face they are on, where they come in pairs)
-const CAPTURED = { lip: ['lips'], brush: ['lid', 'cheek'], glow: ['bone', 'nose', 'arch', 'bow'], pencil: ['brow'] };
-const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow']);
+const CAPTURED = { lip: ['lips'], brush: ['lid', 'cheek'], glow: ['bone', 'nose', 'arch', 'bow'], pencil: ['brow', 'lash'], liner: ['lash'] };
+const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow', 'lash']);
 
 // The zone for a finger's point: as zoneAt, in the zone `locked` once the stroke has one (null before it starts), with
-// capture: hit.ref may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference (x, y), nearest
-// depth z. -> the zone, or null (the pen is up)
+// capture: the hit (ref and pos) may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference
+// (x, y), nearest depth z, as [ref, pos], or null. -> the zone, or null (the pen is up)
 export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
   const z = zoneAt(tool, hit, reg, brows, mouth, guide);
   if (z !== null && (locked == null || z === locked)) return z;
@@ -152,7 +155,9 @@ export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
     const name = PAIRED.has(id.slice(0, -1)) ? id.slice(0, -1) : id, inside = INSIDE[name];
     if (!inside) continue;
     const sx = PAIRED.has(name) ? (id.endsWith('r') ? -1 : 1) : Math.sign(p[0]) || 1;
-    const [qx, qy] = inside(Math.abs(p[0]), p[1], mouth, brows), q = [sx * qx, qy];
+    const target = inside(Math.abs(p[0]), p[1], mouth, brows);
+    if (!target) continue;
+    const q = [sx * target[0], target[1]];
     const at = (t) => { test.ref[0] = p[0] + (q[0] - p[0]) * t; test.ref[1] = p[1] + (q[1] - p[1]) * t; return zoneAt(tool, test, reg, brows, mouth) === id; };
     if (!at(1)) continue;
     let lo = 0, hi = 1; // outside at lo, inside at hi
@@ -164,7 +169,7 @@ export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
   }
   const r = best && lift(best.x, best.y, p[2]);
   if (!r) return null;
-  hit.ref = r;
+  [hit.ref, hit.pos] = r;
   return best.id;
 }
 
