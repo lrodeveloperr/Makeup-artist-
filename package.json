@@ -1,0 +1,40 @@
+{
+  "name": "makeup-artist-",
+  "version": "1.0.0",
+  "description": "WorksBien Studios freestyle makeup game: build contract and the generated-face prototype.",
+  "scripts": {
+    "fetch:makehuman": "node tools/makehuman/fetch.mjs",
+    "build:head": "node tools/makehuman/build-head.mjs",
+    "build:preview": "node tools/build-preview.mjs --minify",
+    "serve": "node tools/serve.mjs build/preview",
+    "audit": "node tests/face-audit.mjs 2000 300",
+    "test": "node tests/unit.mjs && node tests/makeup.mjs && node tests/game.mjs && node tests/face-audit.mjs 2000 300 && node tests/size-budget.mjs",
+    "test:render": "node tools/build-preview.mjs && node tests/render-smoke.mjs",
+    "size": "node tests/size-budget.mjs",
+    "build:game": "node tools/build-game.mjs --minify",
+    "serve:game": "node tools/build-game.mjs && node tools/serve.mjs build/game-dev",
+    "test:game": "node tools/build-game.mjs && node tests/game-smoke.mjs",
+    "test:layout": "node tools/build-game.mjs && node tests/layout.mjs",
+    "test:sound": "node tools/build-game.mjs && node tests/sound.mjs",
+    "test:zones": "node tools/build-game.mjs && node tests/zones.mjs",
+    "test:inputs": "node tools/build-game.mjs && node tests/inputs.mjs",
+    "sounds": "python3 tools/make-sounds.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lrodeveloperr/Makeup-artist-.git"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/lrodeveloperr/Makeup-artist-/issues"
+  },
+  "homepage": "https://github.com/lrodeveloperr/Makeup-artist-#readme",
+  "devDependencies": {
+    "esbuild": "0.25.10",
+    "fflate": "0.8.3",
+    "playwright": "1.55.1"
+  }
+}

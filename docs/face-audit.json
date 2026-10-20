@@ -1,0 +1,232 @@
+{
+ "generatorVersion": 6,
+ "faces": 2000,
+ "geometrySample": 300,
+ "failures": [],
+ "coverage": {
+  "origin": {
+   "aboriginal-australian": 115,
+   "arctic-indigenous": 96,
+   "central-asian": 140,
+   "east-african": 95,
+   "east-asian": 158,
+   "indigenous-americas": 176,
+   "mediterranean-european": 87,
+   "melanesian": 78,
+   "north-african-middle-eastern": 169,
+   "northern-european": 101,
+   "pacific-islander": 106,
+   "south-asian": 154,
+   "southeast-asian": 92,
+   "southern-central-african": 176,
+   "west-african": 257
+  },
+  "kind": {
+   "blend": 536,
+   "single": 1464
+  },
+  "presentation": {
+   "feminine": 2000
+  },
+  "style": {
+   "box-braids": 152,
+   "cornrow-braids": 92,
+   "curly-long": 275,
+   "locs": 80,
+   "long-layered": 200,
+   "long-straight": 607,
+   "long-wavy": 479,
+   "silk-press": 115
+  },
+  "texture": {
+   "coily": 470,
+   "curly": 310,
+   "straight": 784,
+   "wavy": 436
+  },
+  "colour": {
+   "ash-blonde": 11,
+   "ash-brown": 21,
+   "auburn": 13,
+   "chestnut": 45,
+   "copper": 8,
+   "dark-blonde": 24,
+   "dark-brown": 202,
+   "darkest-brown": 353,
+   "golden-blonde": 14,
+   "honey-blonde": 8,
+   "jet-black": 663,
+   "light-blonde": 7,
+   "light-brown": 21,
+   "medium-brown": 43,
+   "platinum-blonde": 3,
+   "soft-black": 561,
+   "strawberry-blonde": 3
+  },
+  "iris": {
+   "blue": 69,
+   "brown": 631,
+   "dark-brown": 1101,
+   "green": 41,
+   "grey": 20,
+   "hazel": 88,
+   "light-brown": 50
+  },
+  "undertone": {
+   "golden": 629,
+   "neutral": 808,
+   "olive": 217,
+   "pink": 87,
+   "red": 259
+  },
+  "tone": {
+   "0": 40,
+   "1": 115,
+   "2": 226,
+   "3": 244,
+   "4": 312,
+   "5": 343,
+   "6": 254,
+   "7": 218,
+   "8": 185,
+   "9": 63
+  },
+  "brows": {
+   "angled": 310,
+   "high-arch": 294,
+   "rounded": 309,
+   "soft-arch": 667,
+   "straight": 420
+  },
+  "age": {
+   "18": 67,
+   "19": 202,
+   "20": 189,
+   "21": 198,
+   "22": 172,
+   "23": 185,
+   "24": 197,
+   "25": 156,
+   "26": 188,
+   "27": 174,
+   "28": 190,
+   "29": 82
+  },
+  "outfitColour": {
+   "berry": 8,
+   "black": 31,
+   "blush": 35,
+   "burgundy": 20,
+   "charcoal": 16,
+   "cobalt": 74,
+   "coral": 109,
+   "cornflower": 25,
+   "cream": 57,
+   "emerald": 97,
+   "fuchsia": 88,
+   "gold": 33,
+   "golden-yellow": 91,
+   "grey-blue": 8,
+   "hot-pink": 106,
+   "ivory": 74,
+   "lavender": 96,
+   "leaf-green": 53,
+   "lilac": 48,
+   "mint": 52,
+   "mustard": 69,
+   "navy": 40,
+   "olive": 25,
+   "orange": 24,
+   "peach": 27,
+   "plum": 29,
+   "powder-blue": 14,
+   "raspberry": 10,
+   "red": 109,
+   "rose": 8,
+   "royal-blue": 54,
+   "royal-purple": 19,
+   "rust": 52,
+   "sky-blue": 44,
+   "teal": 69,
+   "terracotta": 4,
+   "tomato": 42,
+   "turquoise": 96,
+   "violet": 40,
+   "warm-pink": 7,
+   "white": 97
+  },
+  "pattern": {
+   "dots": 260,
+   "floral": 361,
+   "geometric": 196,
+   "gingham": 144,
+   "solid": 526,
+   "stripes": 279,
+   "two-tone": 234
+  },
+  "neckline": {
+   "boat": 241,
+   "off-shoulder": 338,
+   "ruffle": 159,
+   "scoop": 217,
+   "square": 182,
+   "straps": 290,
+   "sweetheart": 269,
+   "v-neck": 304
+  },
+  "garment": {
+   "blouse": 979,
+   "dress": 1021
+  }
+ },
+ "rates": {
+  "freckles": 0.123,
+  "moles": 0.4435,
+  "highlights": 0.1145
+ },
+ "distinctSignatures": 1990,
+ "queue": {
+  "adjacentIdentical": 0,
+  "adjacentSameStyle": 0.013006503251625813,
+  "adjacentSameOrigin": 0.014507253626813406,
+  "adjacentSameToneBin": 0.04852426213106553,
+  "repeatsWithinFour": 0
+ },
+ "geometry": {
+  "eyeR": {
+   "min": 0.1368046217896846,
+   "p5": 0.1393806182759475,
+   "median": 0.15285498919951632,
+   "p95": 0.15898597160410388,
+   "max": 0.16228186934958355
+  },
+  "lidGap": {
+   "min": 0.05772256851196289,
+   "p5": 0.0671162586659193,
+   "median": 0.07957190088927746,
+   "p95": 0.09261393547058105,
+   "max": 0.10320869833230972
+  },
+  "mouthW": {
+   "min": 0.28012028336524963,
+   "p5": 0.2917860746383667,
+   "median": 0.32406240701675415,
+   "p95": 0.3615219295024872,
+   "max": 0.38759106397628784
+  },
+  "top": {
+   "min": 0.9259330034255981,
+   "p5": 0.9497331380844116,
+   "median": 1.0191569328308105,
+   "p95": 1.0760421752929688,
+   "max": 1.09987211227417
+  },
+  "chin": {
+   "min": -2.5615694522857666,
+   "p5": -2.5109846591949463,
+   "median": -2.3737432956695557,
+   "p95": -2.181138515472412,
+   "max": -0.95159512758255
+  }
+ }
+}

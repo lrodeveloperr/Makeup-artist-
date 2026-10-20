@@ -4,13 +4,13 @@ Read `MAKEUP-AI-BUILD-CONTRACT.md` before building, reviewing or changing this g
 
 ## Preserve the settled product
 
-- Four fixed makeup tools, all always available: soft brush, detail pencil, mascara wand and lip applicator. Contact lenses are a separate eye-colour selector, also freely available with base colours.
-- Freestyle application in any order; the player's strokes determine the work. Front-facing, sufficiently close camera. No camera rotation, precision-zoom controls, size/intensity sliders, scoring rubric or required target.
-- Finish opens a player-controlled review with before/after comparison. Next remains available. No free remover, eraser, undo, same-face reset or hidden restart bypass.
-- Exactly two rewarded purposes: one completed rewarded ad for same-face replay, and one completed rewarded ad for the daily extra colour. The daily reward is exactly one colour for one specified tool or lens selector for 24 hours, across unlimited faces during that entitlement. It never unlocks a tool or a whole palette. Existing applied colour survives expiry.
-- Preserve the agreed Haircut-derived natural-break interstitial control in the contract. Never add banners, tool-step ads or extra reward placements.
+- Seven fixed makeup tools, all always available: soft brush, highlighter, detail pencil, liquid liner, mascara wand, lip applicator and face gems (owner, 19 October 2026: the highlighter, liner and gems joined the original four). Contact lenses are a separate eye-colour selector, also freely available with base colours.
+- Freestyle application in any order; the player's strokes determine the work. Lipstick and gloss mix the same whichever goes on first (owner, 19 October 2026): a gloss is a coat over the lipstick, never covering it. Front-facing, sufficiently close camera. No camera rotation, precision-zoom controls, size/intensity sliders, scoring rubric or required target.
+- Finish opens a player-controlled review of the finished look, with no before/after comparison (owner, 19 October 2026). Next remains available. No free remover, eraser, undo, same-face reset or hidden restart bypass.
+- Exactly two rewarded purposes: one completed rewarded ad for same-face replay, and one completed rewarded ad for the daily extra colour. The daily reward is exactly one colour for one specified tool or lens selector, offered until local midnight and kept for good once earned (owner, 19 October 2026). It never unlocks a tool or a whole palette.
+- Interstitials only at Next, systematically after every second finished look, with the contract's guards; a rewarded video stands in for the next one (owner, 19 October 2026). Never add banners, tool-step ads or extra reward placements.
 - Reuse Haircut's screen flow, queue, reward handling, protected saves, direct YouTube integration, lifecycle, cache-safe packaging and applicable QA patterns. Replace its cutting/customer domain with the makeup domain. Keep each game's data and release identity separate.
-- Leave graphics and rendering technology unspecified until the owner chooses them. Do not turn Haircut-specific graphics checks into makeup requirements.
+- Graphics are owner-selected: WebGL2 (own minimal renderer in `src/gl/mini.js`, chosen over Three.js for load time), one 3D head with a fixed front camera, MakeHuman CC0 face assets, procedural shading, young-adult women only, with feminine faces and long hair coherent with their ancestry (no vitiligo, albinism, dyed hair, short cuts, updos or head coverings), and ancestry profiles as tendencies (never race buttons, never shown to players). See `docs/FACES.md` and `ASSETS.md`; keep every new asset CC0, MIT or studio-owned and recorded in `ASSETS.md`. Keep the download within `tests/size-budget.mjs` (minimise loading time). Do not turn Haircut-specific graphics checks into makeup requirements.
 
 ## Authority and scope
 

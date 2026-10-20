@@ -1,0 +1,835 @@
+{
+ "asset": "head.bin.gz",
+ "sha256": "346c349c174554832586288b7f06cd4663d71f4917015f39d17b8a2cbc1e8fc9",
+ "uncompressedBytes": 715734,
+ "source": {
+  "project": "MakeHuman",
+  "repo": "https://github.com/makehumancommunity/makehuman",
+  "commit": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "license": "CC0-1.0",
+  "files": {
+   "makehuman/data/3dobjs/base.obj": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c",
+   "makehuman/data/targets/cheek/l-cheek-bones-decr.target": "0da776725aabc2cbc602d805e50d0dfbc98b0519a0d65f21b7e6f133562e56f9",
+   "makehuman/data/targets/cheek/l-cheek-bones-incr.target": "244ffa39d2d2db94ff15130719346b4cae2236bf2a309c5682eac352da06be50",
+   "makehuman/data/targets/cheek/l-cheek-inner-decr.target": "db665941e27c700ca6ccb514efcdf108d4100efcae6e68b0abf3f95333924dd1",
+   "makehuman/data/targets/cheek/l-cheek-inner-incr.target": "ab5aa2087e0e384f8ca7cc5abe9c03755ed1db1679a59651f8c65aa2788e622f",
+   "makehuman/data/targets/cheek/l-cheek-trans-down.target": "66210ebfcb05056429dcce2c34ee366be25e316ea5c26bf4813b87e6d3b9f974",
+   "makehuman/data/targets/cheek/l-cheek-trans-up.target": "a538a79637616b18f0ba6b0ec749d7b8548791fcb0f9352b37fa82ef4840df39",
+   "makehuman/data/targets/cheek/l-cheek-volume-decr.target": "527d19395f33c02caf3b32254e78702156cdf63c17e4c0e3dd79cca004fa27be",
+   "makehuman/data/targets/cheek/l-cheek-volume-incr.target": "edb0bf9389aa7fd00f9d735603729b687b3899e9a6df0934ca14aa4d44574e27",
+   "makehuman/data/targets/cheek/r-cheek-bones-decr.target": "a336b46fe613d85763fb01ca79758039b15daef1930600e36dc420e799b683d4",
+   "makehuman/data/targets/cheek/r-cheek-bones-incr.target": "a393f67acce21568ab832091daadab267685d464492647cb0c4e8cb5af58c4c9",
+   "makehuman/data/targets/cheek/r-cheek-inner-decr.target": "931435368577ebb410f2179e7e1ed121f741e6ad18fd7eb92ec96c679db1608f",
+   "makehuman/data/targets/cheek/r-cheek-inner-incr.target": "83fd5033cca2fcedc470050d87ac75c037ffc2403bb7ea85ae31eb81de62f0c5",
+   "makehuman/data/targets/cheek/r-cheek-trans-down.target": "27921a4e0920e419f6848a4f08b29a29adc76ce3bae76a44fa5dc5fd1302cddc",
+   "makehuman/data/targets/cheek/r-cheek-trans-up.target": "c776254ff7fc00dc8cae1fb957605291042cbe1b30c519c2079a75a1ca409231",
+   "makehuman/data/targets/cheek/r-cheek-volume-decr.target": "3a356f2f6434ccefa633981dff1b7866ce1feb8427918f35f81b6adffa4599b5",
+   "makehuman/data/targets/cheek/r-cheek-volume-incr.target": "dfdde51eb34b3e2c70a4c0c9fe876339dd80ee6ec0fbb3f798e630af556f9695",
+   "makehuman/data/targets/chin/chin-bones-decr.target": "fc54c1572b2562b095e5a5e48882bab16c1b24e64b106b2d54e6be64ce20121c",
+   "makehuman/data/targets/chin/chin-bones-incr.target": "245b7a9506a10d5828531922ab2ec6da0e813f71bd995dae48c9a4dfad171a49",
+   "makehuman/data/targets/chin/chin-cleft-decr.target": "1ef80a998633e3905b098c546198ffdc14dd4d8171b93bd337b2e058dcffce1a",
+   "makehuman/data/targets/chin/chin-cleft-incr.target": "93f523e952d436094321a5ec8ea38bafcdbe272ada894d3dfa12de7bd4c717d5",
+   "makehuman/data/targets/chin/chin-height-decr.target": "acf83b5b7f2d6665f19d0d91205472878c23ab78b3f43d48420f75afe8e82818",
+   "makehuman/data/targets/chin/chin-height-incr.target": "8b13d4a1e0f4b105cb51a346cd8a3618c9349e620d0197cc442905e83de8ae53",
+   "makehuman/data/targets/chin/chin-jaw-drop-decr.target": "0174f6e636e7d5b136b09f5e1ebc6b6d68045adceef3e84fb813965e14660299",
+   "makehuman/data/targets/chin/chin-jaw-drop-incr.target": "e145bddcf7007a8e4fc56f48202d445e6cf0b3a8f4705b082553f6ead314bbb9",
+   "makehuman/data/targets/chin/chin-prognathism-decr.target": "4dd20d7912e9baf38d5b92e4e3a9f03a7bc0b59578db9d9a80288729ded88885",
+   "makehuman/data/targets/chin/chin-prognathism-incr.target": "81d086ad10c3e210d9a6ddb69ca0aaf2b3f91c2bcd5c7b49173f1303d017bf66",
+   "makehuman/data/targets/chin/chin-prominent-decr.target": "071afc623e6feb38afa5dde7abca83710c062bf1281e30a51fa42a6fbacfc00e",
+   "makehuman/data/targets/chin/chin-prominent-incr.target": "d2493ca5f69aabeb8557d77a56c49cfcf2062ff90c0cad03073d87990d11448b",
+   "makehuman/data/targets/chin/chin-triangle.target": "bd4f02068b8ea3a35cbbdd38554246d686e3f0fbb3ba395f5432dbac76ed3df5",
+   "makehuman/data/targets/chin/chin-width-decr.target": "ac081bd1652c203fc8973f20988a868a423a49f1fe6449cb974727fd46c26af1",
+   "makehuman/data/targets/chin/chin-width-incr.target": "deef506bfe1883d9d4c38667332c9970785226566efbae4724fd3d60c02efcf4",
+   "makehuman/data/targets/ears/l-ear-flap-decr.target": "f45356aa2b841811641d12c45f7d89bc1e778cb2f0abd04010100e1826e862e5",
+   "makehuman/data/targets/ears/l-ear-flap-incr.target": "65f3cde97c13b7cdc88114c701a1cfe4a0e7f9b44c36134fd9cddad9fa266513",
+   "makehuman/data/targets/ears/l-ear-lobe-decr.target": "2d4d34aae12fc052b62f2e5aa1d49b0dde62f83d01389419216a89612bce3b9e",
+   "makehuman/data/targets/ears/l-ear-lobe-incr.target": "e4bd014dbcf89fc32c095e7827ad72415e78a985e7a26757a95d78c0e8336298",
+   "makehuman/data/targets/ears/l-ear-scale-decr.target": "dbe6da6a32a278887bd851c1ce8a3cc8be36e2c833d033afc043a865f171583c",
+   "makehuman/data/targets/ears/l-ear-scale-incr.target": "8112e638fb6ecc46569c527494f5b20acd0c5544d891dbf09c7876402eac384c",
+   "makehuman/data/targets/ears/l-ear-trans-backward.target": "02e302490707dce8ff8248f8cd5e7600978ae0f0c1a1decb3e55ff970b79da85",
+   "makehuman/data/targets/ears/r-ear-flap-decr.target": "38552ada19aa4d0b3b23075db35ffdf621f4eb82a2f5929a0b6e48bfa0d0d60f",
+   "makehuman/data/targets/ears/r-ear-flap-incr.target": "0fc3a78e95c0a8125923fe68873f2ecf3a9a3a80fb14bad11dc0e78bd05944df",
+   "makehuman/data/targets/ears/r-ear-lobe-decr.target": "42191c7331a17a2b5cb1d614bf43893f70fcb9a20ae5e09c0c656f4f8bd2f56d",
+   "makehuman/data/targets/ears/r-ear-lobe-incr.target": "884b026675b3a4f387348f3c74ff7d5cc4d325a697be3bd25cf2bb2d8c2ed58f",
+   "makehuman/data/targets/ears/r-ear-scale-decr.target": "aae4f2455ace56046d1e58fff9a83fea220cd722e24727af352fbaf376a2bb35",
+   "makehuman/data/targets/ears/r-ear-scale-incr.target": "4fa34a2a4d7254fdb5ac514b85b755b8ed0d73ed21450778b2dcb64275a3619d",
+   "makehuman/data/targets/ears/r-ear-trans-backward.target": "ae0d12984160beea75cde7e507b3e33223fcf3f53236e2fbcde327798b0a6d9f",
+   "makehuman/data/targets/eyebrows/eyebrows-angle-down.target": "ec30979a4b998f4054f0d72c8e7e3b204ca12417f07e02669f4f8c8566f8e4f6",
+   "makehuman/data/targets/eyebrows/eyebrows-angle-up.target": "a4b1ff8c5cd7df8d08bba55ccc5de773c120719c7f6c4791e78ade3651f1c2aa",
+   "makehuman/data/targets/eyebrows/eyebrows-trans-backward.target": "0ad186047e809629f169c72502b12d95ad64597294ba6553aaafe9b880e19f11",
+   "makehuman/data/targets/eyebrows/eyebrows-trans-down.target": "38f7de378d535d51f2e50dc2568121a8769445f9a62423bd0a5e688c47ea3225",
+   "makehuman/data/targets/eyebrows/eyebrows-trans-forward.target": "b02d5416bf663e3b77d3ccb44348f735a3a046f5c7df7dd4160b88485a02e7bd",
+   "makehuman/data/targets/eyebrows/eyebrows-trans-up.target": "b685788eecc7629bda0b68a414b2277afbd8636fd7605b3acbd0dabc5d46abda",
+   "makehuman/data/targets/eyes/l-eye-bag-decr.target": "68a0cd34a6849c6614cbdd2fbb8aa6065ab3fbe7c01078277510e206fb8a6259",
+   "makehuman/data/targets/eyes/l-eye-bag-height-decr.target": "bd902077c3e487c45860b99e3f9da891f4f621b8f6865007b99061cfcf3fd992",
+   "makehuman/data/targets/eyes/l-eye-bag-height-incr.target": "8d22f0818abcd616b63b9976ad6f543c2887bedde62716e4d9e67828b9ec6d1e",
+   "makehuman/data/targets/eyes/l-eye-bag-incr.target": "fd3fc50d640d510ffee64862bac239d81495e6f57eae1a5772375f4973ca04cb",
+   "makehuman/data/targets/eyes/l-eye-corner1-down.target": "7f4faca93cab0e8ed4d09b899e5450a176eb9c49604bef4944f4c11f46deaf26",
+   "makehuman/data/targets/eyes/l-eye-corner1-up.target": "bfb3b7440addb68bbbb825b8de709db58900bf9ea7b3a93e60ab36c774f4cb55",
+   "makehuman/data/targets/eyes/l-eye-corner2-down.target": "16944395e9723983dd2d381a0c92d8a6fc4efafbfa2b027cd3dc50f9451f9fc3",
+   "makehuman/data/targets/eyes/l-eye-corner2-up.target": "e31bbedfb1d451459a6ebf510a055e4af94eb8f146079fe9a5e7722b0e4aa661",
+   "makehuman/data/targets/eyes/l-eye-epicanthus-in.target": "2f4be6e52cae5e48453d5b3d596972f305fbda07fccd652ba7c1459376231abf",
+   "makehuman/data/targets/eyes/l-eye-epicanthus-out.target": "5abba734c59087c7cea91e3a25d12a73b668b77523ac5353f4feeac6f820e650",
+   "makehuman/data/targets/eyes/l-eye-eyefold-angle-down.target": "991e20320924d8d5f9f810734a373b04545cef2859d190e759861a9dccfb6c8f",
+   "makehuman/data/targets/eyes/l-eye-eyefold-angle-up.target": "051dd9590fdab0531b739acbe2e89bca372367df956cd019ee1ffb7b22eb159e",
+   "makehuman/data/targets/eyes/l-eye-eyefold-concave.target": "98279454a6951d47a9faf7fe1118de5028d018023b337e537473fe7b48c1f5a6",
+   "makehuman/data/targets/eyes/l-eye-eyefold-convex.target": "2acf824b3b00c728b44eeb94df93538732e159e529e81ef61135c9f19d677bd6",
+   "makehuman/data/targets/eyes/l-eye-eyefold-down.target": "4cbc747fc0be444ccf1546387203370fb9d6a7fffb77ffd84a0ccb75449d7c46",
+   "makehuman/data/targets/eyes/l-eye-eyefold-up.target": "489f12ab9ea1b528c0707dc656c863002a21bff2017880ed78407819ce6a12f3",
+   "makehuman/data/targets/eyes/l-eye-height1-decr.target": "d1d9f77ff6efc9ccdfcc88beafc8a3be8170b3ea386b7a44b414df1f41e84daf",
+   "makehuman/data/targets/eyes/l-eye-height1-incr.target": "75ce5285db2e3721ae5434c8a9d27669eb632da7e588000a112d34264216de20",
+   "makehuman/data/targets/eyes/l-eye-height2-decr.target": "11f97a658461ab341b75165acc280dd5541a0ebf57d84dab24819a3af8ee5d25",
+   "makehuman/data/targets/eyes/l-eye-height2-incr.target": "8521b63c1bf07af06194e96e14eb522dce43615ef1139b8117f104f5132fbc69",
+   "makehuman/data/targets/eyes/l-eye-height3-decr.target": "1e52f3d392fc6493f3544bbb0d9bec1038e3476316d8e425e9e15478e888b7f9",
+   "makehuman/data/targets/eyes/l-eye-height3-incr.target": "61fd32eedef0b3718e529c544b54bd0979d3d92496d881468942d11e7292f458",
+   "makehuman/data/targets/eyes/l-eye-push1-in.target": "8dc07616d8435a382b58fc2d29a5e9a1d6cd4e575cf937d49c57614e8c70f772",
+   "makehuman/data/targets/eyes/l-eye-push1-out.target": "0f0ba53b142015d94ecc1639ff1ac74b7d0d42eb88bedf6a51835300401c3fe3",
+   "makehuman/data/targets/eyes/l-eye-push2-in.target": "f3a2b300de549ea51c6cd73128c54a1c14b13cb48516db3b4513b6599187c1f5",
+   "makehuman/data/targets/eyes/l-eye-push2-out.target": "4adab9a0cb70545fa39ea339a0eb81a9b58524593c3624cc948e5f05369ee5c6",
+   "makehuman/data/targets/eyes/l-eye-scale-decr.target": "a66719f1a42badd955fb0c725ac453969d7fda05cc6e4f4770d388b076703dc7",
+   "makehuman/data/targets/eyes/l-eye-scale-incr.target": "f35550dc3170ca1c0aacae0b598ca139e4f1f913f2ccea146ec6ea5b4e050dbb",
+   "makehuman/data/targets/eyes/l-eye-trans-down.target": "3ebdb3fc54e25cad690b74674db88712f314039660e5b06102763b8edfdb1156",
+   "makehuman/data/targets/eyes/l-eye-trans-in.target": "a92495e3f6cda144b3c37cc07734ee2735934d263e8c20e4b5763b21650ce26b",
+   "makehuman/data/targets/eyes/l-eye-trans-out.target": "ca961a4637517aeb689fa351e9d36abb3c04108a2870b26220f3c8cda027bdee",
+   "makehuman/data/targets/eyes/l-eye-trans-up.target": "2b84f1cdb80c962505809d8be92524221aeb34fdf0a5b51926fdf2f4e37846d3",
+   "makehuman/data/targets/eyes/r-eye-bag-decr.target": "0834b70b669c5287822b4e8bcc626b7d997b944751f95665a6a510a020c415a1",
+   "makehuman/data/targets/eyes/r-eye-bag-height-decr.target": "445db05ea422cd662883dcb078cf719f2ca2cdc98173a2e50a8c4067046bf093",
+   "makehuman/data/targets/eyes/r-eye-bag-height-incr.target": "64bdd6da72b67698dd670dfbcb22e1cb469ec4f30571e160887b07f8feb664dc",
+   "makehuman/data/targets/eyes/r-eye-bag-incr.target": "60bdf910850f5cc89bccb2950b5f1a63fa5960e79ec42746cf5f486719e3662f",
+   "makehuman/data/targets/eyes/r-eye-corner1-down.target": "a95e120f64af8a7af4551899b0fadc5da91d015d9fd259e4c4bd1183d5445001",
+   "makehuman/data/targets/eyes/r-eye-corner1-up.target": "f1bedac16f1b9e493fc06fa0ebc3edf73836bde385d3ab03ae8bb91dbbeec56f",
+   "makehuman/data/targets/eyes/r-eye-corner2-down.target": "cf227aed9a80fd4250f699aa37e5e0e4b726f2726d6a8f51ed90f706c8b27e30",
+   "makehuman/data/targets/eyes/r-eye-corner2-up.target": "121342afb92d0916ca1fba59df1c45a61dcf08713fd81f6ff67871cfc6a4f14c",
+   "makehuman/data/targets/eyes/r-eye-epicanthus-in.target": "bc96fd55c5686ddceee24d3a5b6f7a8c9c3edbb66b198070ae2d6c3f5bdbebda",
+   "makehuman/data/targets/eyes/r-eye-epicanthus-out.target": "e39dfb6dc6adfdeb280e27b4a79cfb2c440d414de15d4c8153db8da1e1b86744",
+   "makehuman/data/targets/eyes/r-eye-eyefold-angle-down.target": "9c8fd1c562b22bb11c93e3e9edbd23ce9bb849d2f05fa749c24147e6c541dec1",
+   "makehuman/data/targets/eyes/r-eye-eyefold-angle-up.target": "ff12695b6ef726c47f7689eb3087ee2c7e451c0a51860a9b9bc4a0c1b653f485",
+   "makehuman/data/targets/eyes/r-eye-eyefold-concave.target": "adee70d68568b7e6ddeabd70b2947a73b1ff2c3c51356140b4a6ecc119b0eb76",
+   "makehuman/data/targets/eyes/r-eye-eyefold-convex.target": "883bc22d1d4699ffda290bc7fdd18e956c784b2fc504f3a4c49b08278d6382d9",
+   "makehuman/data/targets/eyes/r-eye-eyefold-down.target": "44569bba940133d44e07cb66f2946c419e36ff59b45a0e24497930468b749b8a",
+   "makehuman/data/targets/eyes/r-eye-eyefold-up.target": "bc5fac33b9ab5ee66c34c5a8d9449b9d561f2015155c34b5425c02ca9326ddca",
+   "makehuman/data/targets/eyes/r-eye-height1-decr.target": "0e561d96be0453c209ff7cbffdd86cdd73e790a11fc7c0cc8e2e36a1143c46ef",
+   "makehuman/data/targets/eyes/r-eye-height1-incr.target": "daab8f4115ade91e776f9bb4622926ddd20cff2ddcfe74e1ff3654132b727933",
+   "makehuman/data/targets/eyes/r-eye-height2-decr.target": "8fbe66bf11786f68697b5ba720f6f76e1a99f0db066249d369e4476e016f3f64",
+   "makehuman/data/targets/eyes/r-eye-height2-incr.target": "35e1f070ab8a77dc103aab81c478f04136f6afec378a7003d8834e49ff02d916",
+   "makehuman/data/targets/eyes/r-eye-height3-decr.target": "06f6172aecca99b65c01ce9336a6fd744fc6360b80ccba8679ffac34636b8f89",
+   "makehuman/data/targets/eyes/r-eye-height3-incr.target": "2f715100eeb9a1cec7f57d9bb875d746b5a9472ada16d685098f748c5eebebf7",
+   "makehuman/data/targets/eyes/r-eye-push1-in.target": "19b6d4e8af8fbe6821b234c66f8bbf3e1ca043ec79a94750ed30735a250d4ddf",
+   "makehuman/data/targets/eyes/r-eye-push1-out.target": "317c89fe200d18707bd8a71c5f1900565cdcb38f5427d55dd137a05571fc7f30",
+   "makehuman/data/targets/eyes/r-eye-push2-in.target": "c01a1704516b51909e777966fb79ed9a0b4027f68a63e3f98719750eb1ed170e",
+   "makehuman/data/targets/eyes/r-eye-push2-out.target": "a6271fefddb34fd8da2db94e9af58b8d52b3ea13de15567339d49de74fbb8465",
+   "makehuman/data/targets/eyes/r-eye-scale-decr.target": "f43ba41146723a192c755330aa8baa77b638bc28f3736c448e5ce72e8a588f32",
+   "makehuman/data/targets/eyes/r-eye-scale-incr.target": "e1f4cb48575b60a46589635b99a8b87587ba82d7524a8ac1445ace0ba002e918",
+   "makehuman/data/targets/eyes/r-eye-trans-down.target": "763c2044a7b0e1fe6dbe5373035c10dd4a7090bba6db7f1e747016f1a4a295b8",
+   "makehuman/data/targets/eyes/r-eye-trans-in.target": "4c494f3503b219b07782ebf78132da81f2b5711232825cf261dcd1ca57add3d6",
+   "makehuman/data/targets/eyes/r-eye-trans-out.target": "02143e686611f18d36915ee70082234e37db3d38a791cb8e1a46c0c56c4be43c",
+   "makehuman/data/targets/eyes/r-eye-trans-up.target": "f2b2d139f1ab65aabef8483d53636c825ca320b178b51a09644d6942a0b2cafd",
+   "makehuman/data/targets/forehead/forehead-nubian-decr.target": "7475d8f15103e4319e5af3229e8333721055d0c9e145ab0473059b1a9b6ad07d",
+   "makehuman/data/targets/forehead/forehead-nubian-incr.target": "dd35ac6d837bf4feb5599290ce013494ad316c84bdf7ce6c619ba89d08510f7e",
+   "makehuman/data/targets/forehead/forehead-scale-vert-decr.target": "d7b825f28c93766a0ee8e60002b8a0e9c2d8cd2c9b64e7bbd3a278e7103eae1c",
+   "makehuman/data/targets/forehead/forehead-scale-vert-incr.target": "cfe989de3a629665b7147891a9939da30844437f189e39a7d69476cdf7153fbe",
+   "makehuman/data/targets/forehead/forehead-temple-decr.target": "87e64d4445da6c36d19eb1543be6c1047184d2a830314e48d522a1789b921612",
+   "makehuman/data/targets/forehead/forehead-temple-incr.target": "5befc93f4a58ba09f51fcad625fd659b0dc99a86e1d1581373a4e8aecf2e3965",
+   "makehuman/data/targets/forehead/forehead-trans-backward.target": "f5f16d4c7837cbad69a3bd9dd6cfedd9b2b3232cd922ce37958988f8f952e015",
+   "makehuman/data/targets/forehead/forehead-trans-forward.target": "b58ddd3e8a22c9b933b9b6a560599719b4f567ac49eb90560e4a65740eb938c0",
+   "makehuman/data/targets/head/head-age-decr.target": "dce4ba0fcd18e7a4e5bc86d98785452ac5ca6d33b993d7c37ffdb339e50ff568",
+   "makehuman/data/targets/head/head-age-incr.target": "ff677345bd81e3f439bdf75496bbee620ca3c3f029955a546837afd283abf73a",
+   "makehuman/data/targets/head/head-diamond.target": "7072c718c8476ca38d6758fb7531fd945612d51acdca6555da8a8f770284c41d",
+   "makehuman/data/targets/head/head-fat-decr.target": "00473b6069f9cf6c05a2f1fd0c0bae20bb4ec45e9552bb5695f1d1533f3cc119",
+   "makehuman/data/targets/head/head-fat-incr.target": "075d18cdfea9e781ae0152132bfea97ea9b901ffdece8d5e6866cb1744f10056",
+   "makehuman/data/targets/head/head-invertedtriangular.target": "d236302afe23f2f2d6d753e4b73f91c1220d17dca24417931fe477a232f18116",
+   "makehuman/data/targets/head/head-oval.target": "a17cd3a600588a344babe520fbd4d4edcb096db3328051fe692dfb997a1a678d",
+   "makehuman/data/targets/head/head-rectangular.target": "bbfcbd4d6334df18515e73abb707b8a948adb74e0aba88a728c8e146dd5f4e4b",
+   "makehuman/data/targets/head/head-round.target": "bd96b745b19432ac838f15438aa87e9002f597e59353861721e12e6da0f2c625",
+   "makehuman/data/targets/head/head-scale-depth-decr.target": "3989a6a769fd4ee5b69179f3b8f3281deb882d943e071ef4b808e5faa4040663",
+   "makehuman/data/targets/head/head-scale-depth-incr.target": "b31ac0344498d2563d216b568a98eb941f6ebcfd07e034a2b8d1958ccb0b9dec",
+   "makehuman/data/targets/head/head-scale-horiz-decr.target": "cadb55b340cb94e96131860beb68b2e46204fccc7ee8f963f66cc9d22b03af0c",
+   "makehuman/data/targets/head/head-scale-horiz-incr.target": "31830f645c194c9451cb5f59cffb8e1d2a1c8fb215afb0c2ab36028b2c24570d",
+   "makehuman/data/targets/head/head-scale-vert-decr.target": "928f8900b8955ec72659156e3153c00cdd2e55ba23eaaab7f8eeee7a5e64f528",
+   "makehuman/data/targets/head/head-scale-vert-incr.target": "d9560ee80b9125da34cc95ece61192a295ab53c50a314c0084ddb3b0f38cc7d6",
+   "makehuman/data/targets/head/head-square.target": "001d0d135d964daf4ad99ba46a0f77c5bc2378f04e53c2b5a20242ab19cbf265",
+   "makehuman/data/targets/head/head-triangular.target": "09f898db574e636a35b6d39f455e04bfa0bc0248c89d32ad3c959cdb65b8fd1f",
+   "makehuman/data/targets/macrodetails/african-female-young.target": "92d61eeb3c164b421fd5a7c3537ee45e7e1a51de4d49bf312e19c3df2be1d8fc",
+   "makehuman/data/targets/macrodetails/african-male-young.target": "894abc1fbb3d28543a51fef16f89d5d4bdf9aa2e1534413339811a3d47818b7d",
+   "makehuman/data/targets/macrodetails/asian-female-young.target": "095fe79694fa19e1fe98d93009ec116199bd524e081c640351a10eccf2cca1eb",
+   "makehuman/data/targets/macrodetails/asian-male-young.target": "ed2e8c191cb6b87b4a2d97c80486acb2604fa549316c7aa2a738a5d5a14334dc",
+   "makehuman/data/targets/macrodetails/caucasian-female-young.target": "118379f6e8ba9266247fdb8788a20e1df40a239f97ced0b9905bcbcc74f6e820",
+   "makehuman/data/targets/macrodetails/caucasian-male-young.target": "70e228ba7164737dae664454394536fc5935fa48d333c1a97d77e2dc6eacc5f5",
+   "makehuman/data/targets/mouth/mouth-angles-down.target": "39181b6688e6f5ada15b47a82977c75379152434c61dafe8822afb3f551d4fa6",
+   "makehuman/data/targets/mouth/mouth-angles-up.target": "8ddc2f53f4264742f4e10ddafd128e059e09c6a4268a2722e9495bad0f274898",
+   "makehuman/data/targets/mouth/mouth-cupidsbow-decr.target": "debb5dc739434f127604157a9cf361658d1a9814d099a82e43076f612dd3cc20",
+   "makehuman/data/targets/mouth/mouth-cupidsbow-incr.target": "341055fc0d804cec57f0d2aaccc7a090e7d649a5f1b60dbb7d44e4ff2ce40869",
+   "makehuman/data/targets/mouth/mouth-cupidsbow-width-decr.target": "96075322d5f5a8a7129eefc4fd74d8d9f8b92eaf0719329a45b2d1cf4679f0d7",
+   "makehuman/data/targets/mouth/mouth-cupidsbow-width-incr.target": "f66e986b25c1998a2217d917b41075b61f245bdf35769c6a9b21a58588242321",
+   "makehuman/data/targets/mouth/mouth-dimples-in.target": "bc74f0fdc6f5779f4a69b801ba9201d625948af6e21acbb404b8cb6c4fce8c4e",
+   "makehuman/data/targets/mouth/mouth-dimples-out.target": "0cb3576858cabcf2915132673833a94944943a31a82e3c55ec5a3798aa654269",
+   "makehuman/data/targets/mouth/mouth-lowerlip-ext-down.target": "e549b246a81f901363b82534be07b2ca4be38914d6d3968692c50160d3f344cb",
+   "makehuman/data/targets/mouth/mouth-lowerlip-ext-up.target": "9c56c0078efef520ab755c9d74d81f3c9ef7581b946ae24e70848624e25a15fc",
+   "makehuman/data/targets/mouth/mouth-lowerlip-height-decr.target": "26503f3ae2e468d90e10a4c0cb73a17414051108c240b6a5c8079ad2e27f8d92",
+   "makehuman/data/targets/mouth/mouth-lowerlip-height-incr.target": "42181c0b02e0ed30d2d453ae15dbd87600da561d6e4df6fdbd7cc272bdbf5a98",
+   "makehuman/data/targets/mouth/mouth-lowerlip-middle-down.target": "97fbac0d2d0295f0d7ccd0f23356df95077de410ff36ea7e8bd7a02a28ad1759",
+   "makehuman/data/targets/mouth/mouth-lowerlip-middle-up.target": "b52334380917a0b648a35cfd89dd48fbb7fa95745fff28753d30ea73d169de7c",
+   "makehuman/data/targets/mouth/mouth-lowerlip-volume-decr.target": "45f1fe355546cdaa86581512810ee1cd2c6971ac67ffb46d3391ac438e539d15",
+   "makehuman/data/targets/mouth/mouth-lowerlip-volume-incr.target": "dbdaf045b00c67bf8672d53bc8cf94eb3e3dea316de6fe18a278f7080564c65d",
+   "makehuman/data/targets/mouth/mouth-lowerlip-width-decr.target": "f125ab08820f8762d5c623eb72182f5d86dcead188bfbd863d9f117554bd2b7a",
+   "makehuman/data/targets/mouth/mouth-lowerlip-width-incr.target": "6be43c8f0333323dd9affc9141066502d136d15d767596257c08b64cca82a847",
+   "makehuman/data/targets/mouth/mouth-philtrum-volume-decr.target": "e7400e4042f6f2a7fc3ec330ebc8f7f8269173eae52e29785ff00b0f831b0a6b",
+   "makehuman/data/targets/mouth/mouth-philtrum-volume-incr.target": "5b3020ed98d17882e43d47c10886ccf72a0976bb772ec8599553bab5ecefcf91",
+   "makehuman/data/targets/mouth/mouth-scale-depth-decr.target": "15e5da9894901446e21ff4feda6aa757b67e889745995a1d1544002e615c8a30",
+   "makehuman/data/targets/mouth/mouth-scale-depth-incr.target": "ef1411bcef771a73718fd7b4dfb380290a19a06321babb69b19a26247dc0745d",
+   "makehuman/data/targets/mouth/mouth-scale-horiz-decr.target": "07a9ef160755467a470bd0a1df035143d83ebddbc12e4612e69e93a64644405c",
+   "makehuman/data/targets/mouth/mouth-scale-horiz-incr.target": "ccfc39cca249883ebc46af6f2c96c4130df13a67ebce30a2550af17a48637770",
+   "makehuman/data/targets/mouth/mouth-scale-vert-decr.target": "6087f1f8acd837aa1ad098965e907767b80238927c6b5c95f248d45a8aecd48b",
+   "makehuman/data/targets/mouth/mouth-scale-vert-incr.target": "acdbd062c3709211daf947c437b4962a944148c4255501fdd449625160e3d50a",
+   "makehuman/data/targets/mouth/mouth-trans-backward.target": "5d9479ef28a61228104891237f82c871dae1cee433067b3cdb8e4d265e3fe7bc",
+   "makehuman/data/targets/mouth/mouth-trans-down.target": "635eb596ad9ce51a7874fee601ec9abf6ef3d9a95816a06caf1b6d410797f055",
+   "makehuman/data/targets/mouth/mouth-trans-forward.target": "e2174201e312702cb1196c268813660f25df9ed32f0f3706bc1135e74ab14d85",
+   "makehuman/data/targets/mouth/mouth-trans-up.target": "fdbec49a44e9467464a241fef0c4df0f67bbab0c2133a45e45c35f33d1d4c1aa",
+   "makehuman/data/targets/mouth/mouth-upperlip-ext-down.target": "86093379323ca71d4568cdf90c78b1b6fdf773432ccd76b0e3f9202bb07a96b9",
+   "makehuman/data/targets/mouth/mouth-upperlip-ext-up.target": "e00274071ac520d7ecb0e55f51b7b9895f9adb19094a48d0b8c6ec4ec4f715fb",
+   "makehuman/data/targets/mouth/mouth-upperlip-height-decr.target": "9ec5e25eedc30442f06d0df75275438ba8778d48910b8fd6478efecf78621349",
+   "makehuman/data/targets/mouth/mouth-upperlip-height-incr.target": "4eed688bb333c53b579e06bc1c555a5d01a61dbe3f9702aa4e1340384c597c49",
+   "makehuman/data/targets/mouth/mouth-upperlip-middle-down.target": "bc35d43e1e631c84df30730cb3578ba35bc645fbf55d0b586ebebb2f424a56ab",
+   "makehuman/data/targets/mouth/mouth-upperlip-middle-up.target": "5c36d059a282170ce74e86b03a65523539bd474dd1ecf6f6f95046c6a32b177b",
+   "makehuman/data/targets/mouth/mouth-upperlip-volume-decr.target": "20b285d94ecb62cf605907d65659ab11ff760dbb938ba9ae7fc13429b1e3ba16",
+   "makehuman/data/targets/mouth/mouth-upperlip-volume-incr.target": "b124cbd9b9be318264f61a143da603b42e0357ed92b4b6afd1b31a83daaf8568",
+   "makehuman/data/targets/mouth/mouth-upperlip-width-decr.target": "03c14256205de15266956e741a6d4aa4df46070ad539187b6b3168d0cb16ac0e",
+   "makehuman/data/targets/mouth/mouth-upperlip-width-incr.target": "fde8bbe4e9d856ff2acb66820955816630c0bc8b5ce9484f34d5284aeb1481f9",
+   "makehuman/data/targets/neck/neck-scale-horiz-decr.target": "9f63b4b73461064d2f5173eefe7f3929870025b040c2fe70a5508be493067c99",
+   "makehuman/data/targets/neck/neck-scale-horiz-incr.target": "60be8afb75b4c6e41f0157a157cdeba09b6efb5597e417ccd155e14cb06a216d",
+   "makehuman/data/targets/neck/neck-scale-vert-decr.target": "971bae2a8ab215aa45d6073979a9ed85d0c35327434e3fc9c6e6171a90056229",
+   "makehuman/data/targets/neck/neck-scale-vert-incr.target": "2618b7c18c1460fdba8d980da6fa2963210ae903a1a4464dfe55adabdd4eaa5a",
+   "makehuman/data/targets/nose/nose-base-down.target": "f0c22a439540d31e389857a42a415be3bb2262bedb1821b9ce66578068bfebb1",
+   "makehuman/data/targets/nose/nose-base-up.target": "b3f8625bfbbbe455fba4dadcd668a49e48dd8a746597b4c34f4ac46d1ac4ea1d",
+   "makehuman/data/targets/nose/nose-compression-compress.target": "8ffbd7a874eec1661bb3b1311ad046e77145425f1332c86c2f251a444fff83da",
+   "makehuman/data/targets/nose/nose-compression-uncompress.target": "293440df01fc8afaf20a8c8891e7b98de00a00512146c1947f324c73b9d08200",
+   "makehuman/data/targets/nose/nose-curve-concave.target": "30dd70cfdf1ce1c77eabff12b49d238b05a3b36f95f2ba6f64d4b5b059292e58",
+   "makehuman/data/targets/nose/nose-curve-convex.target": "3426e9a53c65962bc75b25aae04759a03e818d708bc5445ffc4dfb812497a7ca",
+   "makehuman/data/targets/nose/nose-flaring-decr.target": "394229c051ec21a8d233341d7ff1b2dc94da7929ace1d0bb2de2bcbdd08d6c0f",
+   "makehuman/data/targets/nose/nose-flaring-incr.target": "697eccedc27b77abbbdc8de87af193e2a5818b9a535e7f0ec8016ce848892fad",
+   "makehuman/data/targets/nose/nose-greek-decr.target": "6dedab05ceb00cbf4965d8ec0b4c4c9c3408fac6781bd73ffd7a0c36a84fbcf7",
+   "makehuman/data/targets/nose/nose-greek-incr.target": "26377458cdc453ff93a9b025c3a6043b4c5f3000173fb125e5b2a7cc66981855",
+   "makehuman/data/targets/nose/nose-hump-decr.target": "036f94479be3cd896d01eb30916af67eaf37b9e1442b97bbffb524fcbe83a04b",
+   "makehuman/data/targets/nose/nose-hump-incr.target": "87f167e76cc908e8f28fed8623cf55e737f59499e8338cfe78f5d635382a5191",
+   "makehuman/data/targets/nose/nose-nostrils-angle-down.target": "151478df5f37878b1ef5458990504c042f76dba5ea2b98d7b98def2ff0037f6c",
+   "makehuman/data/targets/nose/nose-nostrils-angle-up.target": "d403a05ea2d3178d95060649cf273cce475b6428118032473535cd47e51402ba",
+   "makehuman/data/targets/nose/nose-nostrils-width-decr.target": "381335aed6091e8b394092dabea983b89bc2e35f548ced6b5ab2eca6dabc8bd2",
+   "makehuman/data/targets/nose/nose-nostrils-width-incr.target": "15dfd7b35cac462e8ceca6b3787bd863982b765c1b8a39375e2271b55434a29f",
+   "makehuman/data/targets/nose/nose-point-down.target": "decda7e7827d53f0906663d10ff6ee0173d501b8f3bf30dda3540e4465fa6021",
+   "makehuman/data/targets/nose/nose-point-up.target": "c8d556af4cc6fe5fbf340b1950156fffad3835524a191b47074466f244a92047",
+   "makehuman/data/targets/nose/nose-point-width-decr.target": "b9abb0a0fa7acf3208acee76ab9e329c89b4e7b6c83fcf8429ffd004aae1a4cc",
+   "makehuman/data/targets/nose/nose-point-width-incr.target": "c6dca10cdc77721b2e90dad9eef5e56f6c69359687de2e9aa2a965cfe598c56f",
+   "makehuman/data/targets/nose/nose-scale-depth-decr.target": "b46c35046c9c451b7ffe77acc0573bd945d7c6acaefe43d8c21912d4ce1a6e4c",
+   "makehuman/data/targets/nose/nose-scale-depth-incr.target": "6bb03c3065e048d6e9abbcfa58961bfbe1753a307be0d3de477cac6aeaf5f750",
+   "makehuman/data/targets/nose/nose-scale-horiz-decr.target": "1227e6f513d202585e40045fe4234778597bb591ac492e7f9313347cd9a9f2ec",
+   "makehuman/data/targets/nose/nose-scale-horiz-incr.target": "cc319e3ddb0523fa2b563dcfc840cf2f915a890abe5612009a0becebecd3c5ae",
+   "makehuman/data/targets/nose/nose-scale-vert-decr.target": "a154747135740f63f60df812024fcde24df2a6713effa3c6f27797aeee7d3311",
+   "makehuman/data/targets/nose/nose-scale-vert-incr.target": "b87163e4272d77bcdb7b51328504167f71a7a47b630dc9b13da9c68e0f06c20f",
+   "makehuman/data/targets/nose/nose-septumangle-decr.target": "8d31807fcba66c0089e9bbd4916bf1cd11bc16728f826504df910af554804a23",
+   "makehuman/data/targets/nose/nose-septumangle-incr.target": "814b5bcb7fbb2dc0e5ba402d61f49dd77afe33884c0baf658ecd14b17dbcdd04",
+   "makehuman/data/targets/nose/nose-trans-backward.target": "026897f67c2b668f6d3200efe264449037bd0efe10a6cda80807198e5dd50544",
+   "makehuman/data/targets/nose/nose-trans-down.target": "6a4d970a97a1e1b3db113ca88cd1e75a6f950f296c7f456a4931f6b460c58dae",
+   "makehuman/data/targets/nose/nose-trans-forward.target": "a7b232e6ca56d7027388f5a9028fe45e513fbc71cedb34f299912e8a457394e8",
+   "makehuman/data/targets/nose/nose-trans-up.target": "4c1ee5897c22dfb66aee081f65fd9fb77173e8af5bc5c9e8676073dd9eda1d4a",
+   "makehuman/data/targets/nose/nose-volume-decr.target": "97251aecca039f94ab6ea6f996eaf0b232aa4c44b39671a13ba0bc6c8f4bf6bb",
+   "makehuman/data/targets/nose/nose-volume-incr.target": "510730156376c91322f7391154a211c7222184c24c48f3345b7212dfbc583738",
+   "makehuman/data/targets/nose/nose-width1-decr.target": "91a63986af9115fe944f2a3f1177e1eed2ebe8cdd9037a4734d95bd36231d9f4",
+   "makehuman/data/targets/nose/nose-width1-incr.target": "d340bc76601f9061826849d2fc9146ba6fbf7ee0604799849a417c934f53bea0",
+   "makehuman/data/targets/nose/nose-width2-decr.target": "d3301686c7dfd94b0a39fd0693ff26ea66d24b08037488f814e7a8bb340109d9",
+   "makehuman/data/targets/nose/nose-width2-incr.target": "13a9ab9ab6429a5875b47fe90cb33a4d754258af63819ee8913a93d61f312d76",
+   "makehuman/data/targets/nose/nose-width3-decr.target": "eb3e782e1b335f10c68be43ccc75bea98193f330b4d0c7f98f9773f580ce12c3",
+   "makehuman/data/targets/nose/nose-width3-incr.target": "32a88f1b999ea83f57889dda7fbda05347b57b41e0118e7c4cd4466e6b0ba6ec"
+  }
+ },
+ "dimensions": {
+  "gender.plus": [
+   "macro:male"
+  ],
+  "gender.minus": [
+   "macro:female-extra"
+  ],
+  "base-african.plus": [
+   "macro:eth:african"
+  ],
+  "base-asian.plus": [
+   "macro:eth:asian"
+  ],
+  "base-caucasian.plus": [
+   "macro:eth:caucasian"
+  ],
+  "youth.plus": [
+   "head/head-age-decr"
+  ],
+  "youth.minus": [
+   "head/head-age-incr"
+  ],
+  "shape-oval.plus": [
+   "head/head-oval"
+  ],
+  "shape-round.plus": [
+   "head/head-round"
+  ],
+  "shape-rect.plus": [
+   "head/head-rectangular"
+  ],
+  "shape-square.plus": [
+   "head/head-square"
+  ],
+  "shape-triangle.plus": [
+   "head/head-triangular"
+  ],
+  "shape-heart.plus": [
+   "head/head-invertedtriangular"
+  ],
+  "shape-diamond.plus": [
+   "head/head-diamond"
+  ],
+  "head-width.plus": [
+   "head/head-scale-horiz-incr"
+  ],
+  "head-width.minus": [
+   "head/head-scale-horiz-decr"
+  ],
+  "head-height.plus": [
+   "head/head-scale-vert-incr"
+  ],
+  "head-height.minus": [
+   "head/head-scale-vert-decr"
+  ],
+  "head-depth.plus": [
+   "head/head-scale-depth-incr"
+  ],
+  "head-depth.minus": [
+   "head/head-scale-depth-decr"
+  ],
+  "face-fat.plus": [
+   "head/head-fat-incr"
+  ],
+  "face-fat.minus": [
+   "head/head-fat-decr"
+  ],
+  "forehead-slope.plus": [
+   "forehead/forehead-nubian-incr"
+  ],
+  "forehead-slope.minus": [
+   "forehead/forehead-nubian-decr"
+  ],
+  "forehead-height.plus": [
+   "forehead/forehead-scale-vert-incr"
+  ],
+  "forehead-height.minus": [
+   "forehead/forehead-scale-vert-decr"
+  ],
+  "temples.plus": [
+   "forehead/forehead-temple-incr"
+  ],
+  "temples.minus": [
+   "forehead/forehead-temple-decr"
+  ],
+  "forehead-proj.plus": [
+   "forehead/forehead-trans-forward"
+  ],
+  "forehead-proj.minus": [
+   "forehead/forehead-trans-backward"
+  ],
+  "brow-height.plus": [
+   "eyebrows/eyebrows-trans-up"
+  ],
+  "brow-height.minus": [
+   "eyebrows/eyebrows-trans-down"
+  ],
+  "brow-angle.plus": [
+   "eyebrows/eyebrows-angle-up"
+  ],
+  "brow-angle.minus": [
+   "eyebrows/eyebrows-angle-down"
+  ],
+  "brow-proj.plus": [
+   "eyebrows/eyebrows-trans-forward"
+  ],
+  "brow-proj.minus": [
+   "eyebrows/eyebrows-trans-backward"
+  ],
+  "eye-size.plus": [
+   "eyes/l-eye-scale-incr",
+   "eyes/r-eye-scale-incr"
+  ],
+  "eye-size.minus": [
+   "eyes/l-eye-scale-decr",
+   "eyes/r-eye-scale-decr"
+  ],
+  "eye-spacing.plus": [
+   "eyes/l-eye-trans-out",
+   "eyes/r-eye-trans-out"
+  ],
+  "eye-spacing.minus": [
+   "eyes/l-eye-trans-in",
+   "eyes/r-eye-trans-in"
+  ],
+  "eye-height.plus": [
+   "eyes/l-eye-trans-up",
+   "eyes/r-eye-trans-up"
+  ],
+  "eye-height.minus": [
+   "eyes/l-eye-trans-down",
+   "eyes/r-eye-trans-down"
+  ],
+  "eye-open-1.plus": [
+   "eyes/l-eye-height1-incr",
+   "eyes/r-eye-height1-incr"
+  ],
+  "eye-open-1.minus": [
+   "eyes/l-eye-height1-decr",
+   "eyes/r-eye-height1-decr"
+  ],
+  "eye-open-2.plus": [
+   "eyes/l-eye-height2-incr",
+   "eyes/r-eye-height2-incr"
+  ],
+  "eye-open-2.minus": [
+   "eyes/l-eye-height2-decr",
+   "eyes/r-eye-height2-decr"
+  ],
+  "eye-open-3.plus": [
+   "eyes/l-eye-height3-incr",
+   "eyes/r-eye-height3-incr"
+  ],
+  "eye-open-3.minus": [
+   "eyes/l-eye-height3-decr",
+   "eyes/r-eye-height3-decr"
+  ],
+  "eye-depth-1.plus": [
+   "eyes/l-eye-push1-in",
+   "eyes/r-eye-push1-in"
+  ],
+  "eye-depth-1.minus": [
+   "eyes/l-eye-push1-out",
+   "eyes/r-eye-push1-out"
+  ],
+  "eye-depth-2.plus": [
+   "eyes/l-eye-push2-in",
+   "eyes/r-eye-push2-in"
+  ],
+  "eye-depth-2.minus": [
+   "eyes/l-eye-push2-out",
+   "eyes/r-eye-push2-out"
+  ],
+  "eye-inner-corner.plus": [
+   "eyes/l-eye-corner1-up",
+   "eyes/r-eye-corner1-up"
+  ],
+  "eye-inner-corner.minus": [
+   "eyes/l-eye-corner1-down",
+   "eyes/r-eye-corner1-down"
+  ],
+  "eye-outer-corner.plus": [
+   "eyes/l-eye-corner2-up",
+   "eyes/r-eye-corner2-up"
+  ],
+  "eye-outer-corner.minus": [
+   "eyes/l-eye-corner2-down",
+   "eyes/r-eye-corner2-down"
+  ],
+  "epicanthus.plus": [
+   "eyes/l-eye-epicanthus-in",
+   "eyes/r-eye-epicanthus-in"
+  ],
+  "epicanthus.minus": [
+   "eyes/l-eye-epicanthus-out",
+   "eyes/r-eye-epicanthus-out"
+  ],
+  "lid-fold.plus": [
+   "eyes/l-eye-eyefold-down",
+   "eyes/r-eye-eyefold-down"
+  ],
+  "lid-fold.minus": [
+   "eyes/l-eye-eyefold-up",
+   "eyes/r-eye-eyefold-up"
+  ],
+  "lid-fold-angle.plus": [
+   "eyes/l-eye-eyefold-angle-up",
+   "eyes/r-eye-eyefold-angle-up"
+  ],
+  "lid-fold-angle.minus": [
+   "eyes/l-eye-eyefold-angle-down",
+   "eyes/r-eye-eyefold-angle-down"
+  ],
+  "lid-fold-shape.plus": [
+   "eyes/l-eye-eyefold-convex",
+   "eyes/r-eye-eyefold-convex"
+  ],
+  "lid-fold-shape.minus": [
+   "eyes/l-eye-eyefold-concave",
+   "eyes/r-eye-eyefold-concave"
+  ],
+  "eye-bags.plus": [
+   "eyes/l-eye-bag-incr",
+   "eyes/r-eye-bag-incr"
+  ],
+  "eye-bags.minus": [
+   "eyes/l-eye-bag-decr",
+   "eyes/r-eye-bag-decr"
+  ],
+  "eye-bag-height.plus": [
+   "eyes/l-eye-bag-height-incr",
+   "eyes/r-eye-bag-height-incr"
+  ],
+  "eye-bag-height.minus": [
+   "eyes/l-eye-bag-height-decr",
+   "eyes/r-eye-bag-height-decr"
+  ],
+  "nose-width.plus": [
+   "nose/nose-scale-horiz-incr"
+  ],
+  "nose-width.minus": [
+   "nose/nose-scale-horiz-decr"
+  ],
+  "nose-length.plus": [
+   "nose/nose-scale-vert-incr"
+  ],
+  "nose-length.minus": [
+   "nose/nose-scale-vert-decr"
+  ],
+  "nose-depth.plus": [
+   "nose/nose-scale-depth-incr"
+  ],
+  "nose-depth.minus": [
+   "nose/nose-scale-depth-decr"
+  ],
+  "nose-height.plus": [
+   "nose/nose-trans-up"
+  ],
+  "nose-height.minus": [
+   "nose/nose-trans-down"
+  ],
+  "nose-proj.plus": [
+   "nose/nose-trans-forward"
+  ],
+  "nose-proj.minus": [
+   "nose/nose-trans-backward"
+  ],
+  "nostril-width.plus": [
+   "nose/nose-nostrils-width-incr"
+  ],
+  "nostril-width.minus": [
+   "nose/nose-nostrils-width-decr"
+  ],
+  "nostril-angle.plus": [
+   "nose/nose-nostrils-angle-up"
+  ],
+  "nostril-angle.minus": [
+   "nose/nose-nostrils-angle-down"
+  ],
+  "nose-tip-width.plus": [
+   "nose/nose-point-width-incr"
+  ],
+  "nose-tip-width.minus": [
+   "nose/nose-point-width-decr"
+  ],
+  "nose-tip-height.plus": [
+   "nose/nose-point-up"
+  ],
+  "nose-tip-height.minus": [
+   "nose/nose-point-down"
+  ],
+  "nose-base.plus": [
+   "nose/nose-base-up"
+  ],
+  "nose-base.minus": [
+   "nose/nose-base-down"
+  ],
+  "nose-bridge-1.plus": [
+   "nose/nose-width1-incr"
+  ],
+  "nose-bridge-1.minus": [
+   "nose/nose-width1-decr"
+  ],
+  "nose-bridge-2.plus": [
+   "nose/nose-width2-incr"
+  ],
+  "nose-bridge-2.minus": [
+   "nose/nose-width2-decr"
+  ],
+  "nose-bridge-3.plus": [
+   "nose/nose-width3-incr"
+  ],
+  "nose-bridge-3.minus": [
+   "nose/nose-width3-decr"
+  ],
+  "nose-compress.plus": [
+   "nose/nose-compression-compress"
+  ],
+  "nose-compress.minus": [
+   "nose/nose-compression-uncompress"
+  ],
+  "nose-curve.plus": [
+   "nose/nose-curve-convex"
+  ],
+  "nose-curve.minus": [
+   "nose/nose-curve-concave"
+  ],
+  "nose-greek.plus": [
+   "nose/nose-greek-incr"
+  ],
+  "nose-greek.minus": [
+   "nose/nose-greek-decr"
+  ],
+  "nose-hump.plus": [
+   "nose/nose-hump-incr"
+  ],
+  "nose-hump.minus": [
+   "nose/nose-hump-decr"
+  ],
+  "nose-volume.plus": [
+   "nose/nose-volume-incr"
+  ],
+  "nose-volume.minus": [
+   "nose/nose-volume-decr"
+  ],
+  "nose-septum.plus": [
+   "nose/nose-septumangle-incr"
+  ],
+  "nose-septum.minus": [
+   "nose/nose-septumangle-decr"
+  ],
+  "nose-flare.plus": [
+   "nose/nose-flaring-incr"
+  ],
+  "nose-flare.minus": [
+   "nose/nose-flaring-decr"
+  ],
+  "mouth-width.plus": [
+   "mouth/mouth-scale-horiz-incr"
+  ],
+  "mouth-width.minus": [
+   "mouth/mouth-scale-horiz-decr"
+  ],
+  "mouth-height.plus": [
+   "mouth/mouth-scale-vert-incr"
+  ],
+  "mouth-height.minus": [
+   "mouth/mouth-scale-vert-decr"
+  ],
+  "mouth-depth.plus": [
+   "mouth/mouth-scale-depth-incr"
+  ],
+  "mouth-depth.minus": [
+   "mouth/mouth-scale-depth-decr"
+  ],
+  "mouth-pos.plus": [
+   "mouth/mouth-trans-up"
+  ],
+  "mouth-pos.minus": [
+   "mouth/mouth-trans-down"
+  ],
+  "mouth-proj.plus": [
+   "mouth/mouth-trans-forward"
+  ],
+  "mouth-proj.minus": [
+   "mouth/mouth-trans-backward"
+  ],
+  "upper-lip-volume.plus": [
+   "mouth/mouth-upperlip-volume-incr"
+  ],
+  "upper-lip-volume.minus": [
+   "mouth/mouth-upperlip-volume-decr"
+  ],
+  "lower-lip-volume.plus": [
+   "mouth/mouth-lowerlip-volume-incr"
+  ],
+  "lower-lip-volume.minus": [
+   "mouth/mouth-lowerlip-volume-decr"
+  ],
+  "upper-lip-height.plus": [
+   "mouth/mouth-upperlip-height-incr"
+  ],
+  "upper-lip-height.minus": [
+   "mouth/mouth-upperlip-height-decr"
+  ],
+  "lower-lip-height.plus": [
+   "mouth/mouth-lowerlip-height-incr"
+  ],
+  "lower-lip-height.minus": [
+   "mouth/mouth-lowerlip-height-decr"
+  ],
+  "upper-lip-width.plus": [
+   "mouth/mouth-upperlip-width-incr"
+  ],
+  "upper-lip-width.minus": [
+   "mouth/mouth-upperlip-width-decr"
+  ],
+  "lower-lip-width.plus": [
+   "mouth/mouth-lowerlip-width-incr"
+  ],
+  "lower-lip-width.minus": [
+   "mouth/mouth-lowerlip-width-decr"
+  ],
+  "upper-lip-middle.plus": [
+   "mouth/mouth-upperlip-middle-up"
+  ],
+  "upper-lip-middle.minus": [
+   "mouth/mouth-upperlip-middle-down"
+  ],
+  "lower-lip-middle.plus": [
+   "mouth/mouth-lowerlip-middle-up"
+  ],
+  "lower-lip-middle.minus": [
+   "mouth/mouth-lowerlip-middle-down"
+  ],
+  "upper-lip-ends.plus": [
+   "mouth/mouth-upperlip-ext-up"
+  ],
+  "upper-lip-ends.minus": [
+   "mouth/mouth-upperlip-ext-down"
+  ],
+  "lower-lip-ends.plus": [
+   "mouth/mouth-lowerlip-ext-up"
+  ],
+  "lower-lip-ends.minus": [
+   "mouth/mouth-lowerlip-ext-down"
+  ],
+  "cupids-bow.plus": [
+   "mouth/mouth-cupidsbow-incr"
+  ],
+  "cupids-bow.minus": [
+   "mouth/mouth-cupidsbow-decr"
+  ],
+  "cupids-bow-width.plus": [
+   "mouth/mouth-cupidsbow-width-incr"
+  ],
+  "cupids-bow-width.minus": [
+   "mouth/mouth-cupidsbow-width-decr"
+  ],
+  "philtrum.plus": [
+   "mouth/mouth-philtrum-volume-incr"
+  ],
+  "philtrum.minus": [
+   "mouth/mouth-philtrum-volume-decr"
+  ],
+  "mouth-corners.plus": [
+   "mouth/mouth-angles-up"
+  ],
+  "mouth-corners.minus": [
+   "mouth/mouth-angles-down"
+  ],
+  "dimples.plus": [
+   "mouth/mouth-dimples-in"
+  ],
+  "dimples.minus": [
+   "mouth/mouth-dimples-out"
+  ],
+  "cheekbones.plus": [
+   "cheek/l-cheek-bones-incr",
+   "cheek/r-cheek-bones-incr"
+  ],
+  "cheekbones.minus": [
+   "cheek/l-cheek-bones-decr",
+   "cheek/r-cheek-bones-decr"
+  ],
+  "cheek-volume.plus": [
+   "cheek/l-cheek-volume-incr",
+   "cheek/r-cheek-volume-incr"
+  ],
+  "cheek-volume.minus": [
+   "cheek/l-cheek-volume-decr",
+   "cheek/r-cheek-volume-decr"
+  ],
+  "cheek-inner.plus": [
+   "cheek/l-cheek-inner-incr",
+   "cheek/r-cheek-inner-incr"
+  ],
+  "cheek-inner.minus": [
+   "cheek/l-cheek-inner-decr",
+   "cheek/r-cheek-inner-decr"
+  ],
+  "cheek-height.plus": [
+   "cheek/l-cheek-trans-up",
+   "cheek/r-cheek-trans-up"
+  ],
+  "cheek-height.minus": [
+   "cheek/l-cheek-trans-down",
+   "cheek/r-cheek-trans-down"
+  ],
+  "chin-width.plus": [
+   "chin/chin-width-incr"
+  ],
+  "chin-width.minus": [
+   "chin/chin-width-decr"
+  ],
+  "chin-height.plus": [
+   "chin/chin-height-incr"
+  ],
+  "chin-height.minus": [
+   "chin/chin-height-decr"
+  ],
+  "chin-proj.plus": [
+   "chin/chin-prominent-incr"
+  ],
+  "chin-proj.minus": [
+   "chin/chin-prominent-decr"
+  ],
+  "chin-bones.plus": [
+   "chin/chin-bones-incr"
+  ],
+  "chin-bones.minus": [
+   "chin/chin-bones-decr"
+  ],
+  "jaw-drop.plus": [
+   "chin/chin-jaw-drop-incr"
+  ],
+  "jaw-drop.minus": [
+   "chin/chin-jaw-drop-decr"
+  ],
+  "prognathism.plus": [
+   "chin/chin-prognathism-incr"
+  ],
+  "prognathism.minus": [
+   "chin/chin-prognathism-decr"
+  ],
+  "chin-cleft.plus": [
+   "chin/chin-cleft-incr"
+  ],
+  "chin-cleft.minus": [
+   "chin/chin-cleft-decr"
+  ],
+  "chin-pointed.plus": [
+   "chin/chin-triangle"
+  ],
+  "neck-width.plus": [
+   "neck/neck-scale-horiz-incr"
+  ],
+  "neck-width.minus": [
+   "neck/neck-scale-horiz-decr"
+  ],
+  "neck-length.plus": [
+   "neck/neck-scale-vert-incr"
+  ],
+  "neck-length.minus": [
+   "neck/neck-scale-vert-decr"
+  ],
+  "ear-size.plus": [
+   "ears/l-ear-scale-incr",
+   "ears/r-ear-scale-incr"
+  ],
+  "ear-size.minus": [
+   "ears/l-ear-scale-decr",
+   "ears/r-ear-scale-decr"
+  ],
+  "ear-lobe.plus": [
+   "ears/l-ear-lobe-incr",
+   "ears/r-ear-lobe-incr"
+  ],
+  "ear-lobe.minus": [
+   "ears/l-ear-lobe-decr",
+   "ears/r-ear-lobe-decr"
+  ],
+  "ear-flap.plus": [
+   "ears/l-ear-flap-incr",
+   "ears/r-ear-flap-incr"
+  ],
+  "ear-flap.minus": [
+   "ears/l-ear-flap-decr",
+   "ears/r-ear-flap-decr"
+  ]
+ }
+}

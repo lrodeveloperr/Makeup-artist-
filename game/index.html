@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Makeup</title>
+<link rel="icon" href="data:,">
+<script>
+  // The UI scale, as Haircut's: 1 on phones (short side 300–560 px), up to 2.4 on big screens, down to 0.6 in tiny
+  // embeds; and never so big that the controls crowd out the face (portrait: the screen's height / 700; landscape:
+  // its height / 380). Landscape (wider than 1.15 × tall) puts the counter in a column at the side. In portrait the
+  // eight tools sit in one row where it fits with buttons at least 32 px on screen, else in two rows of four (tiny
+  // or narrow embeds). Set before the first layout, and again on every resize.
+  (function () {
+    function scale() {
+      var w = innerWidth, h = innerHeight, m = Math.min(w, h), land = w > h * 1.15;
+      var s = m < 300 ? Math.max(0.6, m / 300) : Math.min(2.4, Math.max(1, m / 560));
+      s = Math.max(0.6, Math.min(s, h / (land ? 380 : 700)));
+      document.documentElement.style.setProperty('--s', s.toFixed(3));
+      document.documentElement.classList.toggle('land', land);
+      document.documentElement.classList.toggle('two', !land && (w / s < 388 || 43 * s < 32)); // 8 × 43 px, 7 gaps of 4, the counter's 8 px sides
+      // review's Retry, as Haircut's: level with Next at the other edge, or in the top-left corner in landscape and
+      // where the screen is too narrow for both (18 + 86 + 10 px beside the 234 px Next row and its margin)
+      document.documentElement.classList.toggle('redo-top', land || w / s < 348);
+    }
+    scale();
+    addEventListener('resize', scale);
+  })();
+</script>
+<!--HOST-->
+<style>
+  /* Blush Studio (owner's choice, 19 October 2026). Haircut's controls, recoloured: round "sticker" buttons with an
+     ink outline and a hard shadow that presses down, a video badge on everything that plays a video, a rosette seal
+     for Done. Textless: icons, numbers and pictures only; spoken labels (aria-label) carry the words. */
+  :root { --ink: #2a1d15; --panel: #fff6e6; --accent: #ff7aa8; --seal: #5ccf72; --badge: #ffb627;
+    --edge: 0 4px 0 var(--ink); --edge-down: 0 1px 0 var(--ink); --outline: 3px solid var(--ink);
+    --wall: radial-gradient(120% 80% at 50% 30%, #fbe4de 0, #f1c8c3 55%, #dfa9ab 100%);
+    font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  html, body { margin: 0; height: 100%; background: #e9c9c4; color: var(--ink); }
+  body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:disabled { cursor: default; }
+  [hidden] { display: none !important; }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+  /* the salon behind the customer: a blush wall and a lit vanity mirror */
+  #backdrop { position: absolute; inset: 0; overflow: hidden; z-index: -1; background: var(--wall); }
+  #backdrop > * { position: absolute; }
+  /* the mirror is hung behind her: main.js places it from where her head is and sets --u (pixels per decimetre at
+     the mirror), so the arch, frame and bulbs keep their proportions on every screen */
+  .mirror { visibility: hidden; box-sizing: border-box; border-radius: 50% 50% 0 0 / 30% 30% 0 0; border: calc(var(--u, 4px) * 0.14) solid #fbefe4; border-bottom: 0;
+    background: linear-gradient(160deg, #fdf3f0 0, #f3dcd8 45%, #ecccc8 100%);
+    box-shadow: inset 0 0 0 calc(var(--u, 4px) * 0.03) #e7cbb3, 0 calc(var(--u, 4px) * 0.08) calc(var(--u, 4px) * 0.3) #9a5b5b33; filter: blur(1px); }
+  .mirror.placed { visibility: visible; }
+  /* the bulbs: one layer over the whole mirror (frame included); main.js puts each bulb on the frame as a fraction
+     of the mirror, so every screen shows the same lights in the same places */
+  .bulbs { position: absolute; inset: calc(var(--u, 4px) * -0.14) calc(var(--u, 4px) * -0.14) 0; }
+  .bulbs i { position: absolute; --d: calc(var(--u, 4px) * 0.34); width: var(--d); height: var(--d); margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+    background: radial-gradient(circle closest-side, #fffdf3 0 32%, #ffe2a6 38%, #ffd78a55 64%, #0000 100%); }
+
+  /* ---- controls ---- */
+  #top { display: flex; align-items: flex-start; justify-content: space-between; padding: max(10px, env(safe-area-inset-top)) 12px 4px; min-height: 80px; box-sizing: border-box; }
+  /* the face's canvas stands on the counter: any spare height becomes salon wall above her head */
+  #stage { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: flex-end; overflow: hidden; position: relative; }
+  /* her face fills the stage, as on phones, up to a close-up that fills the width (the canvas 0.4 × as wide as it is
+     tall); on screens taller still the stage stops there and the counter takes the rest of the height (the stage
+     starts at the full height and shrinks to fit; the counter never shrinks below its height and grows into what
+     is left) */
+  html:not(.land) #stage { flex: 1 1 100%; max-height: calc(min(100vw, 1200px) / 0.4); }
+  html:not(.land) footer { flex: 1 0 auto; }
+  /* every control is drawn at the UI scale */
+  #top, footer, #cover > *, #error > * { zoom: var(--s, 1); }
+  canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .ctl { position: relative; display: grid; place-items: center; padding: 0; border: var(--outline); background: var(--panel); color: var(--ink);
+    box-shadow: var(--edge); transition: transform .08s, box-shadow .08s; touch-action: manipulation; }
+  .ctl:not(:disabled):active { transform: translateY(3px); box-shadow: var(--edge-down); }
+  .ctl:disabled { opacity: .55; }
+  .ctl svg { width: 26px; height: 26px; }
+  .round { width: 52px; height: 52px; border-radius: 50%; }
+  .dot { position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; border-radius: 50%; background: #ff3b30; border: 2.5px solid var(--ink); }
+  .vbadge { position: absolute; right: -6px; bottom: -5px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--badge); border: 2.5px solid var(--ink); box-shadow: 0 2px 0 var(--ink); }
+  .vbadge svg { width: 15px !important; height: 15px !important; }
+  /* Done: the rosette seal (top right), the size of the daily button */
+  #done { width: 56px; height: 56px; border: 0; background: none; box-shadow: none; }
+  #done .seal { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 4px 0 var(--ink)); }
+  #done .seal polygon { fill: var(--seal); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
+  #done > svg:not(.seal) { position: relative; width: 26px; height: 26px; }
+  #done.pop { animation: pop .35s ease-out; }
+  @keyframes pop { 40% { transform: scale(1.35) rotate(12deg); } 100% { transform: scale(1); } }
+  #done:not(:disabled):active { transform: translateY(3px); }
+  #done:not(:disabled):active .seal { filter: drop-shadow(0 1px 0 var(--ink)); }
+  /* the controls sit on the vanity counter in front of the customer (it hides where the body ends); create and review
+     share one height, so the face never moves */
+  footer { min-height: calc(146px + env(safe-area-inset-bottom)); box-sizing: border-box; padding: 6px 8px env(safe-area-inset-bottom); position: relative;
+    background: linear-gradient(#fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: 0 -10px 18px -10px #6a3a3a55; }
+  /* the selected colour rises 4 px, grows 12 % and wears a 6 px ring, about 13 px above its box: the row starts low
+     enough that all of it stays clear below the counter's top edge, the line between her and the tools */
+  /* the colours (owner, 19 October 2026: at most six at a time, never cut off): a page of up to six, as one row in
+     portrait between its arrows (two rows of three above them at the side and on a tall counter); main.js turns the
+     pages. Nothing scrolls. The picked colour rises 3 px, grows 8 % and wears a 6 px ring, about 11 px above its box
+     and 8 px beside it: the gaps (10 px in the row, more in the grids) and the row's padding leave it room, so it
+     never touches its neighbours, the arrows or the counter's top edge */
+  #colours { display: grid; grid-template-areas: "back row more"; justify-content: center; align-items: center; }
+  #swatches { grid-area: row; display: flex; gap: 10px; padding: 17px 4px 10px; justify-content: center; box-sizing: border-box; }
+  #swatches, #swatches button { touch-action: none; } /* a swipe turns the page */
+  #swatches button { position: relative; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
+  #swatches button[aria-checked="true"] { transform: translateY(-3px) scale(1.08); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
+  #swatches.turn { animation: turn .2s ease-out; }
+  @keyframes turn { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 18px)); } }
+  /* the arrows: only when there is more than one page, and quiet beside the colours: a bare chevron in a soft ink,
+     no sticker, no ring, no shadow, on a hit area as tall as a colour; it darkens and nudges its way when pointed at
+     or pressed. At either end the arrow with nowhere to go fades out (its place is kept, so nothing moves) */
+  .pg { display: none; place-items: center; width: max(34px, 30px / var(--s, 1)); height: 42px; margin-top: 7px; padding: 0; border: 0; background: none; color: var(--ink);
+    opacity: .42; touch-action: manipulation; transition: opacity .15s, transform .15s; }
+  .pg svg { width: 18px; height: 18px; }
+  #colours.paged .pg { display: grid; }
+  .pg:disabled { opacity: 0; pointer-events: none; }
+  @media (hover: hover) { .pg:not(:disabled):hover { opacity: .8; } #back:not(:disabled):hover { transform: translateX(-2px); } #more:not(:disabled):hover { transform: translateX(2px); } }
+  .pg:not(:disabled):active { opacity: 1; }
+  .pg:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 15px; }
+  #back { grid-area: back; margin-right: 4px; }
+  #more { grid-area: more; margin-left: 4px; }
+  .two .pg { width: 50px; height: 50px; margin-top: 4px; } /* tiny embeds: drawn small, still a finger's size */
+  #toolbar { display: grid; grid-template-columns: repeat(8, 43px); justify-content: center; gap: 4px; padding-top: 4px; }
+  #toolbar .ctl { width: 43px; height: 43px; border-radius: 50%; }
+  #toolbar .ctl svg { width: 23px; height: 23px; }
+  /* tiny or narrow embeds: two rows of four bigger tools; review's counter grows with it, so the face never moves */
+  .two footer { min-height: calc(204px + env(safe-area-inset-bottom)); }
+  .two #toolbar { grid-template-columns: repeat(4, 52px); gap: 6px 10px; }
+  .two #toolbar .ctl { width: 52px; height: 52px; }
+  .two #toolbar .ctl svg { width: 26px; height: 26px; }
+  /* a tall counter (tall, narrow screens; main.js sets html.tall): bigger tools in two rows of four, the colours in
+     two rows of three bigger swatches, spread over the counter; in review, Retry stands above the Next row */
+  .tall #create { display: flex; flex-direction: column; justify-content: space-evenly; }
+  .tall #swatches { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 18px; padding: 17px 10px 12px; }
+  .tall #swatches button { width: 52px; height: 52px; }
+  .tall #colours, .land #colours { grid-template-areas: "row row" "back more"; }
+  .tall .pg, .land .pg { width: 46px; height: 46px; margin: 0; }
+  .tall #back, .land #back { justify-self: end; margin-right: 6px; }
+  .tall #more, .land #more { justify-self: start; margin-left: 6px; }
+  .tall #toolbar { grid-template-columns: repeat(4, 62px); gap: 14px 10px; padding: 0; }
+  .tall #toolbar .ctl { width: 62px; height: 62px; }
+  .tall #toolbar .ctl svg { width: 30px; height: 30px; }
+  html.tall #review { flex-direction: column; justify-content: center; align-items: center; gap: 30px; padding: 6px 8px env(safe-area-inset-bottom); }
+  /* a gem's swatch is the gem itself */
+  #swatches button.gem { background: var(--panel); display: grid; place-items: center; }
+  #swatches button.gem > svg { width: 30px; height: 30px; overflow: visible; }
+  #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
+  /* review, as Haircut's completion: the top buttons give way. Next is a big arrow at the counter's right edge with
+     the next customer docked against it in one cream pill (a chevron nudging between them); Retry for a video sits
+     level with it at the left edge, as far in as the pill is from the right. In landscape, and where the screen is
+     too narrow for both, Retry takes the top-left corner at the top buttons' size (main.js moves it there). */
+  body.review #daily, body.review #done { display: none; }
+  body:not(.review) #redo { display: none; }
+  #review { display: flex; justify-content: space-between; align-items: center; padding: 6px max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(18px, env(safe-area-inset-left)); }
+  .redo-top #review { justify-content: flex-end; }
+  #review > * { animation: rise .45s .25s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(26px); } }
+  /* on the counter, Retry is the Next arrow's size (86 px), so the row reads as one scale */
+  #redo { width: 86px; height: 86px; animation: rise .45s .25s ease-out both, breathe 1.3s .7s ease-in-out infinite; }
+  #redo > svg { width: 40px; height: 40px; }
+  #redo .vbadge { width: 36px; height: 36px; right: -8px; bottom: -6px; }
+  #redo .vbadge svg { width: 21px !important; height: 21px !important; }
+  #top #redo { width: 52px; height: 52px; animation: none; }
+  #top #redo > svg { width: 26px; height: 26px; }
+  #top #redo .vbadge { width: 24px; height: 24px; right: -8px; bottom: -7px; }
+  #top #redo .vbadge svg { width: 15px !important; height: 15px !important; }
+  @keyframes breathe { 50% { transform: scale(1.06); } }
+  #next { display: flex; align-items: center; gap: 0; padding: 8px; border-radius: 30px; }
+  #next .pic { display: block; width: 96px; height: 96px; border-radius: 20px; border: 3px solid var(--ink); box-sizing: border-box; background: radial-gradient(circle at 50% 35%, #fff6e6, #ecd2c4); overflow: hidden; }
+  #next .pic canvas { display: block; width: 100%; height: 100%; }
+  #next .hint { width: 22px; display: grid; place-items: center; animation: nudge 1s ease-in-out infinite; }
+  #next .hint svg { width: 18px; height: 18px; }
+  @keyframes nudge { 50% { transform: translateX(4px); } }
+  #next .go { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); border: var(--outline); box-shadow: 0 4px 0 var(--ink); }
+  #next .go svg { width: 40px; height: 40px; }
+  /* the finish: sparkles burst from the face */
+  #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #fx i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); background: var(--c); border: 2px solid var(--ink); border-radius: var(--r);
+    clip-path: var(--clip, none); animation: burst var(--t) cubic-bezier(.2, .7, .3, 1) forwards; }
+  @keyframes burst { 0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; }
+    70% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(1); opacity: 0; } }
+  #fx .glow { position: absolute; left: 50%; top: 42%; width: 70%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff9 0, #fff0 65%); animation: glow .9s ease-out forwards; }
+  @keyframes glow { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 30% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -50%) scale(1.3); } }
+  #notice { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--panel); border: var(--outline); box-shadow: 0 3px 0 var(--ink); }
+  #notice svg { width: 22px; height: 22px; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* ---- the colour of the day: the gift (owner's choice, 20 October 2026) ----
+     A card designed at 290 × 400 and scaled as one piece (main.js sets its zoom): the game's UI scale, shrunk only to
+     keep 16 px clear of every edge of the safe area, in whose exact centre it sits; the close button stays inside it.
+     A gift box tied in today's colour (--ribbon) in turning light rays; the product itself only on the button (one
+     video for this colour). The countdown is a tag hanging off the bow that ticks and tocks every second (green,
+     orange from 6 hours, red from 2; in the last ten minutes the card glows and the box beats). After the video the
+     box shakes, the lid flies off and the colour rises out in a flash, with confetti over the whole screen; the
+     clock stops, and the button becomes an arrow that goes back to the game with the colour selected. */
+  #panel { position: fixed; inset: 0; background: #2a1d1566; display: grid; place-items: center; overflow: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  #panel .card { position: relative; width: 290px; height: 400px; box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); overflow: hidden; }
+  #panel:not([hidden]) .card { animation: gift-popin .45s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes gift-popin { from { transform: scale(.6); opacity: 0; } }
+  #panel .x { position: absolute; right: 12px; top: 12px; width: 40px; height: 40px; z-index: 5; }
+  #panel .x svg { width: 17px; height: 17px; }
+  #panel .art { position: absolute; left: 0; right: 0; top: 0; height: 296px; }
+  #panel .rays { position: absolute; left: 50%; top: 52%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%;
+    background: repeating-conic-gradient(#ffd9e4 0 9deg, #fff6e600 9deg 22.5deg); -webkit-mask: radial-gradient(circle, #000 18%, #0000 66%); mask: radial-gradient(circle, #000 18%, #0000 66%); animation: gift-spin 22s linear infinite; }
+  #panel .unwrap .rays, #panel .rest .rays { background: repeating-conic-gradient(#ffe7a3 0 10deg, #fff6e600 10deg 22.5deg); animation-duration: 6s; }
+  @keyframes gift-spin { to { transform: rotate(360deg); } }
+  #panel .box { position: absolute; left: 50%; bottom: 34px; width: 176px; height: 150px; margin-left: -88px; }
+  #panel .box .base { position: absolute; left: 8px; right: 8px; top: 40px; bottom: 0; border-radius: 10px 10px 16px 16px; border: var(--outline);
+    background: linear-gradient(90deg, #fffaf6 0 42%, var(--ribbon) 42% 58%, #fffaf6 58%); box-shadow: 0 6px 0 var(--ink), inset 0 -12px 0 #f3e2d2; }
+  #panel .box .lid { position: absolute; left: 0; right: 0; top: 14px; height: 36px; border-radius: 10px; border: var(--outline); z-index: 3; transform-origin: 50% 100%;
+    background: linear-gradient(90deg, #fffaf6 0 42%, var(--ribbon) 42% 58%, #fffaf6 58%); box-shadow: 0 4px 0 var(--ink); animation: gift-peek 2.6s ease-in-out infinite; }
+  #panel .box .bow { position: absolute; left: 50%; top: -30px; width: 84px; height: 44px; margin-left: -42px; }
+  #panel .box .bow::before, #panel .box .bow::after { content: ""; position: absolute; top: 4px; width: 38px; height: 30px; background: var(--ribbon); border: var(--outline); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; }
+  #panel .box .bow::before { left: 2px; transform: rotate(-18deg); } #panel .box .bow::after { right: 2px; transform: rotate(18deg); }
+  #panel .box .bow i { position: absolute; left: 50%; top: 14px; width: 18px; height: 18px; margin-left: -9px; border-radius: 6px; background: var(--ribbon); filter: brightness(1.25); border: var(--outline); z-index: 1; }
+  #panel .box .seep { position: absolute; left: 14px; right: 14px; top: 36px; height: 16px; background: radial-gradient(50% 100% at 50% 100%, #fff7c2, #ffe08a00); z-index: 2; animation: gift-seep 2.6s ease-in-out infinite; }
+  @keyframes gift-peek { 0%, 60%, 100% { transform: translateY(0) rotate(0); } 70% { transform: translateY(-8px) rotate(-3deg); } 80% { transform: translateY(-2px) rotate(2deg); } 90% { transform: translateY(-5px) rotate(-1deg); } }
+  @keyframes gift-seep { 0%, 60%, 100% { opacity: .25; } 72% { opacity: 1; } }
+  #panel .box .prize { position: absolute; left: 50%; top: 30px; width: 104px; height: 104px; margin-left: -52px; border-radius: 50%; border: var(--outline); overflow: hidden; z-index: 2;
+    background: radial-gradient(120% 90% at 50% 20%, #fffaf6 0, #f3dcd6 100%); box-shadow: 0 0 0 5px #fff, 0 0 30px 14px #ffe9a8; opacity: 0; transform: translateY(40px) scale(.3); }
+  #panel .box .prize > svg { display: block; width: 116%; height: 116%; margin: -8%; }
+  #panel .shake .box { animation: gift-shake .45s; }
+  @keyframes gift-shake { 20%, 60% { transform: rotate(-5deg); } 40%, 80% { transform: rotate(5deg); } }
+  #panel .unwrap .box .lid { animation: gift-lidoff .7s cubic-bezier(.2, .8, .3, 1) forwards; }
+  @keyframes gift-lidoff { to { transform: translate(70px, -230px) rotate(75deg); opacity: 0; } }
+  #panel .unwrap .box .seep, #panel .rest .box .seep { animation: none; opacity: 1; height: 60px; top: 0; }
+  #panel .unwrap .box .prize { animation: gift-rise 1s cubic-bezier(.2, 1.5, .4, 1) .15s forwards; }
+  @keyframes gift-rise { to { opacity: 1; transform: translateY(-92px) rotate(360deg); } }
+  #panel .rest .box .lid { display: none; }
+  #panel .rest .box .prize { opacity: 1; transform: translateY(-92px); }
+  /* kept for good: the seal */
+  #panel .forever { position: absolute; left: 22px; top: 86px; width: 48px; height: 48px; border-radius: 50%; background: var(--seal); border: var(--outline); box-shadow: 0 3px 0 var(--ink); display: grid; place-items: center; transform: rotate(-10deg); z-index: 4; }
+  #panel .forever svg { width: 28px; height: 28px; }
+  /* the clock: a tag on a string from the bow; once the box is open it drops beside it, stopped */
+  #panel .time { position: absolute; right: 18px; top: 74px; display: inline-flex; gap: 6px; align-items: center; height: 30px; box-sizing: border-box; padding: 0 10px; border-radius: 15px; z-index: 4;
+    background: var(--panel); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); font-weight: 900; font-size: 14px; font-variant-numeric: tabular-nums;
+    transform-origin: 50% -26px; transition: transform .14s cubic-bezier(.3, 1.8, .5, 1), top .5s cubic-bezier(.3, 1.5, .5, 1); }
+  #panel .time::before { content: ""; position: absolute; left: 50%; top: -28px; width: 2px; height: 26px; background: var(--ink); }
+  #panel .time.tick { transform: rotate(7deg); } #panel .time.tock { transform: rotate(-4deg); }
+  #panel .time svg { width: 16px; height: 16px; }
+  #panel .time .hand { transform-origin: 12px 13px; transition: transform .14s; }
+  #panel .time.g { background: #c8f0cf; } #panel .time.o { background: #ffd27a; } #panel .time.r { background: #ff3b30; color: #fff; }
+  /* stopped: once the box opens the clock stands still, then swings down and away as the colour rises */
+  #panel .unwrap .time { animation: gift-stopped .7s ease-in .35s forwards; }
+  @keyframes gift-stopped { 30% { transform: rotate(18deg); } 100% { transform: rotate(40deg) translateY(60px); opacity: 0; } }
+  #panel .card.last { animation: alarm 1s ease-in-out infinite; }
+  #panel .card.last .box { animation: beat 1s ease-in-out infinite; }
+  @keyframes alarm { 0%, 100% { box-shadow: 0 6px 0 var(--ink), 0 0 0 4px #ff4d3d55, 0 0 14px 4px #ff4d3d66; } 50% { box-shadow: 0 6px 0 var(--ink), 0 0 0 7px #ff4d3d77, 0 0 28px 10px #ff4d3d99; } }
+  @keyframes beat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.08); } 24% { transform: scale(1.01); } 34% { transform: scale(1.06); } }
+  /* the one button: a video for this colour; then an arrow back to the game */
+  #panel .get { position: absolute; left: 22px; right: 22px; bottom: 22px; height: 66px; border-radius: 33px; background: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; overflow: hidden; }
+  #panel .get:not(:disabled) { animation: gift-nudge 2.4s ease-in-out infinite; }
+  #panel .get::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, #0000 35%, #fff8 50%, #0000 65%) -150% 0 / 250% 100% no-repeat; animation: gift-sheen 2.4s ease-in-out infinite; pointer-events: none; }
+  #panel .get .vb { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--badge); border: var(--outline); flex: none; }
+  #panel .get .vb svg { width: 25px; height: 25px; }
+  #panel .get > svg { width: 22px; height: 22px; flex: none; }
+  #panel .get .prz { width: 50px; height: 50px; border-radius: 50%; border: var(--outline); overflow: hidden; flex: none; background: radial-gradient(120% 90% at 50% 20%, #fffaf6 0, #f3dcd6 100%); }
+  #panel .get .prz > svg { display: block; width: 116%; height: 116%; margin: -8%; }
+  #panel .get.owned { background: var(--seal); }
+  #panel .get.owned > svg { width: 36px; height: 36px; }
+  @keyframes gift-nudge { 0%, 70%, 100% { transform: scale(1); } 78% { transform: scale(1.05); } 86% { transform: scale(.99); } 92% { transform: scale(1.03); } }
+  @keyframes gift-sheen { 0%, 55% { background-position: -150% 0; } 100% { background-position: 150% 0; } }
+  /* the celebration: a flash and confetti over the whole screen */
+  #panel .burst { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #panel .burst i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); background: var(--c); border: 2px solid var(--ink); border-radius: var(--r); animation: gift-confetti var(--t) cubic-bezier(.15, .7, .3, 1) forwards; }
+  @keyframes gift-confetti { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; } }
+  #panel .burst b { position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, #fff 0, #fff8 40%, #fff0 75%); animation: gift-flash .6s ease-out forwards; }
+  @keyframes gift-flash { 15% { opacity: 1; } 100% { opacity: 0; } }
+  .nope { animation: nope .4s; }
+  @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+  /* the tool in hand: drawn in 3D where it works (main.js), never in the way of a pointer; its soft shadow falls down
+     and to the right, as from the face's key light */
+  #hand { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 2; filter: drop-shadow(5px 8px 5px #3a201430); will-change: transform; }
+  #hand canvas { display: block; }
+
+  /* ---- loading and recovery ---- */
+  #cover, #error { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; padding: 24px; background: var(--wall); }
+  /* the loading screen: a blush compact whose pan fills round as the game loads (--p, 0 to 1, from main.js), with a
+     soft shine sweeping over it. Until the game can measure its loading (and all the way where it cannot), the pan
+     fills and empties round in a loop (.wait). Sized by the UI scale like every control (the cover's zoom), so it is
+     the same on every phone and in proportion on tiny embeds and big screens */
+  @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --a { syntax: '<number>'; inherits: true; initial-value: 0; }
+  #cover { --p: 0; --a: 0; transition: --p .35s ease-out, opacity .25s; }
+  #cover.wait { animation: wait 1.8s ease-in-out infinite; }
+  @keyframes wait { 0% { --a: 0; --p: 0; } 50% { --a: 0; --p: 1; } 100% { --a: 1; --p: 1; } }
+  #cover.done { opacity: 0; pointer-events: none; }
+  .blush { position: relative; width: 104px; height: 104px; border-radius: 50%; border: var(--outline); box-sizing: border-box; box-shadow: 0 5px 0 var(--ink), inset 0 0 0 8px #f6dc96;
+    background: radial-gradient(circle at 35% 30%, #fff8 0 14%, #0000 30%), conic-gradient(var(--panel) calc(var(--a) * 360deg), #e48a98 0 calc(var(--p) * 360deg), var(--panel) 0); }
+  .blush::after { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: linear-gradient(115deg, #0000 40%, #fff7 50%, #0000 60%) -120px 0 / 300% 100% no-repeat; animation: shine 1.6s linear infinite; }
+  @keyframes shine { to { background-position: 120px 0; } }
+  #error .oops { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: var(--outline); box-shadow: var(--edge); }
+  #error .oops svg { width: 46px; height: 46px; }
+  #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
+  #retry svg { width: 40px; height: 40px; }
+  #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
+  @media (prefers-reduced-motion: reduce) { #cover.wait, .blush::after, .nope, #notice svg, #redo, #review > *, #next .hint, #panel .card.last, #panel .card.last .box, #panel .rays, #panel .box .lid, #panel .box .seep, #panel .get, #panel .get::after, #done.pop { animation: none !important; } #panel .burst { display: none; } #panel .unwrap .box .lid { display: none; } #fx { display: none; } .ctl, #swatches button, .pg { transition: none; } #swatches.turn { animation: none; } }
+  /* landscape: the counter is a column at the side (tools beside a grid of colours); the top buttons sit over the
+     scene's corners */
+  .land #app { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: minmax(0, 1fr); }
+  .land #stage { grid-area: 1 / 1; align-items: center; }
+  .land #top { grid-area: 1 / 1; align-self: start; z-index: 1; min-height: 0; pointer-events: none; }
+  .land #top > * { pointer-events: auto; }
+  .land footer { grid-area: 1 / 2; height: auto; width: calc(300px + env(safe-area-inset-right)); box-sizing: border-box; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) 14px;
+    background: linear-gradient(90deg, #fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: -10px 0 18px -10px #6a3a3a55; }
+  .land #create { display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 8px; }
+  .land #toolbar { grid-template-columns: repeat(2, 44px); padding: 0; gap: 8px; }
+  .land #toolbar .ctl { width: 44px; height: 44px; }
+  /* at the side: two rows of three, wide enough apart that the picked colour's ring clears the colours round it */
+  .land #colours { justify-content: center; align-content: center; align-self: stretch; }
+  .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 42px); gap: 16px 14px; padding: 17px 6px 12px; }
+  .land #review { align-items: flex-end; justify-content: flex-end; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="backdrop" aria-hidden="true"><div class="mirror"><div class="bulbs"></div></div></div>
+  <header id="top">
+    <button id="daily" class="ctl round" aria-label="Colour of the day" hidden></button>
+    <span></span>
+    <button id="done" class="ctl" aria-label="Done"></button>
+  </header>
+  <main id="stage"><div id="fx" aria-hidden="true"></div><div id="notice" role="status" aria-label="Not saved yet. Retrying." hidden></div></main>
+  <footer id="create"><div id="colours"><button id="back" class="pg" aria-label="Previous colours"></button><div id="swatches" role="radiogroup" aria-label="Colours"></div><button id="more" class="pg" aria-label="More colours"></button></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
+  <footer id="review" hidden>
+    <button id="redo" class="ctl round" aria-label="Do this face again: watch a video" hidden></button>
+    <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="hint"></span><span class="go"></span></button>
+  </footer>
+</div>
+<div id="hand" aria-hidden="true" hidden></div>
+<div id="panel" role="dialog" aria-modal="true" aria-label="Colour of the day" hidden>
+  <div class="burst" aria-hidden="true"></div>
+  <div class="card">
+    <div class="art" role="img"></div>
+    <div class="time" role="timer"></div>
+    <button class="get ctl"></button>
+    <button class="x ctl round" aria-label="Close"></button>
+  </div>
+</div>
+<div id="cover" class="wait"><div class="blush" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100"></div></div>
+<div id="error" role="alert" aria-label="Something went wrong. Your saved looks are safe." hidden><div class="oops"></div><button id="retry" class="ctl" aria-label="Retry"></button><small id="error-code"></small></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
