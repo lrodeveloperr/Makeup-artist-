@@ -72,12 +72,20 @@ try {
     s = await state(page);
     assert.deepEqual([s.phase, s.strokes, s.completions], ['review', 1, 1]);
     assert.equal(await words(page), '', 'no words in review');
+    // review's buttons rise into place and rest exactly there (an animation of the same name elsewhere once sent them
+    // flying up and spinning)
+    // (in place: not moved or turned; Retry breathes, so a gentle scale is fine)
+    const inPlace = (t) => t === 'none' || /^matrix\([\d.]+, 0, 0, [\d.]+, 0, 0\)$/.test(t);
+    const settled = () => page.evaluate(() => new Promise((r) => setTimeout(() => r([...document.querySelectorAll('#review > *:not([hidden])')].map((el) => getComputedStyle(el).transform)), 900)));
+    for (const t of await settled()) assert.ok(inPlace(t), `review's buttons at rest in place (${t})`);
     await page.click('#next'); await idle(page);
     s = await state(page);
     assert.equal(s.seed, nextSeed, 'the previewed customer came next');
     assert.ok(!s.sdk.includes('interstitial'));
-    // an untouched look: Done, Next, nothing counted
-    await done(page); await page.click('#next'); await idle(page);
+    // an untouched look: Done, Next, nothing counted; its review buttons in place too
+    await done(page);
+    for (const t of await settled()) assert.ok(inPlace(t), `an untouched look's review buttons in place (${t})`);
+    await page.click('#next'); await idle(page);
     assert.equal((await state(page)).completions, 1);
     // the host turns sound off: nothing plays, not even a tool's click; back on, it sounds again
     await page.evaluate(() => ytgame.__audio(false));

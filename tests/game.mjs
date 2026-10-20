@@ -1,6 +1,7 @@
 // Fast checks of the game layer without a browser: the colour of the day, interstitial pacing, the game's
 // rules (finish, next, replay, colours), the saved form, and the session's save/ad ordering against a fake host.
 // Usage: node tests/game.mjs
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { DAILY, PALETTE, colourById, coloursFor } from '../src/makeup/palette.js';
 import { createMakeup, addStroke, setLens } from '../src/makeup/makeup.js';
@@ -14,6 +15,12 @@ const tests = [];
 const test = (name, fn) => tests.push([name, fn]); // run in order at the end, one at a time
 const waitFor = async (f) => { while (!f()) await new Promise((r) => setTimeout(r, 0)); };
 const stroke = (m) => addStroke(m, { tool: 'brush', colour: 'brush-rose', segments: [[0, 0, 0]] });
+
+test('the game page: every animation has its own name (one defined twice overrides the other everywhere it is used)', () => {
+  const names = [...fs.readFileSync(new URL('../game/index.html', import.meta.url), 'utf8').matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1]);
+  const twice = names.filter((x, i) => names.indexOf(x) !== i);
+  assert.deepEqual(twice, [], `animations defined twice: ${twice.join(', ')}`);
+});
 
 test('colour of the day: same for everyone that day, never one already owned, tools take turns', () => {
   const days = Array.from({ length: 40 }, (_, i) => dayKey(new Date(2026, 9, 19 + i)));

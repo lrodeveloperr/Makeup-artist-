@@ -200,37 +200,37 @@
   #panel { position: fixed; inset: 0; background: #2a1d1566; display: grid; place-items: center; overflow: hidden;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
   #panel .card { position: relative; width: 290px; height: 400px; box-sizing: border-box; background: var(--panel); border: var(--outline); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); overflow: hidden; }
-  #panel:not([hidden]) .card { animation: popin .45s cubic-bezier(.3, 1.5, .5, 1); }
-  @keyframes popin { from { transform: scale(.6); opacity: 0; } }
+  #panel:not([hidden]) .card { animation: gift-popin .45s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes gift-popin { from { transform: scale(.6); opacity: 0; } }
   #panel .x { position: absolute; right: 12px; top: 12px; width: 40px; height: 40px; z-index: 5; }
   #panel .x svg { width: 17px; height: 17px; }
   #panel .art { position: absolute; left: 0; right: 0; top: 0; height: 296px; }
   #panel .rays { position: absolute; left: 50%; top: 52%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%;
-    background: repeating-conic-gradient(#ffd9e4 0 9deg, #fff6e600 9deg 22.5deg); -webkit-mask: radial-gradient(circle, #000 18%, #0000 66%); mask: radial-gradient(circle, #000 18%, #0000 66%); animation: spin 22s linear infinite; }
+    background: repeating-conic-gradient(#ffd9e4 0 9deg, #fff6e600 9deg 22.5deg); -webkit-mask: radial-gradient(circle, #000 18%, #0000 66%); mask: radial-gradient(circle, #000 18%, #0000 66%); animation: gift-spin 22s linear infinite; }
   #panel .unwrap .rays, #panel .rest .rays { background: repeating-conic-gradient(#ffe7a3 0 10deg, #fff6e600 10deg 22.5deg); animation-duration: 6s; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes gift-spin { to { transform: rotate(360deg); } }
   #panel .box { position: absolute; left: 50%; bottom: 34px; width: 176px; height: 150px; margin-left: -88px; }
   #panel .box .base { position: absolute; left: 8px; right: 8px; top: 40px; bottom: 0; border-radius: 10px 10px 16px 16px; border: var(--outline);
     background: linear-gradient(90deg, #fffaf6 0 42%, var(--ribbon) 42% 58%, #fffaf6 58%); box-shadow: 0 6px 0 var(--ink), inset 0 -12px 0 #f3e2d2; }
   #panel .box .lid { position: absolute; left: 0; right: 0; top: 14px; height: 36px; border-radius: 10px; border: var(--outline); z-index: 3; transform-origin: 50% 100%;
-    background: linear-gradient(90deg, #fffaf6 0 42%, var(--ribbon) 42% 58%, #fffaf6 58%); box-shadow: 0 4px 0 var(--ink); animation: peek 2.6s ease-in-out infinite; }
+    background: linear-gradient(90deg, #fffaf6 0 42%, var(--ribbon) 42% 58%, #fffaf6 58%); box-shadow: 0 4px 0 var(--ink); animation: gift-peek 2.6s ease-in-out infinite; }
   #panel .box .bow { position: absolute; left: 50%; top: -30px; width: 84px; height: 44px; margin-left: -42px; }
   #panel .box .bow::before, #panel .box .bow::after { content: ""; position: absolute; top: 4px; width: 38px; height: 30px; background: var(--ribbon); border: var(--outline); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; }
   #panel .box .bow::before { left: 2px; transform: rotate(-18deg); } #panel .box .bow::after { right: 2px; transform: rotate(18deg); }
   #panel .box .bow i { position: absolute; left: 50%; top: 14px; width: 18px; height: 18px; margin-left: -9px; border-radius: 6px; background: var(--ribbon); filter: brightness(1.25); border: var(--outline); z-index: 1; }
-  #panel .box .seep { position: absolute; left: 14px; right: 14px; top: 36px; height: 16px; background: radial-gradient(50% 100% at 50% 100%, #fff7c2, #ffe08a00); z-index: 2; animation: seep 2.6s ease-in-out infinite; }
-  @keyframes peek { 0%, 60%, 100% { transform: translateY(0) rotate(0); } 70% { transform: translateY(-8px) rotate(-3deg); } 80% { transform: translateY(-2px) rotate(2deg); } 90% { transform: translateY(-5px) rotate(-1deg); } }
-  @keyframes seep { 0%, 60%, 100% { opacity: .25; } 72% { opacity: 1; } }
+  #panel .box .seep { position: absolute; left: 14px; right: 14px; top: 36px; height: 16px; background: radial-gradient(50% 100% at 50% 100%, #fff7c2, #ffe08a00); z-index: 2; animation: gift-seep 2.6s ease-in-out infinite; }
+  @keyframes gift-peek { 0%, 60%, 100% { transform: translateY(0) rotate(0); } 70% { transform: translateY(-8px) rotate(-3deg); } 80% { transform: translateY(-2px) rotate(2deg); } 90% { transform: translateY(-5px) rotate(-1deg); } }
+  @keyframes gift-seep { 0%, 60%, 100% { opacity: .25; } 72% { opacity: 1; } }
   #panel .box .prize { position: absolute; left: 50%; top: 30px; width: 104px; height: 104px; margin-left: -52px; border-radius: 50%; border: var(--outline); overflow: hidden; z-index: 2;
     background: radial-gradient(120% 90% at 50% 20%, #fffaf6 0, #f3dcd6 100%); box-shadow: 0 0 0 5px #fff, 0 0 30px 14px #ffe9a8; opacity: 0; transform: translateY(40px) scale(.3); }
   #panel .box .prize > svg { display: block; width: 116%; height: 116%; margin: -8%; }
-  #panel .shake .box { animation: shake .45s; }
-  @keyframes shake { 20%, 60% { transform: rotate(-5deg); } 40%, 80% { transform: rotate(5deg); } }
-  #panel .unwrap .box .lid { animation: lidoff .7s cubic-bezier(.2, .8, .3, 1) forwards; }
-  @keyframes lidoff { to { transform: translate(70px, -230px) rotate(75deg); opacity: 0; } }
+  #panel .shake .box { animation: gift-shake .45s; }
+  @keyframes gift-shake { 20%, 60% { transform: rotate(-5deg); } 40%, 80% { transform: rotate(5deg); } }
+  #panel .unwrap .box .lid { animation: gift-lidoff .7s cubic-bezier(.2, .8, .3, 1) forwards; }
+  @keyframes gift-lidoff { to { transform: translate(70px, -230px) rotate(75deg); opacity: 0; } }
   #panel .unwrap .box .seep, #panel .rest .box .seep { animation: none; opacity: 1; height: 60px; top: 0; }
-  #panel .unwrap .box .prize { animation: rise 1s cubic-bezier(.2, 1.5, .4, 1) .15s forwards; }
-  @keyframes rise { to { opacity: 1; transform: translateY(-92px) rotate(360deg); } }
+  #panel .unwrap .box .prize { animation: gift-rise 1s cubic-bezier(.2, 1.5, .4, 1) .15s forwards; }
+  @keyframes gift-rise { to { opacity: 1; transform: translateY(-92px) rotate(360deg); } }
   #panel .rest .box .lid { display: none; }
   #panel .rest .box .prize { opacity: 1; transform: translateY(-92px); }
   /* kept for good: the seal */
@@ -246,16 +246,16 @@
   #panel .time .hand { transform-origin: 12px 13px; transition: transform .14s; }
   #panel .time.g { background: #c8f0cf; } #panel .time.o { background: #ffd27a; } #panel .time.r { background: #ff3b30; color: #fff; }
   /* stopped: once the box opens the clock stands still, then swings down and away as the colour rises */
-  #panel .unwrap .time { animation: stopped .7s ease-in .35s forwards; }
-  @keyframes stopped { 30% { transform: rotate(18deg); } 100% { transform: rotate(40deg) translateY(60px); opacity: 0; } }
+  #panel .unwrap .time { animation: gift-stopped .7s ease-in .35s forwards; }
+  @keyframes gift-stopped { 30% { transform: rotate(18deg); } 100% { transform: rotate(40deg) translateY(60px); opacity: 0; } }
   #panel .card.last { animation: alarm 1s ease-in-out infinite; }
   #panel .card.last .box { animation: beat 1s ease-in-out infinite; }
   @keyframes alarm { 0%, 100% { box-shadow: 0 6px 0 var(--ink), 0 0 0 4px #ff4d3d55, 0 0 14px 4px #ff4d3d66; } 50% { box-shadow: 0 6px 0 var(--ink), 0 0 0 7px #ff4d3d77, 0 0 28px 10px #ff4d3d99; } }
   @keyframes beat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.08); } 24% { transform: scale(1.01); } 34% { transform: scale(1.06); } }
   /* the one button: a video for this colour; then an arrow back to the game */
   #panel .get { position: absolute; left: 22px; right: 22px; bottom: 22px; height: 66px; border-radius: 33px; background: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; overflow: hidden; }
-  #panel .get:not(:disabled) { animation: nudge 2.4s ease-in-out infinite; }
-  #panel .get::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, #0000 35%, #fff8 50%, #0000 65%) -150% 0 / 250% 100% no-repeat; animation: sheen 2.4s ease-in-out infinite; pointer-events: none; }
+  #panel .get:not(:disabled) { animation: gift-nudge 2.4s ease-in-out infinite; }
+  #panel .get::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, #0000 35%, #fff8 50%, #0000 65%) -150% 0 / 250% 100% no-repeat; animation: gift-sheen 2.4s ease-in-out infinite; pointer-events: none; }
   #panel .get .vb { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--badge); border: var(--outline); flex: none; }
   #panel .get .vb svg { width: 25px; height: 25px; }
   #panel .get > svg { width: 22px; height: 22px; flex: none; }
@@ -263,14 +263,14 @@
   #panel .get .prz > svg { display: block; width: 116%; height: 116%; margin: -8%; }
   #panel .get.owned { background: var(--seal); }
   #panel .get.owned > svg { width: 36px; height: 36px; }
-  @keyframes nudge { 0%, 70%, 100% { transform: scale(1); } 78% { transform: scale(1.05); } 86% { transform: scale(.99); } 92% { transform: scale(1.03); } }
-  @keyframes sheen { 0%, 55% { background-position: -150% 0; } 100% { background-position: 150% 0; } }
+  @keyframes gift-nudge { 0%, 70%, 100% { transform: scale(1); } 78% { transform: scale(1.05); } 86% { transform: scale(.99); } 92% { transform: scale(1.03); } }
+  @keyframes gift-sheen { 0%, 55% { background-position: -150% 0; } 100% { background-position: 150% 0; } }
   /* the celebration: a flash and confetti over the whole screen */
   #panel .burst { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-  #panel .burst i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); background: var(--c); border: 2px solid var(--ink); border-radius: var(--r); animation: confetti var(--t) cubic-bezier(.15, .7, .3, 1) forwards; }
-  @keyframes confetti { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; } }
-  #panel .burst b { position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, #fff 0, #fff8 40%, #fff0 75%); animation: flash .6s ease-out forwards; }
-  @keyframes flash { 15% { opacity: 1; } 100% { opacity: 0; } }
+  #panel .burst i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); background: var(--c); border: 2px solid var(--ink); border-radius: var(--r); animation: gift-confetti var(--t) cubic-bezier(.15, .7, .3, 1) forwards; }
+  @keyframes gift-confetti { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; } }
+  #panel .burst b { position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, #fff 0, #fff8 40%, #fff0 75%); animation: gift-flash .6s ease-out forwards; }
+  @keyframes gift-flash { 15% { opacity: 1; } 100% { opacity: 0; } }
   .nope { animation: nope .4s; }
   @keyframes nope { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
