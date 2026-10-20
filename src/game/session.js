@@ -44,8 +44,10 @@ export class Session {
   // the current state has not been saved yet (a new player's first state)
   touch() { this.rev++; this.schedule(0); }
 
+  // (a background save waits while the host has the game paused: only the final save on pause, an explicit flush, runs
+  // then)
   schedule(ms) {
-    if (!this.timer) this.timer = setTimeout(() => { this.timer = null; this.flush().catch(() => {}); }, ms);
+    if (!this.timer) this.timer = setTimeout(async () => { this.timer = null; await this.host.whenResumed?.(); this.flush().catch(() => {}); }, ms);
   }
 
   // Save the current state. Resolves once the host acknowledged a write that includes every change made before

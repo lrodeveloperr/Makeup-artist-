@@ -493,7 +493,8 @@ async function main() {
       art.innerHTML = `<div class="rays"></div><div class="box"><div class="base"></div><div class="seep"></div><div class="lid"><div class="bow"><i></i></div></div><div class="prize">${c ? productShot(c) : ''}</div></div><span class="forever">${ICON.forever}</span>`;
     }
     // an opened box stays open (also when the card is opened again later the same day)
-    card.classList.toggle('rest', owned && !card.classList.contains('unwrap'));
+    // (not while it is being revealed: the shake, then the lid flies off)
+    card.classList.toggle('rest', owned && !revealing && !card.classList.contains('unwrap'));
     const live = !!c && !owned;
     for (const l of ['g', 'o', 'r']) { card.classList.toggle(l, live && t.level === l); time.classList.toggle(l, live && t.level === l); }
     card.classList.toggle('last', live && t.last);
@@ -517,7 +518,7 @@ async function main() {
   };
   // every second while the colour waits: the tag swings, the hand moves, the clock ticks and tocks
   const clockTick = () => {
-    if (paused) return;
+    if (paused || revealing) return; // (midnight never swaps the colour in the box as it is revealed)
     session.refreshDaily();
     const s = session.state, live = !!s.pick && !s.owned.includes(s.pick.colour) && !revealing;
     if (live) { beat++; time.classList.toggle('tick', beat % 2 === 1); time.classList.toggle('tock', beat % 2 === 0); ui(beat % 2 ? 'tick' : 'tock'); }
@@ -535,6 +536,7 @@ async function main() {
   };
   addEventListener('resize', fitCard);
   const openPanel = () => {
+    if (finishing) return; // a finished look is on its way to review (its Finish must not be lost)
     input.interrupt();
     ui('panel');
     session.refreshDaily(); session.openedDaily();
@@ -571,7 +573,7 @@ async function main() {
   daily.onclick = openPanel;
   card.querySelector('.x').onclick = closePanel;
   panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
-  addEventListener('keydown', (e) => { if (e.key === 'Escape' && panelOpen) closePanel(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && panelOpen && !paused) closePanel(); });
   get.onclick = async () => {
     if (session.state.owned.includes(session.state.pick?.colour)) { closePanel(); return; } // continue: it is selected
     const p = session.reward('daily');

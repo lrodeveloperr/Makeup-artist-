@@ -46,6 +46,12 @@ test('colour of the day: same for everyone that day, never one already owned, to
   assert.deepEqual([timeLeft(new Date(2026, 9, 19, 23, 49, 0)).last, timeLeft(new Date(2026, 9, 19, 23, 51, 0)).last], [false, true]);
 });
 
+test('every colour of the day owned: the daily check changes nothing (so nothing is saved every minute)', () => {
+  const all = Object.values(DAILY).flat().map((c) => c.id), s = { ...G.newGame(5), owned: all, pick: null };
+  assert.equal(G.withPick(s, '2026-10-20'), s);
+  assert.equal(G.withPick(s, '2026-10-21'), s);
+});
+
 test('interstitial pacing: every second finished look, at least a minute of making, never on an untouched look', () => {
   const at = (c, extra = {}) => atNext(c, { changed: true, now: 1e6, ...extra });
   let c = createCadence();

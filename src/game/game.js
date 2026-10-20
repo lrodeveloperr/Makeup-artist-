@@ -84,6 +84,7 @@ export const rewardEarned = (s) => ({ ...s, cadence: rewarded(s.cadence) });
 export function withPick(s, day) {
   if (s.pick?.day === day) return s;
   const colour = dailyOffer(day, new Set(s.owned));
+  if (!colour && s.pick === null) return s; // every colour owned: nothing changes (and nothing is saved)
   return { ...s, pick: colour ? { day, colour } : null };
 }
 // the earned colour joins its tool for good and is selected, ready to use
