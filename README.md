@@ -1,18 +1,75 @@
 # Freestyle makeup game
 
-Build contract for WorksBien Studios' makeup game, using the reusable structure of [Haircut](https://github.com/lrodeveloperr/Haircut).
+WorksBien Studios' makeup game for YouTube Playables, built on the reusable structure of
+[Haircut](https://github.com/lrodeveloperr/Haircut).
 
-Start with [MAKEUP-AI-BUILD-CONTRACT.md](MAKEUP-AI-BUILD-CONTRACT.md). It is the current source of truth for gameplay, rewards, platform behavior and acceptance. Read [AGENTS.md](AGENTS.md) before making changes.
+Start with [MAKEUP-AI-BUILD-CONTRACT.md](MAKEUP-AI-BUILD-CONTRACT.md): it is the source of truth for gameplay, rewards,
+platform behaviour, acceptance and the owner's decisions. Read [AGENTS.md](AGENTS.md) before making changes.
 
-The agreed game is simple: apply makeup with four always-available tools, change eye colour with contact lenses, review the result, then move to the next generated face or watch one rewarded ad to replay the same clean face. Each day one special colour for one tool (or the lenses) is on offer until midnight; one rewarded ad adds it to that tool's colours for good. An interstitial plays at Next after every second finished look.
+## The game
 
-The camera is already close enough for application. Players control the result through their strokes and repeated passes. There are no zoom controls or brush-size/intensity sliders.
+Apply makeup freely to a generated customer, review the look, then move on to the next face, or watch one rewarded
+video to replay the same face clean. Every day one special colour for one tool (or the lenses) is offered as a gift box
+until midnight; one rewarded video keeps it for good. An interstitial plays at Next after every second finished look.
 
-Status (20 October 2026): the game is complete and plays end to end. The **face generation and rendering** is built: CC0 MakeHuman head with its three sculpted young-female base heads and 93 shape dimensions, 15 ancestry profiles plus named blends, procedural skin, eyes, brows and lashes, 8 long hairstyles that suit each natural hair texture, natural hair colours per ancestry, blouses and dresses worn on the body in complexion-flattering colours and patterns, and a variety director. Every customer is a young woman with long hair. The **makeup painting tools** work on every face by mouse and touch: soft brush, highlighter, detail pencil, liquid liner (tapering to a sharp wing), mascara wand, lip applicator and tap-on 3D face gems, with fixed behaviour (no sliders, eraser or undo), 30 basic base colours (a clear gloss among them) and 5 natural lens colours tapped onto either iris, plus 365 colours of the day (a year of daily offers) (everyday extras, shimmers, glosses, metallics, brights, fantasy shades and gems) earned with a video and kept for good. The look is stored as compact validated data that rebuilds exactly; a maximum-work session saves in under 54 KB. The face system and the tools download in about 419 KB (face budget 420 KB), and the whole game page in about 731 KB (budget 1 MB). They pass the 2,000-face audit, the makeup checks and the browser render, paint and touch smoke test. See [docs/FACES.md](docs/FACES.md), [docs/MAKEUP.md](docs/MAKEUP.md), [docs/FACE-AUDIT.md](docs/FACE-AUDIT.md) and [ASSETS.md](ASSETS.md). The **single-screen game** plays end to end: Done → review → Next, Redo for a video, the colour of the day as a gift box opened by one video, the selected tool drawn in hand as a 3D model lit like the face, colours shown six at a time, real CC0 ASMR recordings for every tool (no music), saves and ads through the YouTube Playables SDK, verified in the browser against a test stand-in for the SDK on 30 screen sizes ([docs/GAME.md](docs/GAME.md)). The game has no words on screen (icons, pictures and numbers only), so it plays the same in every language. The owner has tested it on a laptop. After a first touch-screen try, painting by finger was made quicker (only the painted patch is redrawn) and assisted: under a finger each tool works only in its own zones of the face (lighting up faintly while the finger is down), a stroke stays in its zone and the liner follows the lash line, while a mouse stays free; testing on a phone is still to do. The owner makes the release package and publishes; no release archive, certification or publication is claimed here. The public game title is not locked.
+- **Seven tools, always available:** soft brush, highlighter, detail pencil, liquid liner, mascara wand, lipstick and
+  gloss, and tap-on 3D face gems, plus contact lenses for eye colour. Each tool is drawn in hand as a 3D model lit
+  like the face, with real CC0 ASMR recordings (no music).
+- **Fixed behaviour:** no sliders, eraser or undo. Strokes and repeated passes decide the result, and the close,
+  front-facing camera needs no zoom.
+- **Colours:** 35 base colours (a clear gloss among them) and 365 colours of the day (a year of daily offers), shown
+  six at a time, newest first.
+- **No words on screen:** icons, pictures and numbers only, so it plays the same in every language.
+
+## Mouse, pen and touch
+
+- **A mouse or a pen is free.** The tool takes the cursor's place, its tip exactly at the pointer.
+- **A finger is assisted** (owner decisions, 20 October 2026):
+  - Each tool works only in its own zones of the face, which glow faintly while the finger is down. A stroke stays in
+    the zone it starts in, and a finger that strays a little is pulled to the zone's edge, so no tool has to be forced.
+  - The liner and the pencil follow the lash line.
+  - The tool is held just above the finger and set back over it, so it is seen in hand: 48 px above a forefinger, up
+    to 66 px for a thumb, and a contact lens at 85 % of that. These heights were tuned by the owner on a phone.
+  - While painting, only the area round the stroke is redrawn, so painting stays smooth on phones.
+
+## Faces
+
+CC0 MakeHuman heads with 93 shape dimensions, 15 ancestry profiles and named blends, procedural skin, eyes, brows
+and lashes, 8 long hairstyles suited to each natural hair texture, natural hair colours per ancestry, and blouses and
+dresses in complexion-flattering colours. Every customer is a young woman with long hair. See
+[docs/FACES.md](docs/FACES.md) and [ASSETS.md](ASSETS.md).
+
+## Status (20 October 2026)
+
+- **Complete and merged into `main`.** The game plays end to end: Done → review → Next, Redo for a video, the gift box,
+  saves and ads through the YouTube Playables SDK.
+- **Download:** 419,946 bytes for the face system and tools (budget 420,000), and about 740 KB for the whole game page
+  (budget 1 MB).
+- **Saves:** a look is stored as compact, validated data that rebuilds exactly. A maximum-work session saves in under
+  54 KB.
+- **Pre-release integrity check passed.** Every test suite passes on the final code. A three-part code review fixed 17
+  issues. The most serious were a GPU memory leak, recovery when a phone discards the game's graphics, the gift reveal,
+  a lost Done, and paused saves.
+- **Testing by the owner:** played on a laptop, with touch tuned on a phone. All automated tests run in a desktop
+  browser with simulated touch, so a final play-through on a phone is the owner's step before publishing.
+- **Release:** the owner makes the release package and publishes. No release archive, certification or publication
+  is claimed here, and the public game title is not locked.
+
+More detail: [docs/GAME.md](docs/GAME.md) (screen, sound, ads, saves, tests) and [docs/MAKEUP.md](docs/MAKEUP.md)
+(tools, zones, input).
+
+## Build and test
 
 ```sh
 npm ci
-npm run serve:game                        # the game (development page): http://localhost:8130/?testads
-node tools/build-preview.mjs && node tools/serve.mjs build/preview   # face and tool preview
-npm test && npm run test:render && npm run test:game   # unit tests, audit, size budget, browser tests
+npm run serve:game     # the game (development page): http://localhost:8130/?testads
+npm run build:game     # build/game: the YouTube page to package (with the fflate licence notice)
+
+npm test               # unit, makeup and game logic, the 2,000-face audit, the size budget
+npm run test:game      # the full game flow in the browser, with a test stand-in for the SDK
+npm run test:inputs    # every tool by finger, mouse and pen, its tip drawn where it works
+npm run test:zones     # every touch zone of every tool paints and shows; nothing lands outside
+npm run test:render    # faces and tools render; touch and patch redraws
+npm run test:layout    # 30 screen sizes, portrait and landscape
+npm run test:sound     # the sounds keep time with the hand
 ```
