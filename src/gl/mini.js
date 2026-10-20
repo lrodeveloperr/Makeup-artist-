@@ -306,8 +306,8 @@ export class WebGLRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
     gl.viewport(0, 0, rt.width, rt.height);
     if (clear) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); }
-    if (scissor) { gl.enable(gl.SCISSOR_TEST); gl.scissor(...scissor); }
-    if (mask) gl.colorMask(...mask);
+    if (scissor) { gl.enable(gl.SCISSOR_TEST); gl.scissor(...scissor); } else gl.disable(gl.SCISSOR_TEST);
+    gl.colorMask(...(mask || [true, true, true, true]));
     if (mesh) {
       const p = this.program(mesh.material);
       gl.useProgram(p.prog);
@@ -384,8 +384,10 @@ export class WebGLRenderer {
   render(scene, camera, clip = null) {
     const gl = this.gl;
     this.collect();
+    // (from a clean state, whatever a failed draw may have left: the screen, all channels, no scissor unless clipped)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.colorMask(true, true, true, true);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    if (clip) { gl.enable(gl.SCISSOR_TEST); gl.scissor(...clip); }
+    if (clip) { gl.enable(gl.SCISSOR_TEST); gl.scissor(...clip); } else gl.disable(gl.SCISSOR_TEST);
     const bg = scene.background; // null: transparent
     gl.clearColor(...(bg ? [...linearBackground(bg), 1] : [0, 0, 0, 0]));
     gl.depthMask(true);

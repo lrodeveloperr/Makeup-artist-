@@ -281,6 +281,18 @@ It runs in three environments:
 it in place of the SDK address, and it is never part of an upload. The YouTube page (`build/game`) always
 loads the real SDK first.
 
+## Robustness (pre-release review, 20 October 2026)
+
+- **A lost graphics context comes back.** A phone may take a page's graphics away (a backgrounded tab, memory
+  pressure). The game keeps the page's claim on them and, when they return, makes every GPU resource again as it is
+  next drawn and replays the look's paint (which lives only on the GPU) from the saved strokes; the tool in hand and
+  the thumbnails are drawn afresh.
+- **No GPU leaks.** Brows and lashes refill their own buffers when rebuilt (a new face, every mascara coat) instead
+  of leaving new ones behind each time.
+- **Every draw starts from a clean state** (the screen, every channel, no clipping unless asked), so a failed draw
+  can never leave later ones clipped or drawing into the paint.
+- The fflate MIT notice ships beside the game (`fflate-MIT.txt`).
+
 ## Build and test
 
 ```sh

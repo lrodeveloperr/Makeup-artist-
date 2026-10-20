@@ -146,8 +146,10 @@ const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow', 'lash']);
 // capture: the hit (ref and pos) may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference
 // (x, y), nearest depth z, as [ref, pos], or null. -> the zone, or null (the pen is up)
 export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
-  const z = zoneAt(tool, hit, reg, brows, mouth, guide);
-  if (z !== null && (locked == null || z === locked)) return z;
+  // (the lash-line guide moves the hit only once its zone is taken)
+  let guided = null;
+  const z = zoneAt(tool, hit, reg, brows, mouth, (h) => { guided = h; });
+  if (z !== null && (locked == null || z === locked)) { if (guided) guide?.(guided); return z; }
   const p = hit.ref, side = p[0] < 0 ? 'r' : 'l', test = { ref: [0, 0, p[2]] };
   const ids = locked != null ? [locked] : (CAPTURED[tool] || []).map((n) => (PAIRED.has(n) ? n + side : n));
   let best = null;

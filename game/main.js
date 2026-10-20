@@ -155,7 +155,22 @@ async function main() {
   // The selected tool is drawn in 3D where it works, lit like her and at her scale (makeup/tools3d.js): a mouse or a
   // pen holds it in place of the cursor, its tip at the pointer, from the moment it is over her face; a finger holds
   // it while it is down, its tip a little above the finger (input.js) and its handle running down to the finger.
+  // A phone may take a page's graphics away (a backgrounded tab, memory pressure) and give them back: every GPU
+  // resource is made again when next drawn, and `after` repaints what lived only on the GPU
+  const revive = (renderer, after) => {
+    renderer.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+      const gl = renderer.gl;
+      for (const m of [renderer.programs, renderer.buffers, renderer.vaos, renderer.textures]) m.clear();
+      gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.frontFace(gl.CCW);
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      after();
+    });
+  };
+  // the face: its paint is replayed from the look
+  revive(view.renderer, () => { const m = view.makeup.makeup; view.makeup.reset(view.profile); view.makeup.restore(m); redraw(); });
   const hand = $('hand'), tools = new ToolView();
+  revive(tools.renderer, () => { handFor = ''; });
   hand.append(tools.canvas);
   let handFor = '', tip = [0, 0];
   // draw the tool for a selection and a grip (unless it is drawn already): a pen-like angle under a mouse; under a
@@ -207,7 +222,8 @@ async function main() {
   };
   // how far a stroke can change the face from a painted point (decimetres): the tool's radius and its dabs' soft
   // edge, and the mascara's wand with the lashes it lengthens
-  const REACH = { brush: 0.2, glow: 0.13, pencil: 0.05, liner: 0.06, lip: 0.08, mascara: 0.3 };
+  // (the liner's: its taper's tail too, drawn as a guided line leaves its zone)
+  const REACH = { brush: 0.2, glow: 0.13, pencil: 0.05, liner: 0.1, lip: 0.08, mascara: 0.3 };
   let patch = null;
   // add a box (CSS pixels) and the tool's reach round it to the patch
   const grow = (x0, y0, x1, y1, tool) => {
@@ -233,13 +249,15 @@ async function main() {
     // dabs a step behind); anything else (a gem, a lens) redraws the whole face
     onChange: () => { if (patch) { redrawPatch(...patch); patch = null; } else redraw(); },
     onCommit: (change) => {
+      // a lens or a gem changes more than a stroke's patch: the whole face is drawn again
+      if (change.lens || change.stroke?.tool === 'gem') { patch = null; redraw(); }
       session.applied(view.makeup.makeup);
       if (change.lens) tap('lens');
       else if (change.stroke?.tool === 'gem') tap('gem', colourById(change.stroke.colour));
     },
     feedback: {
       // each stroke's sound follows the hand, in decimetres a second on the face (the same on every screen)
-      down(sel) { this.voice = stroke(sel.tool, colourById(sel.colour)); this.last = null; this.tool = sel.tool; },
+      down(sel) { this.voice = stroke(sel.tool, colourById(sel.colour)); this.last = null; this.tool = sel.tool; patch = null; },
       move(x, y, contact, time) {
         const t = (time ?? performance.now()) / 1000, P = view.makeup.picker;
         // the patch this sample may change, from the last sample to this one
@@ -395,6 +413,7 @@ async function main() {
     if (thumbs.has(face.seed)) return thumbs.get(face.seed);
     if (!side) {
       side = new FaceView({ canvas: document.createElement('canvas'), width: 168, height: 168, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true, makeup: false });
+      revive(side.renderer, () => {}); // (each thumbnail is drawn afresh)
       side.init(view.head);
       side.zoom(1.75, 0.08); // the head
     }

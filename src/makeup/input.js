@@ -70,7 +70,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     aim?.(x, y, sel, kind);
     if (sel.tool === 'lens' || sel.tool === 'gem') { active = { id: e.pointerId, tap: sel, x, y, moved: false, tip, kind }; return; }
     const g = applicator.begin(sel.tool, sel.colour, kind === 'touch');
-    if (!g) return;
+    if (!g) { aim?.(null); return; } // nothing can be painted (the look is full): no tool in hand
     active = { id: e.pointerId, g, tip, sel, kind };
     feedback?.down(sel);
     const changed = applicator.move(g, x, y);

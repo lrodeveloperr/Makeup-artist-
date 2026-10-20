@@ -15,6 +15,8 @@ for (const [dir, host] of [['build/game', SDK], ['build/game-dev', DEV]]) {
   fs.copyFileSync('assets/head.bin.gz', `${dir}/head.bin.gz`);
   // the tools' CC0 recordings (tools/make-sounds.py)
   for (const f of fs.readdirSync('assets/sounds')) fs.copyFileSync(`assets/sounds/${f}`, `${dir}/snd-${f}`);
+  // the MIT notice of fflate, bundled in main.js (ASSETS.md)
+  fs.copyFileSync('licenses/fflate-MIT.txt', `${dir}/fflate-MIT.txt`);
 }
 // the face's download size, for the loading screen's progress where a server does not send it
 const define = { HEAD_BYTES: String(fs.statSync('assets/head.bin.gz').size) };

@@ -32,7 +32,7 @@ void main() {
   vec3 iris = rho < 0.5 ? mix(uIris[0], uIris[1], smoothstep(0.2, 0.5, rho))
             : rho < 0.8 ? mix(uIris[1], uIris[2], smoothstep(0.5, 0.8, rho)) : mix(uIris[2], uIris[3], smoothstep(0.8, 1.0, rho));
   iris *= 0.72 + 0.5 * fib;
-  iris *= 1.0 + 0.12 * exp(-pow((rho - 0.47) / 0.06, 2.0));
+  iris *= 1.0 + 0.12 * exp(-pow(abs(rho - 0.47) / 0.06, 2.0));
   float crypt = smoothstep(0.62, 0.72, fbm(vec3(ang * 6.0, rho * 8.0, uSeed + 9.0))) * smoothstep(0.45, 0.6, rho) * (1.0 - smoothstep(0.8, 0.9, rho));
   iris *= 1.0 - 0.3 * crypt;
   iris *= mix(1.0, 0.3, smoothstep(1.0 - uLimbal, 1.0, rho));

@@ -53,7 +53,7 @@ float lipMask(vec3 r) {
   float line = mix(uMouth.y, uMouth.z, t * t);
   float dy = r.y - line;
   float taperU = pow(max(1.0 - pow(t, 2.2), 0.0), 0.8);
-  float up = (uMouth.w + (uMouth2.x - uMouth.w) * exp(-pow((t - uMouth2.y) / 0.17, 2.0)) * smoothstep(0.0, uMouth2.y, t)) * taperU;
+  float up = (uMouth.w + (uMouth2.x - uMouth.w) * exp(-pow(abs(t - uMouth2.y) / 0.17, 2.0)) * smoothstep(0.0, uMouth2.y, t)) * taperU;
   float lo = uMouth2.z * pow(max(1.0 - t * t * t, 0.0), 0.9);
   float e = max(fwidth(dy) * 1.2, 0.0035);
   return smoothstep(-e, e, up - dy) * smoothstep(-e, e, dy + lo);
@@ -226,9 +226,7 @@ void main() {
   vec3 glitter = coatTint > 0.0 ? coat.rgb / coatTint : vec3(1.0);
   glitter = mix(vec3(1.0), glitter / max(max(glitter.r, max(glitter.g, glitter.b)), 1e-3), 0.6);
   col += finish.a * glitter * (0.05 * sheen + 1.2 * sparkle);
-  // glow (highlighter): the high points catch the light in a broad pearly lustre of the product's tint, with fine
-  // glints, over a soft sheen from the room's light, so a stroke always shows, even where the key light falls away
-  // (owner, 20 October 2026: no tool may feel forced to work)
+  // glow (highlighter): a pearly lustre and glints where the light catches, over a soft sheen that always shows
   col += finish.b * tint * (0.55 * lustre + 0.35 * sparkle + 0.3 * ambient(n));
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>

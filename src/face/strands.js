@@ -104,11 +104,10 @@ export function buildStrandGeometry(strands, geometry = new GL.BufferGeometry())
       }
     }
   }
-  geometry.setIndex(new GL.BufferAttribute(index, 1));
-  geometry.setAttribute('position', new GL.BufferAttribute(pos, 3));
-  geometry.setAttribute('offset', new GL.BufferAttribute(off, 3));
-  geometry.setAttribute('tangent', new GL.BufferAttribute(tan, 3));
-  geometry.setAttribute('color', new GL.BufferAttribute(col, 3));
-  geometry.setAttribute('st', new GL.BufferAttribute(st, 2));
+  // a rebuild (brows for a new face, lashes on every new coat) refills the same attributes, so the renderer reuses their
+  // GPU buffers; new attributes would leave the old buffers behind each time
+  const put = (a, array, size) => { if (a) { a.array = array; a.needsUpdate = true; return a; } return new GL.BufferAttribute(array, size); };
+  geometry.setIndex(put(geometry.index, index, 1));
+  for (const [name, array, size] of [['position', pos, 3], ['offset', off, 3], ['tangent', tan, 3], ['color', col, 3], ['st', st, 2]]) geometry.setAttribute(name, put(geometry.attributes[name], array, size));
   return geometry;
 }
