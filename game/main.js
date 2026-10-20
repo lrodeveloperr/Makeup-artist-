@@ -672,12 +672,14 @@ async function main() {
     mirror.classList.add('placed');
   };
 
-  // the canvas fills the stage (window size, orientation, bars)
-  new ResizeObserver(() => {
-    const [w, h] = fit();
-    if (w !== W || h !== H) {
+  // the canvas fills the stage (window size, orientation, bars), at the screen's current pixel density (browser zoom,
+  // or the window moved to another screen, so the face stays as sharp as the tool in hand)
+  const refit = () => {
+    const [w, h] = fit(), dpr = Math.min(devicePixelRatio, 2);
+    if (w !== W || h !== H || dpr !== view.renderer.pixelRatio) {
       input.interrupt(); // a resize ends the stroke; its applied part is kept
       [W, H] = [w, h];
+      view.renderer.setPixelRatio(dpr);
       view.setSize(W, H);
       canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
       redraw();
@@ -685,7 +687,11 @@ async function main() {
     placeMirror(); // the canvas may also have moved
     tallCounter();
     placeRedo();
-  }).observe(stage);
+  };
+  new ResizeObserver(refit).observe(stage);
+  // a change of density alone (no change of size) is heard from a media query for the current one
+  const density = () => matchMedia(`(resolution: ${devicePixelRatio}dppx)`).addEventListener('change', () => { refit(); density(); }, { once: true });
+  density();
 
   // ---- ready ----
   session.refreshDaily();
