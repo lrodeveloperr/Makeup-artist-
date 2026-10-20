@@ -197,7 +197,7 @@ try {
     });
     let at = await drawnTip();
     assert.ok(at.shown, 'the brush shows while the finger is down');
-    assert.ok(Math.abs(at.x - (x + 24 - 0.28 * tip)) < 1.5 && Math.abs(at.y - y) < 1.5, `its tip is at the working point, above the finger and set back by the tool's lean (${at.x}, ${at.y})`);
+    assert.ok(Math.abs(at.x - (x + 24 - 1.5 * 0.28 * tip)) < 1.5 && Math.abs(at.y - y) < 1.5, `its tip is at the working point, above the finger and set back by the tool's lean (${at.x}, ${at.y})`);
     await touch('touchEnd', []);
     assert.ok(await page.isHidden('#hand'), 'gone when the finger lifts');
     assert.ok(!(await page.evaluate(() => game.glow.mesh.visible)), 'and so is the light on the zones');
