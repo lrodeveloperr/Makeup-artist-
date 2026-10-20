@@ -109,7 +109,7 @@ part of every face at any screen size.
     10.5 mm), 51 px where the device gives no contact size, and at most 16 % of the face's height in a tiny embed.
     Across, the tip is set back by 1.5 times the tool's lean as drawn, so the tool shows over the finger rather than
     beside it (owner's pick on a phone, 20 October 2026: about 20 px for a forefinger). A contact lens is held nearer,
-    at 80 % of that height (owner, 20 October 2026: it was too high; 80 % was the pick on a phone). (It was 72 px,
+    at 85 % of that height (owner, 20 October 2026: it was too high; 85 % was the pick on a phone). (It was 72 px,
     then 44 px when paint landed away from the finger; the zones below now keep the paint where it belongs, so the tool can stand clear of the
     finger again.) Its handle runs down to
     the finger, while the finger is down. Strokes paint at the tip from the moment the finger drags; a touch that
