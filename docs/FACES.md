@@ -68,7 +68,7 @@ src/face/face-view.js  record ─▶ morph ─▶ subdivide ─▶ skin, eyes, b
 | Module | What it does |
 | --- | --- |
 | `../gl/mini.js` | The renderer: shader programs, buffers, alpha-blended passes, Khronos neutral tone mapping to sRGB |
-| `head-data.js`, `subdivide.js`, `head-geometry.js` | Inflate and parse the asset, apply shape dimensions, run one Catmull-Clark subdivision step, and compute normals and a cavity term (cheap occlusion in creases) |
+| `head-data.js`, `subdivide.js`, `head-geometry.js` | Inflate and parse the asset, apply shape dimensions, run one Catmull-Clark subdivision step, and compute normals and a cavity term (cheap occlusion in creases). Down each side of the nose, from the inner corner of the eye to just above the nostril, the shape's change from the base head is smoothed, because the blended targets could leave a stray vertical crease there (owner, 20 October 2026). The rest of the face keeps its shape exactly |
 | `skin-material.js` | Wrapped diffuse with a red shift (a subsurface stand-in) and two specular lobes. Per pixel: natural lips, flush, under-eye tone, freckles, beauty marks, brow fill, a lash line, a painted hairline (matte, so it never shines through the hair), pores, and the `uPaint` hook for makeup |
 | `eyes.js` | Eyeballs placed from MakeHuman's eye helpers and aimed at the camera. Procedural iris, set per eye (ready for contact lenses) |
 | `brows.js`, `lashes.js`, `strands.js` | Short, groomed brow hairs rooted on the skin over a soft brow fill, and upper and lower lashes rooted on MakeHuman's lash helper lines. Upper lashes fan out and gather into small clumps; lower lashes are fewer and lighter. Each lash keeps its own parameters, ready for mascara |
@@ -200,7 +200,9 @@ The garment is made from the face's own body, so it is worn rather than pasted o
   from −1.3 near the neck to −1.7 at the shoulder point): a dip at the front, the line over the shoulders or along
   wide straps, the bodice's sides, and either sleeves or a bare arm. Camisole straps leave the bodice near the
   chest and run out over the middle of the shoulder. The cut is exact per pixel and anti-aliased, and the same
-  curve shades the skin softly along the fabric's edge and beside the straps.
+  curve shades the skin softly along the fabric's edge and beside the straps. The shadow is sampled in rings round
+  each point of skin, so the steep sides of a square or V neckline and the straps cast as soft and wide a shadow as
+  its bottom edge, never a hairline that reads as a line drawn on the neck (owner, 20 October 2026).
 - **Drape.** The covered body surface is lifted off the skin, then smoothed so the fabric bridges hollows
   (collarbones, cleavage, armpits) instead of shrink-wrapping them, and pushed back out wherever it would sink
   to the skin. A rolled hem along the neckline stands slightly proud, with a highlight on its crest and a

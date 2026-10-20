@@ -50,6 +50,7 @@ export class HeadGeometry {
   // shape: { dimensionId: value in [-1, 1] }
   setShape(shape) {
     morph(this.head, shape, this.base);
+    this.smoothNoseSides();
     this.sub.refine(this.base, this.subPos);
     quadNormals(this.subPos, this.sub.subQuads, this.sub.subCount, this.subNrm);
     this.updateCavity();
@@ -59,6 +60,42 @@ export class HeadGeometry {
     this.gather(this.sub.refine(this.cavity, null, 1), 1, g.attributes.cavity.array);
     for (const a of ['position', 'normal', 'cavity']) g.attributes[a].needsUpdate = true;
     return this.base;
+  }
+
+  // Where the nose's shape targets fade out, down each side of the nose from the inner corner of the eye, the blend
+  // can leave a stray crease that shows as a fine vertical line (owner, 20 October 2026). Only in that strip the
+  // shape's change from the base head is smoothed; the nose itself, the cheeks and the rest of the face keep their
+  // shape exactly.
+  smoothNoseSides() {
+    const V = this.head.headVertexCount, ev = this.sub.edges, P = this.base, P0 = this.head.positions;
+    if (!this.noseSide) {
+      const R = this.head.regions, nc = this.head.regionChannels.length, lid = this.regionIndex.lidMargin, interior = this.regionIndex.interior;
+      const ss = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
+      // the strip down each side of the nose on the base head (dm; eyes at y = 0): beside the bridge, from the inner
+      // corner of the eye to just above the nostril, on the front of the face, clear of the lids
+      this.noseSide = new Float32Array(V);
+      for (let v = 0; v < V; v++) {
+        const x = Math.abs(P0[v * 3]), y = P0[v * 3 + 1], z = P0[v * 3 + 2];
+        this.noseSide[v] = ss(0.05, 0.09, x) * (1 - ss(0.24, 0.3, x)) * ss(-0.4, -0.32, y) * (1 - ss(0.0, 0.06, y)) * ss(0.0, 0.1, z)
+          * ss(0.02, 0.05, R[v * nc + lid]) * (1 - R[v * nc + interior]);
+      }
+      this.delta = new Float32Array(V * 3); this.deltaTmp = new Float32Array(V * 3);
+    }
+    let D = this.delta, T = this.deltaTmp;
+    for (let i = 0; i < V * 3; i++) D[i] = P[i] - P0[i];
+    for (let it = 0; it < 6; it++) {
+      T.fill(0);
+      for (let e = 0; e < ev.length; e += 2) {
+        const a = ev[e] * 3, b = ev[e + 1] * 3;
+        for (let k = 0; k < 3; k++) { T[a + k] += D[b + k]; T[b + k] += D[a + k]; }
+      }
+      for (let v = 0; v < V; v++) for (let k = 0; k < 3; k++) T[v * 3 + k] = 0.5 * D[v * 3 + k] + 0.5 * T[v * 3 + k] / this.valence[v];
+      [D, T] = [T, D];
+    }
+    for (let v = 0; v < V; v++) {
+      const w = this.noseSide[v];
+      if (w > 0) for (let k = 0; k < 3; k++) P[v * 3 + k] += (P0[v * 3 + k] + D[v * 3 + k] - P[v * 3 + k]) * w;
+    }
   }
 
   // How far each vertex sits below its smoothed neighbourhood: a cheap, shape-aware stand-in for

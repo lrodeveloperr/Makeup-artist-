@@ -168,10 +168,17 @@ void main() {
   // --- lighting ---
   float ao = 1.0 - 0.4 * smoothstep(0.005, 0.06, vCavity);
   ao *= 1.0 - 0.6 * interior;
-  // the outfit's edge shades the skin just above the neckline and beside the straps
+  // the outfit's edge casts a soft shadow on the skin beside it, all round: above the neckline, beside its sides
+  // and beside the straps alike. Sampled in rings around the point, so a steep edge (a square or V neck's side, a
+  // strap) shades a band as wide as a level one, never a hairline (owner, 20 October 2026: no lines on the neck)
   if (r.y < -1.1) {
-    float edge = max(neckCover(r - vec3(0.0, 0.03, 0.0), 0.012), max(neckStrap(r + vec3(0.02, 0.0, 0.0), 0.01), neckStrap(r - vec3(0.02, 0.0, 0.0), 0.01)));
-    ao *= 1.0 - 0.35 * max(edge - neckCover(r, 0.002), 0.0);
+    float near = 0.0;
+    for (int i = 0; i < 8; i++) {
+      float a = float(i) * 0.7854;
+      vec3 d = vec3(cos(a), sin(a), 0.0);
+      near += neckCover(r + d * 0.018, 0.012) + neckCover(r + d * 0.036, 0.012);
+    }
+    ao *= 1.0 - 0.3 * max(near / 16.0 - neckCover(r, 0.002), 0.0);
   }
   float NoV = max(dot(n, v), 1e-3);
   float rough = mix(0.6, 0.47, uOil * (vRB.x + 0.6 * smoothstep(0.35, 0.75, r.y) * (1.0 - scalpMask(r))));
