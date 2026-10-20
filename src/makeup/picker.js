@@ -5,7 +5,8 @@
 // skin under the outfit.
 //
 // pick(x, y) (CSS pixels in the canvas) returns
-//   { kind: 'skin', ref: [x, y, z] (reference-head point), pos: [x, y, z] (current face) }
+//   { kind: 'skin', ref: [x, y, z] (reference-head point), pos: [x, y, z] (current face), at: its triangle's vertices
+//     a, b, c and their weights u, v, w }
 //   { kind: 'eye', eye: 'left' | 'right', iris: boolean }
 //   null when nothing is under the pointer
 const CELL = 8; // grid cell, CSS pixels
@@ -84,7 +85,7 @@ export class Picker {
     }
     if (!best) return null;
     const lerp = (A) => [0, 1, 2].map((i) => best.u * A[best.a * 3 + i] + best.v * A[best.b * 3 + i] + best.w * A[best.c * 3 + i]);
-    return { kind: 'skin', ref: lerp(this.ref), pos: lerp(this.P), depth: -best.depth };
+    return { kind: 'skin', ref: lerp(this.ref), pos: lerp(this.P), depth: -best.depth, at: best };
   }
 
   // exact ray-sphere test against each eyeball; returns the nearer hit

@@ -100,12 +100,33 @@ part of every face at any screen size.
   - **Finger:** a finger covers what it touches, so the tool works at its tip, held a little above the finger
     (44 px, at most 7 % of the face's height: clear of the fingertip, close enough to feel held; it was 72 px until
     the owner found paint landing too far from the finger on a phone, 20 October 2026), its handle running down to
-    the finger, while the finger is down. A finger aims first (owner, 20 October 2026: on a touch screen it was hard
-    to time where a stroke began): touching shows the tool and where its tip is without painting; once the finger
-    slides 6 px the stroke begins, from where the tip was; a touch that lifts without sliding leaves one dab there.
-    A gem or a lens shows at the tip from the touch and goes on where the finger lifts (press, aim, release), since
-    a tap under a finger cannot be aimed. On a touch screen the selected tool is drawn ahead, as soon as the face
-    is ready, so it appears the moment the finger lands.
+    the finger, while the finger is down. Strokes paint at the tip from the moment the finger drags; a touch that
+    lifts without sliding leaves one dab. A gem or a lens shows at the tip from the touch and goes on where the
+    finger lifts (press, aim, release), since a tap under a finger cannot be aimed. On a touch screen the selected
+    tool is drawn ahead, as soon as the face is ready, so it appears the moment the finger lands.
+  - **A finger is assisted; a mouse or a pen is free** (owner, 20 October 2026: on a touch screen there is almost
+    no margin for error, since the tool works the moment it is dragged). Under a finger each tool paints only in
+    its own zones of the face, and a stroke stays in the zone it starts in: a slip onto the nose or the eye paints
+    nothing (the pen is up outside the zone, and comes down again if the finger comes back). The zones are drawn
+    once on the reference head (`game/zones.js`), so they fit every face, and they hold the points a stroke passes
+    through, so a tool's soft edge reaches a little past them, as a real brush does:
+
+    | Tool | Zones (each side separately) |
+    |---|---|
+    | Brush | the upper lid, from the lashes up to under her brow, its shadow reaching a little past the outer corner; the apple of the cheek |
+    | Highlighter | the top of the cheekbone; the bridge of the nose; under the brow's tail; the cupid's bow |
+    | Pencil | her brows (her own brow shape, 2 mm round it); along the lashes |
+    | Liner | along the lashes, upper and lower, and a wing rising from the outer corner |
+    | Lipstick and gloss | the lips, kept 0.8 mm inside their outline |
+    | Mascara | the lashes (as with a mouse) |
+    | Lens | the iris (as with a mouse) |
+    | Gems | her face, but not her lips, ears or neck |
+
+    Along the lashes the liner and the pencil are guided: a finger within about 8 mm of the lashes draws on the lash
+    line itself (`toLashes`: the lid's edge found on screen, then 3.2 mm onto the upper lid, where a line shows just
+    above the lashes, or 1 mm below the lower lashes), so a line drawn roughly along the lashes follows them. While a
+    finger is down, the selected tool's zones light up faintly (`ZoneGlow`), so the rule needs no words. The stored
+    strokes are ordinary points, so a restored look replays exactly, and the save format is unchanged.
 
 ### Colours (base catalogue, all available from the start)
 
@@ -158,8 +179,9 @@ Rose (contract §3).
 
 - One captured primary pointer applies at a time. Other fingers and non-primary mouse buttons are ignored. The
   canvas has `touch-action: none` and no context menu, so a stroke never scrolls, zooms or opens a menu.
-- A finger works at the tool's tip, above it, and aims before it paints (see the tool in hand, above); the game
-  draws the tool there through `attachInput`'s `aim` hook.
+- A finger works at the tool's tip, above it, and is kept to the tool's zones (see the tool in hand, above): the
+  game draws the tool there through `attachInput`'s `aim` hook and gives the zones through the applicator's `zones`
+  hook (`begin` and `tapGem` take `assisted`, true for a finger). The preview has no zones: a finger is free there.
 - The tool and colour are captured at pointer-down and kept for the whole gesture.
 - Pointer-up commits. Cancel, lost capture, resize or an interrupt (`input.interrupt()`, for a host pause or an
   opening panel) ends the gesture at its last applied sample and keeps that work. A new pointer-down is needed to

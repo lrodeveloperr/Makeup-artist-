@@ -5,6 +5,7 @@
 import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
 import { ToolView } from '../src/makeup/tools3d.js';
+import { zoneAt, regionsAt, toLashes, ZoneGlow } from './zones.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
 import { chime, hush, setEnabled, stroke, tap, ui, preload, logUnits, stats as sounds } from './sound.js';
@@ -178,8 +179,18 @@ async function main() {
     const s = session.state, sel = { tool: s.selection.tool, colour: s.selection.colour[s.selection.tool] };
     if (touchFirst && hand.hidden && s.attempt.phase === 'create' && view.makeup.picker.camera) holdTool(sel, 'touch', 1);
   };
+  // assisted touch (zones.js): under a finger each tool works only in its zones, which light up faintly while it is down
+  const mouth = view.head.header.landmarks.mouth, glow = new ZoneGlow(view);
+  const guide = (hit) => toLashes(hit, view.makeup.picker, view.eyes);
+  view.makeup.zones = (tool, hit) => zoneAt(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, guide);
+  const showZones = (tool) => {
+    const was = glow.mesh.visible;
+    glow.show(tool === 'lens' || tool === 'mascara' ? null : tool, view.profile.brows, mouth);
+    if (glow.mesh.visible !== was) redraw();
+  };
   const aim = (x, y, sel, kind) => {
-    if (x === null) { hand.hidden = true; canvas.style.cursor = ''; return; }
+    if (x === null) { hand.hidden = true; canvas.style.cursor = ''; showZones(null); return; }
+    if (kind === 'touch') showZones(sel.tool);
     const [ax] = view.makeup.picker.project([0, 0, 0.5]);
     holdTool(sel, kind, x < ax ? -1 : 1);
     const r = canvas.getBoundingClientRect();
@@ -650,7 +661,7 @@ async function main() {
   setTimeout(() => { cover.hidden = true; }, 300);
   prepare();
   await host.gameReady();
-  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits } }); // for tests and debugging
+  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits, glow, mouth, zoneAt } }); // for tests and debugging
 }
 
 main().catch((e) => fail('START', e));

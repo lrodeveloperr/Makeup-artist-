@@ -1,11 +1,12 @@
 // Applies makeup to the face on screen: turns pointer samples into strokes (contract §2 input rules), paints
 // them live, records them in the makeup state, and rebuilds the look from a saved state.
 //
-//   const g = applicator.begin('brush', 'brush-rose');  // tool and colour are fixed for the whole gesture
+//   const g = applicator.begin('brush', 'brush-rose');  // tool and colour are fixed for the whole gesture (a third
+//                                                         // argument, true: assisted, kept to the tool's zones)
 //   applicator.move(g, x, y) ...                          // canvas CSS pixels; fast moves are interpolated
 //   applicator.end(g);                                    // pointer-up, cancel or lost capture: keeps valid work
 //   applicator.tapLens(x, y, 'lens-green');               // sets that iris if the tap is on one
-//   applicator.tapGem(x, y, 'gem-crystal');               // sticks a gem on the skin there
+//   applicator.tapGem(x, y, 'gem-crystal');               // sticks a gem on the skin there (assisted: in its zone)
 import { PaintLayer, StrokePainter } from './paint.js';
 import { Gems } from './gems.js';
 import { Picker } from './picker.js';
@@ -27,6 +28,10 @@ export class Applicator {
     view.scene.add(this.gems.mesh);
     this.makeup = createMakeup();
     this.allowed = () => true; // the game sets which colours the player may use (colours of the day once earned)
+    // the game's zones for assisted (touch) work: (tool, skin hit) -> the zone there (any value, compared with ===),
+    // or null outside every zone of that tool; it may move the hit (ref and pos) to guide the tool (onto the lash line); without it,
+    // assisted work is free like a mouse's
+    this.zones = null;
   }
 
   // a new face (or the same face's clean start): no makeup, natural lashes and irises
@@ -77,12 +82,13 @@ export class Applicator {
   }
 
   // ---- gestures ----
-  begin(tool, colour) {
+  begin(tool, colour, assisted = false) {
     if (!(SURFACE_TOOLS.has(tool) || tool === 'mascara') || colourById(colour)?.target !== tool || !this.allowed(colour)) return null;
     const room = Math.min(LIMITS.pointsPerStroke, LIMITS.points - pointCount(this.makeup));
     if (room <= 0 || this.makeup.strokes.length >= LIMITS.strokes) return null; // the state is full
     return {
       tool, colour, segments: [], seg: null, points: 0, room, xy: null, lastQ: null, pending: null, touched: new Set(),
+      assist: assisted && this.zones, zone: null,
       step: TOOLS[tool].step * Q,
       painter: SURFACE_TOOLS.has(tool) ? new StrokePainter(this.paint, tool, colour) : null,
       linear: hexToLinear(colourById(colour).hex),
@@ -111,7 +117,7 @@ export class Applicator {
       // the lashes, keep to the lid's edge where the pointer slips just onto the eye
       let hit = this.picker.pick(x, y);
       if (hit?.kind === 'eye' && LID_TOOLS.has(g.tool)) hit = this.picker.lidNear(x, y, hit.eye);
-      if (hit?.kind === 'skin' && !this.view.garment?.covers(hit.ref)) q = hit.ref.map(toQ);
+      if (hit?.kind === 'skin' && !this.view.garment?.covers(hit.ref) && this.inZone(g, hit)) q = hit.ref.map(toQ);
     } else {
       const p = this.picker.onPlane(x, y, this.view.lashes.zPlane);
       if (p) q = p.map(toQ);
@@ -124,6 +130,16 @@ export class Applicator {
     }
     g.pending = q;
     return Math.hypot(...q.map((v, i) => v - g.lastQ[i])) >= g.step && this.store(g, q);
+  }
+
+  // assisted: a stroke paints only in its tool's zones, and only in the zone it first painted in (outside it, the pen
+  // is up)
+  inZone(g, hit) {
+    if (!g.assist) return true;
+    const z = g.assist(g.tool, hit);
+    if (z === null || (g.zone !== null && z !== g.zone)) return false;
+    g.zone = z;
+    return true;
   }
 
   store(g, q) {
@@ -161,10 +177,10 @@ export class Applicator {
 
   // face gems: a tap on the skin sticks one there (not on the outfit, the eyes or empty space); returns the stored
   // stroke or null
-  tapGem(x, y, colour) {
+  tapGem(x, y, colour, assisted = false) {
     if (colourById(colour)?.target !== 'gem' || !this.allowed(colour)) return null;
     const hit = this.picker.pick(x, y);
-    if (hit?.kind !== 'skin' || this.view.garment?.covers(hit.ref)) return null;
+    if (hit?.kind !== 'skin' || this.view.garment?.covers(hit.ref) || (assisted && this.zones?.('gem', hit) === null)) return null;
     const q = hit.ref.map(toQ);
     if (!this.gems.locate(q.map(fromQ))) return null;
     const before = this.makeup;

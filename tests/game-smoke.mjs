@@ -173,16 +173,22 @@ try {
     await page.waitForFunction(() => document.getElementById('cover').hidden);
     const cdp = await ctx.newCDPSession(page);
     const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1, radiusX: 6, radiusY: 6, force: 1 })) });
-    const [x, y, tip] = await page.evaluate(() => {
-      const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, [px, py] = v.makeup.picker.project([L[0] + 0.08, L[1] - 0.42, L[2]]);
-      return [c.left + px, c.top + py, Math.min(44, c.height * 0.07)];
+    // a point on her left cheek, one in the middle of her forehead, and her mouth (page pixels)
+    const [x, y, tip, fx, fy, mx, my] = await page.evaluate(() => {
+      const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, P = v.makeup.picker;
+      const [px, py] = P.project([L[0] + 0.12, L[1] - 0.36, L[2]]), [hx, hy] = P.project([0, L[1] + 0.45, L[2] + 0.2]), [ux, uy] = P.project([0, L[1] - 0.62, L[2] + 0.3]);
+      return [c.left + px, c.top + py, Math.min(44, c.height * 0.07), c.left + hx, c.top + hy, c.left + ux, c.top + uy];
     });
+    // the brush's zones at each stored point of a stroke (assisted touch, game/zones.js)
+    const zones = (stroke) => page.evaluate((stroke) => {
+      const out = new Set(), brows = game.view.profile.brows;
+      for (const seg of stroke.segments) for (let i = 0; i < seg.length; i += 3) out.add(game.zoneAt(stroke.tool, { ref: [seg[i] / 1024, seg[i + 1] / 1024, seg[i + 2] / 1024] }, [1, 1, 0, 0, 0, 0, 0, 0], brows, game.mouth));
+      return [...out];
+    }, stroke);
+    const last = () => page.evaluate(() => game.view.makeup.makeup.strokes.at(-1));
     assert.ok(await page.isHidden('#hand'));
-    // a finger first aims: touching shows the tool but paints nothing, nor does a slide of a few pixels
     await touch('touchStart', [[x, y + tip]]);
-    await touch('touchMove', [[x + 3, y + tip]]);
-    assert.ok(!(await page.isHidden('#hand')), 'touching shows the tool');
-    assert.equal(await page.evaluate(() => game.view.makeup.makeup.strokes.length), 0, 'aiming paints nothing');
+    assert.ok(await page.evaluate(() => game.glow.mesh.visible), "the brush's zones light up while the finger is down");
     for (let k = 1; k <= 6; k++) await touch('touchMove', [[x + k * 4, y + tip]]);
     // where the tool's tip is drawn on screen
     const drawnTip = () => page.evaluate(() => {
@@ -194,26 +200,124 @@ try {
     assert.ok(Math.abs(at.x - (x + 24)) < 1.5 && Math.abs(at.y - y) < 1.5, `its tip is at the working point, above the finger (${at.x}, ${at.y})`);
     await touch('touchEnd', []);
     assert.ok(await page.isHidden('#hand'), 'gone when the finger lifts');
+    assert.ok(!(await page.evaluate(() => game.glow.mesh.visible)), 'and so is the light on the zones');
     assert.equal((await state(page)).strokes, 1, 'it painted');
-    // a touch that lifts without sliding leaves one dab, where the tip was
-    await touch('touchStart', [[x + 10, y + tip + 10]]);
+    assert.deepEqual(await zones(await last()), ['cheekl'], 'on the cheek');
+    // a slip: a stroke that starts on the cheek and runs on over her nose and mouth paints only the cheek
+    await touch('touchStart', [[x, y + tip]]);
+    for (let k = 1; k <= 16; k++) await touch('touchMove', [[x + ((mx - x) * k) / 16, y + tip + ((my - y) * k) / 16]]);
     await touch('touchEnd', []);
-    const dab = await page.evaluate(() => game.view.makeup.makeup.strokes.at(-1));
-    assert.equal((await state(page)).strokes, 2, 'a tap leaves a dab');
-    assert.equal(dab.segments.length, 1, 'one dab');
-    // a mouse holds the tool in place of the cursor, its tip at the pointer, before and while it paints
-    await page.mouse.move(x, y + 30);
+    assert.equal((await state(page)).strokes, 2);
+    assert.deepEqual(await zones(await last()), ['cheekl'], 'the stroke stays in the zone it started in');
+    // a touch that lifts without sliding leaves one dab, where the tip was
+    await touch('touchStart', [[x + 10, y + tip]]);
+    await touch('touchEnd', []);
+    assert.equal((await state(page)).strokes, 3, 'a tap leaves a dab');
+    assert.equal((await last()).segments.length, 1, 'one dab');
+    // outside every zone of the brush (her forehead), a finger paints nothing
+    await touch('touchStart', [[fx, fy + tip]]);
+    for (let k = 1; k <= 6; k++) await touch('touchMove', [[fx + k * 4, fy + tip]]);
+    await touch('touchEnd', []);
+    assert.equal((await state(page)).strokes, 3, 'no paint outside the zones');
+    // a mouse holds the tool in place of the cursor, its tip at the pointer, before and while it paints, and is free:
+    // it paints her forehead
+    await page.mouse.move(fx, fy);
     at = await drawnTip();
-    assert.ok(at.shown && Math.abs(at.x - x) < 1.5 && Math.abs(at.y - (y + 30)) < 1.5 && at.cursor === 'none', `hovering: the tool's tip at the pointer, no cursor (${JSON.stringify(at)})`);
-    await page.mouse.down(); await page.mouse.move(x + 20, y + 30, { steps: 4 });
+    assert.ok(at.shown && Math.abs(at.x - fx) < 1.5 && Math.abs(at.y - fy) < 1.5 && at.cursor === 'none', `hovering: the tool's tip at the pointer, no cursor (${JSON.stringify(at)})`);
+    await page.mouse.down(); await page.mouse.move(fx + 20, fy, { steps: 4 });
     at = await drawnTip();
-    assert.ok(at.shown && Math.abs(at.x - (x + 20)) < 1.5 && Math.abs(at.y - (y + 30)) < 1.5, 'painting: the tip follows the pointer');
+    assert.ok(at.shown && Math.abs(at.x - (fx + 20)) < 1.5 && Math.abs(at.y - fy) < 1.5, 'painting: the tip follows the pointer');
+    assert.ok(!(await page.evaluate(() => game.glow.mesh.visible)), 'no zones under a mouse');
     await page.mouse.up();
-    assert.equal((await state(page)).strokes, 3, 'the mouse painted at the pointer');
+    assert.equal((await state(page)).strokes, 4, 'the mouse painted at the pointer, outside the zones');
     await page.mouse.move(2, 2); // off the face: the tool goes, the cursor comes back
     at = await drawnTip();
     assert.ok(!at.shown && at.cursor === '');
     await ctx.close();
+  });
+
+  await check('assisted touch: under a finger every tool paints in its own zones, a stroke stays in its zone, gems go on the face', async () => {
+    for (const seed of [4, 9, 17]) {
+      const { ctx, page } = await open({ phone: true, save: G.serialise(G.newGame(seed)) });
+      await ready(page);
+      await page.waitForFunction(() => document.getElementById('cover').hidden);
+      const cdp = await ctx.newCDPSession(page);
+      const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1, radiusX: 6, radiusY: 6, force: 1 })) });
+      const tip = await page.evaluate(() => Math.min(44, document.querySelector('#stage canvas').clientHeight * 0.07));
+      const count = () => page.evaluate(() => game.session.state.attempt.makeup.strokes.length);
+      for (const tool of ['brush', 'glow', 'pencil', 'liner', 'lip']) {
+        await page.evaluate((tool) => game.session.select(tool), tool);
+        // a point well inside each of the tool's zones (page pixels), found from the head's vertices
+        const spots = await page.evaluate((tool) => {
+          const v = game.view, g = v.headGeometry.geometry, P = v.makeup.picker, c = document.querySelector('#stage canvas').getBoundingClientRect();
+          const ref = g.attributes.ref.array, pos = g.attributes.position.array, A = g.attributes.regionA.array, B = g.attributes.regionB.array;
+          const all = {};
+          for (let i = 0; i < ref.length / 3; i++) {
+            const reg = [...A.slice(i * 4, i * 4 + 4), ...B.slice(i * 4, i * 4 + 4)];
+            const z = game.zoneAt(tool, { ref: [ref[i * 3], ref[i * 3 + 1], ref[i * 3 + 2]] }, reg, v.profile.brows, game.mouth);
+            if (z) (all[z] ||= []).push(i);
+          }
+          const out = {};
+          for (const [z, list] of Object.entries(all)) {
+            const m = [0, 1, 2].map((a) => list.reduce((s, i) => s + ref[i * 3 + a], 0) / list.length);
+            list.sort((i, j) => Math.hypot(ref[i * 3] - m[0], ref[i * 3 + 1] - m[1]) - Math.hypot(ref[j * 3] - m[0], ref[j * 3 + 1] - m[1]));
+            for (const i of list.slice(0, 600)) {
+              const [x, y] = P.project([pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]]), hit = P.pick(x, y);
+              if (hit?.kind === 'skin' && v.makeup.zones(tool, hit) === z) { out[z] = [c.left + x, c.top + y]; break; }
+            }
+          }
+          return out;
+        }, tool);
+        const names = Object.keys(spots);
+        assert.ok(names.length >= (tool === 'lip' ? 1 : 2), `${tool}: its zones are on the face (${names})`);
+        for (const [zone, [x, y]] of Object.entries(spots)) {
+          // a short stroke in the zone paints
+          const before = await count();
+          await touch('touchStart', [[x, y + tip]]);
+          for (let k = 1; k <= 3; k++) await touch('touchMove', [[x + (k % 2 ? 2 : -2), y + tip + k]]);
+          await touch('touchEnd', []);
+          assert.equal(await count(), before + 1, `${tool} paints in ${zone} (seed ${seed})`);
+          // a long slip from the zone across her whole face: the stroke's points stay in the zone it started in
+          await page.evaluate(() => {
+            const m = game.view.makeup, zones = m.zones;
+            window.__zones = []; m.zones = (t, h) => { const z = zones(t, h); window.__zones.push(z); return z; }; window.__restore = () => { m.zones = zones; };
+          });
+          const box = await page.locator('#stage canvas').boundingBox(), to = [box.x + box.width - x + box.x, y + 120];
+          await touch('touchStart', [[x, y + tip]]);
+          for (let k = 1; k <= 30; k++) await touch('touchMove', [[x + ((to[0] - x) * k) / 30, y + tip + ((to[1] - y) * k) / 30]]);
+          await touch('touchEnd', []);
+          const seen = await page.evaluate(() => { window.__restore(); return window.__zones; });
+          const stroke = await page.evaluate(() => game.session.state.attempt.makeup.strokes.at(-1));
+          assert.equal(await count(), before + 2, `${tool}: the slip painted in ${zone}`);
+          assert.equal(seen.find((z) => z !== null), zone, `${tool}: the slip started in ${zone}`);
+          assert.ok(seen.some((z) => z === null) || new Set(seen.filter(Boolean)).size > 1, `${tool}: the slip left ${zone} (${[...new Set(seen)]})`);
+          const points = stroke.segments.reduce((n, s) => n + s.length / 3, 0);
+          assert.ok(points <= seen.filter((z) => z === zone).length + stroke.segments.length, `${tool}: only points in ${zone} were kept`);
+        }
+        // her forehead is in none of these tools' zones: nothing is painted there
+        const [fx, fy] = await page.evaluate(() => {
+          const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, [x, y] = v.makeup.picker.project([0, L[1] + 0.45, L[2] + 0.2]);
+          return [c.left + x, c.top + y];
+        });
+        const before = await count();
+        await touch('touchStart', [[fx, fy + tip]]);
+        for (let k = 1; k <= 6; k++) await touch('touchMove', [[fx + k * 5, fy + tip]]);
+        await touch('touchEnd', []);
+        assert.equal(await count(), before, `${tool}: nothing painted outside its zones`);
+      }
+      // gems: on her forehead or cheek, yes; on her lips, no
+      await page.evaluate(() => game.session.select('gem'));
+      const [[gx, gy], [lx, ly]] = await page.evaluate(() => {
+        const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, P = v.makeup.picker;
+        return [[0, L[1] + 0.45, L[2] + 0.2], [0, L[1] - 0.66, L[2] + 0.3]].map((p) => { const [x, y] = P.project(p); return [c.left + x, c.top + y]; });
+      });
+      const before = await count();
+      await touch('touchStart', [[lx, ly + tip]]); await touch('touchEnd', []);
+      assert.equal(await count(), before, 'no gem on the lips');
+      await touch('touchStart', [[gx, gy + tip]]); await touch('touchEnd', []);
+      assert.equal(await count(), before + 1, 'a gem on the forehead');
+      await ctx.close();
+    }
   });
 
   await check('many colours: six to a page, newest first, never cut off; the arrows, a swipe, a drag and the wheel turn the page', async () => {

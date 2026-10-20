@@ -89,6 +89,9 @@ on each screen.
   pixel) and at least 16 px.
 - **The mirror** follows her head (`placeMirror` in `game/main.js`), never the screen's percentages.
 - **Making a look and review** keep the same counter, so the face doesn't move.
+- **Assisted touch** (owner, 20 October 2026): under a finger each tool works only in its own zones, which light up
+  faintly while the finger is down; a mouse or a pen is free (`game/zones.js`; see docs/MAKEUP.md, the tool in
+  hand).
 - **Painting stays quick on phones** (owner, 20 October 2026: painting was slow on a touch screen). Drawing her
   face is what costs, in proportion to the pixels drawn, so while a stroke is painted only the patch it has just
   changed is drawn again (the stroke's latest step, padded by the tool's reach), through a scissor box; the rest of
@@ -300,7 +303,10 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 **`tests/game-smoke.mjs`** runs the full flow with the mouse:
 - readiness signals
 - review
-- the tool in hand under a finger (aiming without painting, a stroke at the tip, a tap's dab) and under a mouse
+- the tool in hand under a finger (a stroke at the tip, a tap's dab) and under a mouse
+- assisted touch on three faces: every tool, by finger, paints in each of its zones and nowhere outside them, a long
+  slip across her face keeps to the zone it started in, gems go on her forehead but not her lips, the zones light
+  up only while a finger is down, and a mouse paints anywhere
 - Next and an untouched Next
 - the interstitial on the second look
 - a refused, then an earned, colour of the day
