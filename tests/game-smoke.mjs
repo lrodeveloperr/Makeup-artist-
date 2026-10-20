@@ -197,7 +197,7 @@ try {
     });
     let at = await drawnTip();
     assert.ok(at.shown, 'the brush shows while the finger is down');
-    assert.ok(Math.abs(at.x - (x + 24)) < 1.5 && Math.abs(at.y - y) < 1.5, `its tip is at the working point, above the finger (${at.x}, ${at.y})`);
+    assert.ok(Math.abs(at.x - (x + 24 - 0.28 * tip)) < 1.5 && Math.abs(at.y - y) < 1.5, `its tip is at the working point, above the finger and set back by the tool's lean (${at.x}, ${at.y})`);
     await touch('touchEnd', []);
     assert.ok(await page.isHidden('#hand'), 'gone when the finger lifts');
     assert.ok(!(await page.evaluate(() => game.glow.mesh.visible)), 'and so is the light on the zones');
@@ -277,7 +277,9 @@ try {
         }, tool);
         const names = Object.keys(spots);
         assert.ok(names.length >= (tool === 'lip' ? 1 : 2), `${tool}: its zones are on the face (${names})`);
-        for (const [zone, [x, y]] of Object.entries(spots)) {
+        for (const [zone, [x0, y]] of Object.entries(spots)) {
+          // the finger, below the working point and across by the tool's lean
+          const x = x0 + tip * (await page.evaluate(([t, x]) => game.lean({ tool: t }, x - document.querySelector('#stage canvas').getBoundingClientRect().left), [tool, x0]));
           // a short stroke in the zone paints
           const before = await count();
           await touch('touchStart', [[x, y + tip]]);

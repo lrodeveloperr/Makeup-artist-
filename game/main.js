@@ -215,8 +215,12 @@ async function main() {
     const b = [x0 - r, y0 - r, x1 + r, y1 + r];
     patch = patch ? [Math.min(patch[0], b[0]), Math.min(patch[1], b[1]), Math.max(patch[2], b[2]), Math.max(patch[3], b[3])] : b;
   };
+  // under a finger the tool leans as it is drawn (holdTool: the fan brush out from her middle, the rest to the right),
+  // so its tip is set back by its lean and the handle runs into the finger: the tool shows over the finger, not beside
+  // it (owner, 20 October 2026)
+  const lean = (sel, x) => (sel.tool === 'glow' ? 0.4 * (x < view.makeup.picker.project([0, 0, 0.5])[0] ? -1 : 1) : 0.28);
   const input = attachInput(canvas, view.makeup, {
-    aim,
+    aim, lean,
     selection: () => {
       const s = session.state;
       if (s.attempt.phase !== 'create' || panelOpen || paused || session.busy || finishing) return null;
@@ -672,7 +676,7 @@ async function main() {
   setTimeout(() => { cover.hidden = true; }, 300);
   prepare();
   await host.gameReady();
-  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits, glow, mouth, zoneAt, regionsAt } }); // for tests and debugging
+  Object.assign(globalThis, { game: { session, view, host, input, sounds, logUnits, glow, mouth, zoneAt, regionsAt, lean } }); // for tests and debugging
 }
 
 main().catch((e) => fail('START', e));

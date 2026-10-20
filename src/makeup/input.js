@@ -31,9 +31,13 @@ const touchTip = (e, height) => Math.min(Math.min(Math.max((e.height > 1 ? e.hei
 // pixels (kind: 'touch', or 'mouse' for a mouse or a pen) while a finger is down, and while a mouse or pen is over the
 // face, pressed or not, so the player aims before painting; aim(null) when it lifts or leaves, or the face takes no
 // input
-export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback, aim }) {
+// lean (optional): lean(selection, x) -> how far the finger's tool leans, in pixels across for each pixel down from its
+// tip (x: the finger in canvas CSS pixels); its tip is set back by that much, so the tool's handle runs down into the
+// finger rather than beside it
+export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback, aim, lean }) {
   let active = null;
-  const local = (e, tip = 0) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - tip]; };
+  // where the tool works, in canvas CSS pixels: tip [across, up] from the pointer (a finger's tool is above it)
+  const local = (e, tip = [0, 0]) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left - tip[0], e.clientY - r.top - tip[1]]; };
 
   const finish = (commit) => {
     if (!active) return;
@@ -58,7 +62,8 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     e.preventDefault();
     const sel = selection();
     if (!sel) return;
-    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', tip = kind === 'touch' ? touchTip(e, canvas.clientHeight) : 0;
+    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', up = kind === 'touch' ? touchTip(e, canvas.clientHeight) : 0;
+    const tip = [up * (up && lean ? lean(sel, local(e)[0]) : 0), up];
     const [x, y] = local(e, tip);
     canvas.setPointerCapture(e.pointerId);
     aim?.(x, y, sel, kind);
@@ -84,7 +89,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     for (const ev of events) {
       const [x, y] = local(ev, active.tip);
       if (active.tap) {
-        if (active.tip) { active.x = x; active.y = y; } // a finger aims the lens or gem; it goes on where it lifts
+        if (active.tip[1]) { active.x = x; active.y = y; } // a finger aims the lens or gem; it goes on where it lifts
         else if (Math.hypot(x - active.x, y - active.y) > TAP_SLOP) active.moved = true;
         continue;
       }
