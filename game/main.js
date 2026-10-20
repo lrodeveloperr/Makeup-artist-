@@ -159,14 +159,14 @@ async function main() {
   hand.append(tools.canvas);
   let handFor = '', tip = [0, 0];
   // draw the tool for a selection and a grip (unless it is drawn already): a pen-like angle under a mouse; under a
-  // finger, the handle runs down to it. The highlighter's fan brush sweeps along her cheekbone, which rises outwards,
-  // so its fan lies along it: the handle runs down and out, away from the middle of her face, on whichever side
-  // (out: -1 left of her middle, 1 right)
+  // finger, the handle runs down to it, leaning right. Under a mouse the highlighter's fan brush sweeps along her
+  // cheekbone, which rises outwards, so its fan lies along it: the handle runs down and out, away from the middle of her
+  // face, on whichever side (out: -1 left of her middle, 1 right)
   const holdTool = (sel, kind, out) => {
     const P = view.makeup.picker, [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]), k = Math.abs(bx - ax) * 10; // pixels a decimetre
     const fan = sel.tool === 'glow';
-    const dir = fan ? [(kind === 'touch' ? 0.4 : 0.5) * out, 1] : kind === 'touch' ? [0.28, 1] : [1, 1.15];
-    const dpr = Math.min(devicePixelRatio, 2), key = `${sel.tool}:${sel.colour}:${kind}:${fan ? out : ''}:${k.toFixed(1)}:${dpr}`;
+    const dir = kind === 'touch' ? [0.28, 1] : fan ? [0.5 * out, 1] : [1, 1.15]; // a finger: every tool leans right alike
+    const dpr = Math.min(devicePixelRatio, 2), key = `${sel.tool}:${sel.colour}:${kind}:${fan && kind !== 'touch' ? out : ''}:${k.toFixed(1)}:${dpr}`;
     if (handFor !== key) {
       handFor = key;
       ({ tip } = tools.draw(sel.tool, colourById(sel.colour), { dir }, k, dpr));
@@ -215,10 +215,10 @@ async function main() {
     const b = [x0 - r, y0 - r, x1 + r, y1 + r];
     patch = patch ? [Math.min(patch[0], b[0]), Math.min(patch[1], b[1]), Math.max(patch[2], b[2]), Math.max(patch[3], b[3])] : b;
   };
-  // under a finger the tool leans as it is drawn (holdTool: the fan brush out from her middle, the rest to the right),
-  // so its tip is set back across the finger, 1.5 times its lean (the owner's pick on a phone of B1 to B2, 20 October
-  // 2026): the tool shows over the finger, not beside it
-  const lean = (sel, x) => 1.5 * (sel.tool === 'glow' ? 0.4 * (x < view.makeup.picker.project([0, 0, 0.5])[0] ? -1 : 1) : 0.28);
+  // under a finger every tool leans right as it is drawn (holdTool; owner, 20 October 2026: the highlighter too, as
+  // leaning left upset the alignment), so its tip is set back across the finger, 1.5 times its lean (the owner's pick
+  // on a phone of B1 to B2): the tool shows over the finger, not beside it
+  const lean = () => 1.5 * 0.28;
   const input = attachInput(canvas, view.makeup, {
     aim, lean,
     selection: () => {

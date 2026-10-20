@@ -90,7 +90,8 @@ part of every face at any screen size.
   lipstick's slanted bullet (wound up about 1.5 cm, as far as a woman winds it to use), tweezers holding the gem (the
   placed gems' own geometry and material), a contact lens. The fan brush is held as it sweeps highlighter along the
   cheekbone: its fan lies along the bone, which rises outwards, so its handle runs down and away from the middle of
-  her face, on whichever side it is. It is lit by the face's three lights, sky and ground, with her tone mapping,
+  her face, on whichever side it is (with a mouse; under a finger it leans right like every other tool, owner, 20
+  October 2026, as leaning left upset its alignment over the finger). It is lit by the face's three lights, sky and ground, with her tone mapping,
   colour space and camera perspective, so a brush's tuft is as wide as the stroke it paints and the lens as wide as
   an iris; a soft shadow falls down and to the right, as from her key light. It is drawn once for each tool, colour
   and grip, then moved with the pointer.
