@@ -89,6 +89,10 @@ on each screen.
   pixel) and at least 16 px.
 - **The mirror** follows her head (`placeMirror` in `game/main.js`), never the screen's percentages.
 - **Making a look and review** keep the same counter, so the face doesn't move.
+- **Painting stays quick on phones** (owner, 20 October 2026: painting was slow on a touch screen). Drawing her
+  face is what costs, in proportion to the pixels drawn, so while a stroke is painted only the patch it has just
+  changed is drawn again (the stroke's latest step, padded by the tool's reach), through a scissor box; the rest of
+  the picture is kept. At most one draw is made a frame, and the whole face is drawn again when the stroke ends.
 - **`npm run test:layout`** (`tests/layout.mjs`) runs Haircut's 30-viewport matrix, from 225×400 to 3840×1080,
   portrait and landscape, live-resized. It covers making a look, the colour of the day and review, and checks:
   - every control is on screen, at least 30 px, and apart from the others
@@ -296,6 +300,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 **`tests/game-smoke.mjs`** runs the full flow with the mouse:
 - readiness signals
 - review
+- the tool in hand under a finger (aiming without painting, a stroke at the tip, a tap's dab) and under a mouse
 - Next and an untouched Next
 - the interstitial on the second look
 - a refused, then an earned, colour of the day

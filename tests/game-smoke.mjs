@@ -175,10 +175,14 @@ try {
     const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1, radiusX: 6, radiusY: 6, force: 1 })) });
     const [x, y, tip] = await page.evaluate(() => {
       const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, [px, py] = v.makeup.picker.project([L[0] + 0.08, L[1] - 0.42, L[2]]);
-      return [c.left + px, c.top + py, Math.min(72, c.height * 0.12)];
+      return [c.left + px, c.top + py, Math.min(44, c.height * 0.07)];
     });
     assert.ok(await page.isHidden('#hand'));
+    // a finger first aims: touching shows the tool but paints nothing, nor does a slide of a few pixels
     await touch('touchStart', [[x, y + tip]]);
+    await touch('touchMove', [[x + 3, y + tip]]);
+    assert.ok(!(await page.isHidden('#hand')), 'touching shows the tool');
+    assert.equal(await page.evaluate(() => game.view.makeup.makeup.strokes.length), 0, 'aiming paints nothing');
     for (let k = 1; k <= 6; k++) await touch('touchMove', [[x + k * 4, y + tip]]);
     // where the tool's tip is drawn on screen
     const drawnTip = () => page.evaluate(() => {
@@ -191,6 +195,12 @@ try {
     await touch('touchEnd', []);
     assert.ok(await page.isHidden('#hand'), 'gone when the finger lifts');
     assert.equal((await state(page)).strokes, 1, 'it painted');
+    // a touch that lifts without sliding leaves one dab, where the tip was
+    await touch('touchStart', [[x + 10, y + tip + 10]]);
+    await touch('touchEnd', []);
+    const dab = await page.evaluate(() => game.view.makeup.makeup.strokes.at(-1));
+    assert.equal((await state(page)).strokes, 2, 'a tap leaves a dab');
+    assert.equal(dab.segments.length, 1, 'one dab');
     // a mouse holds the tool in place of the cursor, its tip at the pointer, before and while it paints
     await page.mouse.move(x, y + 30);
     at = await drawnTip();
@@ -199,7 +209,7 @@ try {
     at = await drawnTip();
     assert.ok(at.shown && Math.abs(at.x - (x + 20)) < 1.5 && Math.abs(at.y - (y + 30)) < 1.5, 'painting: the tip follows the pointer');
     await page.mouse.up();
-    assert.equal((await state(page)).strokes, 2, 'the mouse painted at the pointer');
+    assert.equal((await state(page)).strokes, 3, 'the mouse painted at the pointer');
     await page.mouse.move(2, 2); // off the face: the tool goes, the cursor comes back
     at = await drawnTip();
     assert.ok(!at.shown && at.cursor === '');

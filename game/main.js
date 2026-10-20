@@ -124,7 +124,15 @@ async function main() {
 
   // ---- state ----
   let panelOpen = false, paused = false, frame = 0;
-  const redraw = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; view.render(); }); };
+  // The next frame draws the whole picture again, or, while painting, only the patch round the stroke (CSS pixels:
+  // [x0, y0, x1, y1]): on a phone the face is millions of shaded pixels, the stroke a few thousand
+  let dirty = null; // null: nothing to draw; 'all'; or the patch
+  const draw = () => { frame = 0; const d = dirty; dirty = null; view.render(d === 'all' ? null : [d[0], d[1], d[2] - d[0], d[3] - d[1]]); };
+  const redraw = () => { dirty = 'all'; if (!frame) frame = requestAnimationFrame(draw); };
+  const redrawPatch = (x0, y0, x1, y1) => {
+    if (dirty !== 'all') dirty = dirty ? [Math.min(dirty[0], x0), Math.min(dirty[1], y0), Math.max(dirty[2], x1), Math.max(dirty[3], y1)] : [x0, y0, x1, y1];
+    if (!frame) frame = requestAnimationFrame(draw);
+  };
   const session = new Session(host, parsed.state || G.newGame(crypto.getRandomValues(new Uint32Array(1))[0]), { onChange: () => render() });
   if (!parsed.state) session.touch(); // a new player's first state is saved straight away
   view.makeup.allowed = (id) => G.canUse(session.state, id);
@@ -148,13 +156,13 @@ async function main() {
   const hand = $('hand'), tools = new ToolView();
   hand.append(tools.canvas);
   let handFor = '', tip = [0, 0];
-  const aim = (x, y, sel, kind) => {
-    if (x === null) { hand.hidden = true; canvas.style.cursor = ''; return; }
+  // draw the tool for a selection and a grip (unless it is drawn already): a pen-like angle under a mouse; under a
+  // finger, the handle runs down to it. The highlighter's fan brush sweeps along her cheekbone, which rises outwards,
+  // so its fan lies along it: the handle runs down and out, away from the middle of her face, on whichever side
+  // (out: -1 left of her middle, 1 right)
+  const holdTool = (sel, kind, out) => {
     const P = view.makeup.picker, [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]), k = Math.abs(bx - ax) * 10; // pixels a decimetre
-    // a pen-like angle under a mouse; under a finger, the handle runs down to it. The highlighter's fan brush sweeps
-    // along her cheekbone, which rises outwards, so its fan lies along it: the handle runs down and out, away from
-    // the middle of her face, on whichever side it is
-    const out = x < ax ? -1 : 1, fan = sel.tool === 'glow';
+    const fan = sel.tool === 'glow';
     const dir = fan ? [(kind === 'touch' ? 0.4 : 0.5) * out, 1] : kind === 'touch' ? [0.28, 1] : [1, 1.15];
     const dpr = Math.min(devicePixelRatio, 2), key = `${sel.tool}:${sel.colour}:${kind}:${fan ? out : ''}:${k.toFixed(1)}:${dpr}`;
     if (handFor !== key) {
@@ -162,11 +170,27 @@ async function main() {
       ({ tip } = tools.draw(sel.tool, colourById(sel.colour), { dir }, k, dpr));
       hand.dataset.tip = tip.map((v) => v.toFixed(1)).join(','); // where its tip is in its picture (for tests)
     }
+  };
+  // on a touch screen the tool is drawn as soon as it (or its colour) is picked, so it is in hand the moment a finger
+  // lands
+  const touchFirst = matchMedia('(pointer: coarse)').matches;
+  const readyTool = () => {
+    const s = session.state, sel = { tool: s.selection.tool, colour: s.selection.colour[s.selection.tool] };
+    if (touchFirst && hand.hidden && s.attempt.phase === 'create' && view.makeup.picker.camera) holdTool(sel, 'touch', 1);
+  };
+  const aim = (x, y, sel, kind) => {
+    if (x === null) { hand.hidden = true; canvas.style.cursor = ''; return; }
+    const [ax] = view.makeup.picker.project([0, 0, 0.5]);
+    holdTool(sel, kind, x < ax ? -1 : 1);
     const r = canvas.getBoundingClientRect();
     hand.style.transform = `translate(${(r.left + x - tip[0]).toFixed(1)}px, ${(r.top + y - tip[1]).toFixed(1)}px)`;
     hand.hidden = false;
     canvas.style.cursor = kind === 'touch' ? '' : 'none'; // the tool is the cursor
   };
+  // how far a stroke can change the face from a painted point (decimetres): the tool's radius and its dabs' soft
+  // edge, and the mascara's wand with the lashes it lengthens
+  const REACH = { brush: 0.2, glow: 0.13, pencil: 0.05, liner: 0.06, lip: 0.08, mascara: 0.3 };
+  let patch = null;
   const input = attachInput(canvas, view.makeup, {
     aim,
     selection: () => {
@@ -174,7 +198,9 @@ async function main() {
       if (s.attempt.phase !== 'create' || panelOpen || paused || session.busy || finishing) return null;
       return { tool: s.selection.tool, colour: s.selection.colour[s.selection.tool] };
     },
-    onChange: redraw,
+    // a stroke changes the face only round the points it painted (the tool's reach, and a little more for the
+    // dabs a step behind); anything else (a gem, a lens) redraws the whole face
+    onChange: () => { if (patch) { redrawPatch(...patch); patch = null; } else redraw(); },
     onCommit: (change) => {
       session.applied(view.makeup.makeup);
       if (change.lens) tap('lens');
@@ -182,9 +208,14 @@ async function main() {
     },
     feedback: {
       // each stroke's sound follows the hand, in decimetres a second on the face (the same on every screen)
-      down(sel) { this.voice = stroke(sel.tool, colourById(sel.colour)); this.last = null; },
+      down(sel) { this.voice = stroke(sel.tool, colourById(sel.colour)); this.last = null; this.tool = sel.tool; },
       move(x, y, contact, time) {
         const t = (time ?? performance.now()) / 1000, P = view.makeup.picker;
+        // the patch this sample may change, from the last sample to this one
+        const [px] = P.project([0, 0, 0.5]), [qx] = P.project([0.1, 0, 0.5]), k = Math.abs(qx - px) * 10;
+        const r = (REACH[this.tool] ?? 0.2) * k + 14, [lx, ly] = this.last || [x, y];
+        const b = [Math.min(x, lx) - r, Math.min(y, ly) - r, Math.max(x, lx) + r, Math.max(y, ly) + r];
+        patch = patch ? [Math.min(patch[0], b[0]), Math.min(patch[1], b[1]), Math.max(patch[2], b[2]), Math.max(patch[3], b[3])] : b;
         if (this.voice && this.last) {
           const [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]);
           const dx = x - this.last[0], dy = y - this.last[1];
@@ -538,6 +569,7 @@ async function main() {
     for (const b of [$('next'), $('redo'), $('done')]) b.disabled = session.busy;
     for (const b of toolbar.children) b.setAttribute('aria-pressed', String(b.dataset.tool === s.selection.tool));
     renderSwatches();
+    readyTool();
     // no rewarded videos here, or every colour already earned: nothing to offer, no daily button
     if (!panelOpen) daily.hidden = !session.dailyOffered;
     daily.querySelector('.dot').hidden = !session.dailyWaiting;

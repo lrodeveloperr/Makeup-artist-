@@ -379,10 +379,13 @@ export class WebGLRenderer {
     }
   }
 
-  render(scene, camera) {
+  // clip (optional): [x, y, width, height] in drawing-buffer pixels from the bottom left: only that part of the picture
+  // is drawn again, the rest kept as it was (the canvas preserves its drawing); much cheaper while painting
+  render(scene, camera, clip = null) {
     const gl = this.gl;
     this.collect();
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    if (clip) { gl.enable(gl.SCISSOR_TEST); gl.scissor(...clip); }
     const bg = scene.background; // null: transparent
     gl.clearColor(...(bg ? [...linearBackground(bg), 1] : [0, 0, 0, 0]));
     gl.depthMask(true);
@@ -420,6 +423,7 @@ export class WebGLRenderer {
       if (o.material.side === DoubleSide) { draw(o, BackSide); draw(o, FrontSide); } else draw(o, o.material.side);
     }
     gl.bindVertexArray(null);
+    if (clip) gl.disable(gl.SCISSOR_TEST);
   }
 }
 // the clear colour is written as-is, so convert the linear background to sRGB like the shaders' output

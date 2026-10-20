@@ -141,7 +141,14 @@ export class FaceView {
     this.makeup?.reset(profile); // a new face starts clean
   }
 
-  render() {
-    this.renderer.render(this.scene, this.camera);
+  // rect (optional): [x, y, width, height] in CSS pixels from the canvas's top left: draw only that part again (the
+  // rest of the picture is kept); without it, the whole picture
+  render(rect = null) {
+    let clip = null;
+    if (rect) { // in whole drawing-buffer pixels, from the bottom left (a box partly off the canvas is fine)
+      const r = this.renderer.pixelRatio, [x, y, w, h] = rect, x0 = Math.floor(x * r), y1 = Math.ceil((y + h) * r);
+      clip = [x0, this.renderer.gl.drawingBufferHeight - y1, Math.ceil((x + w) * r) - x0, y1 - Math.floor(y * r)];
+    }
+    this.renderer.render(this.scene, this.camera, clip);
   }
 }

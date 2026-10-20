@@ -1,6 +1,6 @@
 // Browser smoke test: renders faces in Chromium (WebGL2) and fails on shader/page errors or a blank canvas, and
 // applies every makeup tool to a face with scripted strokes, the mouse and touch (see paintCheck, nearCheck,
-// lipOrderCheck, lashLineCheck, touchCheck).
+// lipOrderCheck, lashLineCheck, patchCheck, touchCheck).
 // With --gallery it renders one face of every heritage (each profile and each named blend, plus a second East
 // Asian face to fill the grid) and writes docs/face-gallery.jpg, labelled with the heritage.
 // Usage: node tools/build-preview.mjs && node tests/render-smoke.mjs [--gallery]
@@ -210,6 +210,41 @@ async function lashLineCheck(page, errors) {
   console.log(`eye tools: the liner along the lashes is one line of ${r.points} points; one mascara sweep coated ${r.coated} of ${r.upper} upper lashes (each at least ×${r.width.toFixed(2)} thick)`);
 }
 
+// Painting redraws only the patch round the stroke (game/main.js): drawn that way, the picture is exactly the one a
+// full redraw gives.
+async function patchCheck(page, errors) {
+  const r = await page.evaluate(() => {
+    const v = window.view, a = v.makeup, P = a.picker, c = v.renderer.domElement, gl = v.renderer.gl;
+    const read = () => { const px = new Uint8Array(c.width * c.height * 4); gl.readPixels(0, 0, c.width, c.height, gl.RGBA, gl.UNSIGNED_BYTE, px); return px; };
+    // (two full redraws of the same face can differ in a few values: hair strands of equal depth drawn in either order)
+    v.render(); const f0 = read(); v.render(); const f1 = read();
+    let noise = 0; for (let i = 0; i < f0.length; i++) if (Math.abs(f0[i] - f1[i]) > 1) noise++;
+    const [px] = P.project([0, 0, 0.5]), [qx] = P.project([0.1, 0, 0.5]), k = Math.abs(qx - px) * 10;
+    const REACH = { brush: 0.2, lip: 0.08 };
+    let diff = 0, patches = 0;
+    for (const [tool, colour, from, to] of [['brush', 'brush-berry', [0.42, -0.25, 0.45], [0.2, -0.35, 0.55]], ['lip', 'lip-red', [-0.15, -0.64, 0.6], [0.15, -0.64, 0.6]]]) {
+      const g = a.begin(tool, colour), pts = [];
+      for (let t = 0; t <= 1; t += 0.05) pts.push(P.project(from.map((f, i) => f + (to[i] - f) * t)));
+      let box = null;
+      for (const [x, y] of pts) {
+        a.move(g, x, y);
+        const rr = REACH[tool] * k + 14;
+        box = box ? [Math.min(box[0], x - rr), Math.min(box[1], y - rr), Math.max(box[2], x + rr), Math.max(box[3], y + rr)] : [x - rr, y - rr, x + rr, y + rr];
+        v.render([box[0], box[1], box[2] - box[0], box[3] - box[1]]); patches++;
+      }
+      a.end(g);
+      v.render([box[0], box[1], box[2] - box[0], box[3] - box[1]]);
+      const part = read();
+      v.render();
+      const full = read();
+      for (let i = 0; i < full.length; i++) if (Math.abs(full[i] - part[i]) > 1) diff++;
+    }
+    return { diff, patches, noise };
+  });
+  if (r.diff > 2 * r.noise + 32) errors.push(`drawing only the stroke's patch left ${r.diff} channel values different from a full redraw (two full redraws differ in ${r.noise})`);
+  console.log(`patch redraw: ${r.patches} patches, ${r.diff} channel values differ from a full redraw (two full redraws differ in ${r.noise})`);
+}
+
 async function touchCheck(browser, errors) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
@@ -220,7 +255,7 @@ async function touchCheck(browser, errors) {
   const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y, id]) => ({ x, y, id, radiusX: 4, radiusY: 4, force: 1 })) });
   const box = await page.locator('#stage canvas').boundingBox();
   // where the tool works: this far above the finger (input.js)
-  const tip = Math.min(72, box.height * 0.12);
+  const tip = Math.min(44, box.height * 0.07);
   // canvas points: the middle of each cheek, a point beside it, and each iris (the finger goes `tip` below them)
   const [a, a1, b, b1, irisR, irisL] = (await page.evaluate(() => {
     const v = window.view, [L, R] = v.eyes.meshes.map((m) => m.position), r = v.eyes.meshes[0].scale[0];
@@ -282,6 +317,7 @@ try {
   await nearCheck(first, errors);
   await lipOrderCheck(first, errors);
   await lashLineCheck(first, errors);
+  await patchCheck(first, errors);
   await first.close();
   await touchCheck(browser, errors);
   await page.goto(gallery

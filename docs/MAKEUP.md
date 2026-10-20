@@ -98,9 +98,14 @@ part of every face at any screen size.
     moment it is over her (so the player aims before pressing), held at a pen's angle; strokes, gems and lenses go on
     at the pointer. Off her face the cursor comes back.
   - **Finger:** a finger covers what it touches, so the tool works at its tip, held a little above the finger
-    (72 px, at most 12 % of the face's height, as Haircut's clipper), its handle running down to the finger, while
-    the finger is down. Strokes paint at the tip. A gem or a lens shows at the tip from the touch and goes on where
-    the finger lifts (press, aim, release), since a tap under a finger cannot be aimed.
+    (44 px, at most 7 % of the face's height: clear of the fingertip, close enough to feel held; it was 72 px until
+    the owner found paint landing too far from the finger on a phone, 20 October 2026), its handle running down to
+    the finger, while the finger is down. A finger aims first (owner, 20 October 2026: on a touch screen it was hard
+    to time where a stroke began): touching shows the tool and where its tip is without painting; once the finger
+    slides 6 px the stroke begins, from where the tip was; a touch that lifts without sliding leaves one dab there.
+    A gem or a lens shows at the tip from the touch and goes on where the finger lifts (press, aim, release), since
+    a tap under a finger cannot be aimed. On a touch screen the selected tool is drawn ahead, as soon as the face
+    is ready, so it appears the moment the finger lands.
 
 ### Colours (base catalogue, all available from the start)
 
@@ -153,8 +158,8 @@ Rose (contract §3).
 
 - One captured primary pointer applies at a time. Other fingers and non-primary mouse buttons are ignored. The
   canvas has `touch-action: none` and no context menu, so a stroke never scrolls, zooms or opens a menu.
-- A finger works at the tool's tip, above it (see the tool in hand, above); the game draws the tool there through
-  `attachInput`'s `aim` hook.
+- A finger works at the tool's tip, above it, and aims before it paints (see the tool in hand, above); the game
+  draws the tool there through `attachInput`'s `aim` hook.
 - The tool and colour are captured at pointer-down and kept for the whole gesture.
 - Pointer-up commits. Cancel, lost capture, resize or an interrupt (`input.interrupt()`, for a host pause or an
   opening panel) ends the gesture at its last applied sample and keeps that work. A new pointer-down is needed to
@@ -233,6 +238,8 @@ or a lens matching the natural iris does not count.
   - A real mouse drag adds a stroke.
   - By touch: one finger paints, a second finger adds nothing, a lens and a gem apply on a tap but not on a drag,
     and the page never scrolls, pans or zooms.
+  - Partial redraw: strokes drawn with only the painted patch redrawn match a full redraw (allowing for the few
+    values two full redraws already differ in).
 - Download: the face system and the makeup tools together are 405 KB (`tests/size-budget.mjs`; the face budget
   is 420 KB, raised from 400 KB when the highlighter, liquid liner and gems and their colours added about 12 KB).
 
