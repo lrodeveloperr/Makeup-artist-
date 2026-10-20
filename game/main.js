@@ -5,7 +5,8 @@
 import { FaceView } from '../src/face/face-view.js';
 import { attachInput } from '../src/makeup/input.js';
 import { ToolView } from '../src/makeup/tools3d.js';
-import { zoneAt, regionsAt, toLashes, ZoneGlow } from './zones.js';
+import { zoneAt, assist, regionsAt, toLashes, ZoneGlow } from './zones.js';
+import { evalPoint } from '../src/face/surface.js';
 import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
 import { chime, hush, setEnabled, stroke, tap, ui, preload, logUnits, stats as sounds } from './sound.js';
@@ -182,7 +183,8 @@ async function main() {
   // assisted touch (zones.js): under a finger each tool works only in its zones, which light up faintly while it is down
   const mouth = view.head.header.landmarks.mouth, glow = new ZoneGlow(view);
   const guide = (hit) => toLashes(hit, view.makeup.picker, view.eyes);
-  view.makeup.zones = (tool, hit) => zoneAt(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, guide);
+  const lift = (x, y, z) => { const h = view.sampler.locate(x, y, z); return h && evalPoint(h, view.headGeometry.refSub, []); };
+  view.makeup.zones = (tool, hit, locked) => assist(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, locked, guide, lift);
   const showZones = (tool) => {
     const was = glow.mesh.visible;
     glow.show(tool === 'lens' || tool === 'mascara' ? null : tool, view.profile.brows, mouth);

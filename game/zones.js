@@ -112,6 +112,62 @@ export function zoneAt(tool, hit, reg, brows, mouth, guide) {
   }
 }
 
+// Capture (owner, 20 October 2026: a tool must never feel forced to work). A finger that strays up to 6 mm outside
+// the zone it is painting, or lands up to 6 mm outside any of its tool's zones, is not refused: the point is moved to
+// the zone's edge (towards a point inside it), so the paint slides along the edge as along a stencil, and a stroke that
+// starts just beside a zone starts at its edge. Further out, the pen is up. The lash line needs none: the liner and
+// the pencil are guided onto it from 8 mm away.
+const CAPTURE = 0.06;
+// a point inside each zone to move towards, for a stray point at (ax, y) (|x|, y): its middle, or the nearest point
+// of its middle line for a long, thin one
+const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+const INSIDE = {
+  lips: (ax, y, m) => { const t = Math.min(ax / m.halfWidth, 0.8); return [t * m.halfWidth, m.lineCentre + (m.lineCorner - m.lineCentre) * t * t]; },
+  lid: (ax) => [clamp(ax, 0.22, 0.36), 0.085],
+  cheek: () => [0.44, -0.34],
+  bone: (ax, y) => { const c = Math.cos(0.3), s = Math.sin(0.3), u = clamp((ax - 0.45) * c + (y + 0.21) * s, -0.1, 0.1); return [0.45 + u * c, -0.21 + u * s]; },
+  nose: (ax, y) => [0, clamp(y, -0.3, 0.07)],
+  arch: (ax) => [clamp(ax, 0.32, 0.45), 0.1325],
+  bow: (ax, y, m) => [Math.min(ax, 0.04), m.lineCentre + m.upperCentre + 0.012],
+  brow: (ax, y, m, brows) => {
+    const sh = BROW_SHAPES[brows.shape] || BROW_SHAPES['soft-arch'], end = 0.49 * brows.length, u = clamp((ax - 0.115) / (end - 0.115), 0.05, 0.95);
+    const a = u < sh.pu ? Math.sin((Math.PI / 2) * (u / sh.pu)) ** sh.k1 : 1 - (1 - sh.tail) * ((u - sh.pu) / (1 - sh.pu)) ** sh.k2;
+    return [0.115 + u * (end - 0.115), 0.17 + sh.ph * a];
+  },
+};
+// the zones a tool's stroke can be captured by (with the side of the face they are on, where they come in pairs)
+const CAPTURED = { lip: ['lips'], brush: ['lid', 'cheek'], glow: ['bone', 'nose', 'arch', 'bow'], pencil: ['brow'] };
+const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow']);
+
+// The zone for a finger's point: as zoneAt, in the zone `locked` once the stroke has one (null before it starts), with
+// capture: hit.ref may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference (x, y), nearest
+// depth z. -> the zone, or null (the pen is up)
+export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
+  const z = zoneAt(tool, hit, reg, brows, mouth, guide);
+  if (z !== null && (locked == null || z === locked)) return z;
+  const p = hit.ref, side = p[0] < 0 ? 'r' : 'l', test = { ref: [0, 0, p[2]] };
+  const ids = locked != null ? [locked] : (CAPTURED[tool] || []).map((n) => (PAIRED.has(n) ? n + side : n));
+  let best = null;
+  for (const id of ids) {
+    const name = PAIRED.has(id.slice(0, -1)) ? id.slice(0, -1) : id, inside = INSIDE[name];
+    if (!inside) continue;
+    const sx = PAIRED.has(name) ? (id.endsWith('r') ? -1 : 1) : Math.sign(p[0]) || 1;
+    const [qx, qy] = inside(Math.abs(p[0]), p[1], mouth, brows), q = [sx * qx, qy];
+    const at = (t) => { test.ref[0] = p[0] + (q[0] - p[0]) * t; test.ref[1] = p[1] + (q[1] - p[1]) * t; return zoneAt(tool, test, reg, brows, mouth) === id; };
+    if (!at(1)) continue;
+    let lo = 0, hi = 1; // outside at lo, inside at hi
+    for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (at(m)) hi = m; else lo = m; }
+    const d = hi * Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (d > CAPTURE || (best && d >= best.d)) continue;
+    const t = Math.min(hi + 0.004 / Math.max(Math.hypot(q[0] - p[0], q[1] - p[1]), 1e-6), 1); // a little way in
+    best = { d, id, x: p[0] + (q[0] - p[0]) * t, y: p[1] + (q[1] - p[1]) * t };
+  }
+  const r = best && lift(best.x, best.y, p[2]);
+  if (!r) return null;
+  hit.ref = r;
+  return best.id;
+}
+
 // the feature regions at a hit (its triangle's, weighted)
 export function regionsAt(geometry, at) {
   const A = geometry.attributes.regionA.array, B = geometry.attributes.regionB.array, out = [];

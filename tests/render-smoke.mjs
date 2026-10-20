@@ -255,7 +255,7 @@ async function touchCheck(browser, errors) {
   const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y, id]) => ({ x, y, id, radiusX: 4, radiusY: 4, force: 1 })) });
   const box = await page.locator('#stage canvas').boundingBox();
   // where the tool works: this far above the finger (input.js)
-  const tip = Math.min(44, box.height * 0.07);
+  const tip = Math.min(60, box.height * 0.16); // a 12 px contact: 60 px (src/makeup/input.js)
   // canvas points: the middle of each cheek, a point beside it, and each iris (the finger goes `tip` below them)
   const [a, a1, b, b1, irisR, irisL] = (await page.evaluate(() => {
     const v = window.view, [L, R] = v.eyes.meshes.map((m) => m.position), r = v.eyes.meshes[0].scale[0];

@@ -306,7 +306,7 @@ npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with
 - the tool in hand under a finger (a stroke at the tip, a tap's dab) and under a mouse
 - assisted touch on three faces: every tool, by finger, paints in each of its zones and nowhere outside them, a long
   slip across her face keeps to the zone it started in, gems go on her forehead but not her lips, the zones light
-  up only while a finger is down, and a mouse paints anywhere
+  up only while a finger is down, and a mouse paints anywhere; a thumb holds the tool higher than a forefinger
 - Next and an untouched Next
 - the interstitial on the second look
 - a refused, then an earned, colour of the day

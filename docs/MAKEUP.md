@@ -98,8 +98,11 @@ part of every face at any screen size.
     moment it is over her (so the player aims before pressing), held at a pen's angle; strokes, gems and lenses go on
     at the pointer. Off her face the cursor comes back.
   - **Finger:** a finger covers what it touches, so the tool works at its tip, held a little above the finger
-    (44 px, at most 7 % of the face's height: clear of the fingertip, close enough to feel held; it was 72 px until
-    the owner found paint landing too far from the finger on a phone, 20 October 2026), its handle running down to
+    (owner, 20 October 2026: the balance between the finger and seeing the tool, part of the ASMR, so it feels held
+    rather than like painting with the finger): half the fingertip's contact height plus 38 px, from 60 to 90 px, so
+    a thumb holds it higher than a forefinger (60 px where the device gives no contact size), and at most 16 % of the
+    face's height in a tiny embed. (It was 72 px, then 44 px when paint landed away from the finger; the zones below
+    now keep the paint where it belongs, so the tool can stand clear of the finger again.) Its handle runs down to
     the finger, while the finger is down. Strokes paint at the tip from the moment the finger drags; a touch that
     lifts without sliding leaves one dab. A gem or a lens shows at the tip from the touch and goes on where the
     finger lifts (press, aim, release), since a tap under a finger cannot be aimed. On a touch screen the selected
@@ -122,6 +125,13 @@ part of every face at any screen size.
     | Lens | the iris (as with a mouse) |
     | Gems | her face, but not her lips, ears or neck |
 
+    No tool is forced (owner, 20 October 2026: some tools felt as if they had to be forced to work): a finger that
+    strays up to 6 mm outside the zone it is painting, or lands up to 6 mm outside one, is moved in to the zone's
+    edge (towards a point inside it, such as the middle line of her brow or cheekbone), so the paint slides along
+    the edge as along a stencil, and a stroke that starts just beside a zone starts at its edge; further out the pen
+    is up. With a finger wobbling ±3 mm along each feature, every tool now paints on 97–100 % of its samples (the
+    cheekbone's highlighter and the brow pencil were refused on up to 60 % before). A straight pencil line across an
+    arched brow follows the arch.
     Along the lashes the liner and the pencil are guided: a finger within about 8 mm of the lashes draws on the lash
     line itself (`toLashes`: the lid's edge found on screen, then 3.2 mm onto the upper lid, where a line shows just
     above the lashes, or 1 mm below the lower lashes), so a line drawn roughly along the lashes follows them. While a

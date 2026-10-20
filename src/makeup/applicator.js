@@ -28,9 +28,10 @@ export class Applicator {
     view.scene.add(this.gems.mesh);
     this.makeup = createMakeup();
     this.allowed = () => true; // the game sets which colours the player may use (colours of the day once earned)
-    // the game's zones for assisted (touch) work: (tool, skin hit) -> the zone there (any value, compared with ===),
-    // or null outside every zone of that tool; it may move the hit (ref and pos) to guide the tool (onto the lash line); without it,
-    // assisted work is free like a mouse's
+    // the game's zones for assisted (touch) work: (tool, skin hit, the stroke's zone so far or null) -> the zone the
+    // point is in (any value but null; the stroke's own once it has one), or null to refuse it; it may move the hit's
+    // ref to guide the tool (onto the lash line, or in to a zone's edge); without it, assisted work is free like a
+    // mouse's
     this.zones = null;
   }
 
@@ -136,8 +137,8 @@ export class Applicator {
   // is up)
   inZone(g, hit) {
     if (!g.assist) return true;
-    const z = g.assist(g.tool, hit);
-    if (z === null || (g.zone !== null && z !== g.zone)) return false;
+    const z = g.assist(g.tool, hit, g.zone);
+    if (z === null) return false;
     g.zone = z;
     return true;
   }
@@ -180,7 +181,7 @@ export class Applicator {
   tapGem(x, y, colour, assisted = false) {
     if (colourById(colour)?.target !== 'gem' || !this.allowed(colour)) return null;
     const hit = this.picker.pick(x, y);
-    if (hit?.kind !== 'skin' || this.view.garment?.covers(hit.ref) || (assisted && this.zones?.('gem', hit) === null)) return null;
+    if (hit?.kind !== 'skin' || this.view.garment?.covers(hit.ref) || (assisted && this.zones?.('gem', hit, null) === null)) return null;
     const q = hit.ref.map(toQ);
     if (!this.gems.locate(q.map(fromQ))) return null;
     const before = this.makeup;

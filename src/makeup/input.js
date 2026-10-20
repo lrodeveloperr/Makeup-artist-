@@ -12,8 +12,11 @@
 //   tool works the moment it is dragged): each tool paints only in its own small zones of the face, a stroke stays in
 //   the zone it starts in, and a gem goes on only where gems sit (the applicator's `zones`); a mouse or a pen is free
 const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move (mouse and pen)
-const TOUCH_TIP = 44; // CSS pixels above the finger where the tool works, at most 7 % of the face's height (clear of
-// the fingertip, close enough to feel held)
+// Where a finger's tool works: far enough above the finger that the tool shows beside it, held as a tool rather than
+// hidden under the fingertip (owner, 20 October 2026), and no further: the fingertip's half-height (from the touch's
+// contact size, so a thumb holds it higher than a forefinger) and 38 px more, from 60 to 90 px (60 where the device
+// gives no contact size), and at most 16 % of the face's height (a tiny embed)
+const touchTip = (e, height) => Math.min(Math.min(Math.max((e.height > 1 ? e.height / 2 : 0) + 38, 60), 90), height * 0.16);
 
 // canvas: the face canvas; applicator: Applicator; selection(): { tool, colour } ('lens' for lenses, 'gem' for gems), or null
 // while the face takes no input (review, an open panel, a pause);
@@ -52,7 +55,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     e.preventDefault();
     const sel = selection();
     if (!sel) return;
-    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', tip = kind === 'touch' ? Math.min(TOUCH_TIP, canvas.clientHeight * 0.07) : 0;
+    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', tip = kind === 'touch' ? touchTip(e, canvas.clientHeight) : 0;
     const [x, y] = local(e, tip);
     canvas.setPointerCapture(e.pointerId);
     aim?.(x, y, sel, kind);
