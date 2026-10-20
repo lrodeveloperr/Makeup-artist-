@@ -2,9 +2,9 @@
 // shapes, in portrait and landscape. One page is resized through every size, so orientation changes are tested
 // live. In each state (making a look, the colour of the day open, review) every control must be on screen, at a
 // tappable size, apart from the others and off the face (her eyes and mouth stay clear); the face must fit its
-// canvas, centred in the salon mirror. Then, with every colour earned, the colours at the side must show whole
-// pages (no colour cut off, the picked one's ring included, the arrows tappable) and the row at the bottom must
-// keep the picked colour whole and clear of its fades. Writes a contact sheet per state to tests/out/.
+// canvas, centred in the salon mirror. Then, with every colour earned, a page shows at most six colours, each whole
+// on the counter, the picked one's ring clear of its neighbours, the arrows and the tools, and both arrows on screen
+// and tappable. Writes a contact sheet per state to tests/out/.
 // Usage: node tools/build-game.mjs && node tests/layout.mjs
 import fs from 'node:fs';
 import { chromium } from 'playwright';
@@ -111,32 +111,26 @@ try {
     const where = `${W}x${H} many colours`;
     const m = await p2.evaluate(() => {
       const r = (el) => { const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; };
-      const sw = document.getElementById('swatches'), paged = document.getElementById('colours').classList.contains('paged');
-      const shown = [...sw.children].filter((b) => !b.hidden).map((b) => ({ ...r(b), picked: b.getAttribute('aria-checked') === 'true' }));
-      const arrows = paged ? ['prev', 'more'].map((id) => ({ id, ...r(document.getElementById(id)) })) : [];
+      const shown = [...document.querySelectorAll('#swatches button')].map((b) => ({ ...r(b), picked: b.getAttribute('aria-checked') === 'true' }));
       const tools = [...document.querySelectorAll('#toolbar .ctl')].map((b) => ({ id: b.dataset.tool, ...r(b) }));
-      return { land: document.documentElement.classList.contains('land'), paged, shown, arrows, tools, box: r(sw), foot: r(document.getElementById('create')), total: sw.children.length };
+      const arrows = ['back', 'more'].map((id) => document.getElementById(id)).filter((el) => el.offsetParent).map((el) => ({ id: el.id, ...r(el) }));
+      return { shown, tools, arrows, foot: r(document.getElementById('create')) };
     });
-    const ring = (b) => (b.picked ? (8 * b.w) / 47 : 0); // the picked colour's ring and lift, beyond its button
-    const whole = (b, box) => b.x - ring(b) >= box.x - 0.5 && b.y - ring(b) >= box.y - 0.5 && b.x + b.w + ring(b) <= box.x + box.w + 0.5 && b.y + b.h + ring(b) <= box.y + box.h + 0.5;
-    if (!m.shown.length) errors.push(`${where}: no colours on screen`);
-    if (m.land) {
-      // whole pages: every colour shown is whole, inside the counter and the screen; the arrows are tappable, apart
-      for (const b of m.shown) if (!whole(b, m.foot) || !inside(b, W, H)) errors.push(`${where}: a colour is cut off (${JSON.stringify(b)})`);
-      if (m.paged !== m.shown.length < m.total) errors.push(`${where}: ${m.shown.length} of ${m.total} colours shown, ${m.paged ? '' : 'no '}arrows`);
-      for (const a of m.arrows) {
-        if (!inside(a, W, H)) errors.push(`${where}: the ${a.id} arrow is off screen`);
-        if (a.w < MIN_TAP || a.h < MIN_TAP) errors.push(`${where}: the ${a.id} arrow is ${Math.round(a.w)}x${Math.round(a.h)}, under ${MIN_TAP}`);
-        for (const o of [...m.shown, ...m.tools]) if (overlap(a, o)) errors.push(`${where}: the ${a.id} arrow overlaps a ${o.id ? 'tool' : 'colour'}`);
-      }
-    } else {
-      // the row (or a tall counter's rows), at rest: each colour whole inside it or scrolled wholly out of it; the
-      // picked one in view
-      const away = (b) => b.x + b.w <= m.box.x + 1 || b.x >= m.box.x + m.box.w - 1 || b.y + b.h <= m.box.y + 1 || b.y >= m.box.y + m.box.h - 1; // (within a pixel: a scaled row rests on fractions of one)
-      for (const b of m.shown) if (!whole(b, m.box) && !away(b)) errors.push(`${where}: a colour is cut off (${JSON.stringify(b)}, the row ${JSON.stringify(m.box)})`);
-      const p = m.shown.find((b) => b.picked);
-      if (!p || away(p)) errors.push(`${where}: the picked colour is out of view`);
-      if (!inside(m.box, W, H)) errors.push(`${where}: the colours are off screen`);
+    // the picked colour's ring (6 px) and its shadow (9 px below), beyond its grown, lifted button (1.08 × its size)
+    const grown = (b) => { const u = b.picked ? b.w / 1.08 / 40 : 0; return { x: b.x - 6 * u * 1.08, y: b.y - 6 * u * 1.08, w: b.w + 12 * u * 1.08, h: b.h + 15 * u * 1.08 }; };
+    const within = (b, box) => b.x >= box.x - 0.5 && b.y >= box.y - 0.5 && b.x + b.w <= box.x + box.w + 0.5 && b.y + b.h <= box.y + box.h + 0.5;
+    if (!m.shown.length || m.shown.length > 6) errors.push(`${where}: ${m.shown.length} colours on a page (1 to 6)`);
+    for (const b of m.shown) if (!within(grown(b), m.foot) || !inside(grown(b), W, H)) errors.push(`${where}: a colour is cut off (${JSON.stringify(b)})`);
+    // the picked colour's ring clears its neighbours, the arrows and the tools
+    const p = m.shown.find((b) => b.picked);
+    if (!p) errors.push(`${where}: the picked colour is not on the page`);
+    else for (const o of [...m.shown.filter((b) => b !== p), ...m.tools, ...m.arrows]) if (overlap(grown(p), o)) errors.push(`${where}: the picked colour's ring touches ${o.id ? `the ${o.id}` : 'a colour'}`);
+    // the arrows: both on screen, tappable and apart from everything
+    if (m.arrows.length !== 2) errors.push(`${where}: ${m.arrows.length} arrows for many pages`);
+    for (const a of m.arrows) {
+      if (!inside(a, W, H)) errors.push(`${where}: the ${a.id} arrow is off screen`);
+      if (a.w < MIN_TAP || a.h < MIN_TAP) errors.push(`${where}: the ${a.id} arrow is ${Math.round(a.w)}x${Math.round(a.h)}, under ${MIN_TAP}`);
+      for (const o of [...m.shown, ...m.tools]) if (overlap(a, o)) errors.push(`${where}: the ${a.id} arrow overlaps a ${o.id ? 'tool' : 'colour'}`);
     }
     const file = `tests/out/layout-many-${W}x${H}.png`;
     await p2.screenshot({ path: file, timeout: 120000 });

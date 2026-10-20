@@ -27,9 +27,8 @@ const ICON = {
   lens: svg('M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 1 0 0-6.8', ' fill="none"'),
   check: svg('M5 12.5l4.5 4.5L19 7.5', ' stroke-width="3.6"'),
   next: svg('M5 12h13M12.5 5.5L19 12l-6.5 6.5', ' stroke-width="3.2"'),
-  chev: svg('M9 6l6 6-6 6', ' stroke-width="3.4"'), // Haircut's hint between the next customer and Next
-  up: svg('M6 15l6-6 6 6', ' stroke-width="3.4"'),
-  down: svg('M6 9l6 6 6-6', ' stroke-width="3.4"'),
+  chev: svg('M9 6l6 6-6 6', ' stroke-width="3.4"'), // Haircut's hint between the next customer and Next; the colours' next page
+  back: svg('M15 6l-6 6 6 6', ' stroke-width="3.4"'), // the colours' page before
   redo: svg('M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 4.2v4.6h4.6', ' stroke-width="3"'),
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
   clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2M9.5 2.5h5', ' stroke-width="2.6"'), // Haircut's stopwatch
@@ -37,7 +36,6 @@ const ICON = {
   cloud: svg('M7 18.5h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.5 1.6A3.4 3.4 0 0 0 7 18.5zM4 4l16 16', ' stroke-width="2.4"'),
   oops: svg('M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M12 7.5v6M12 16.6v.4', ' stroke-width="2.8"'),
   gift: svg('M4 10.5h16V21H4zM2.8 7h18.4v3.5H2.8zM12 7v14M12 7c-1.6-4.2-6.2-3.6-5.2-.4M12 7c1.6-4.2 6.2-3.6 5.2-.4', ' stroke-width="2.3"'),
-  star: '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.2 7.3 7.3 2.2-7.3 2.2L12 20.5l-2.2-7.3L2.5 11l7.3-2.2z" fill="#ffe14d" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
 };
 // Haircut's rosette for Done: a scalloped seal
 const SEAL = `<svg class="seal" viewBox="-50 -50 100 100" aria-hidden="true"><polygon points="${Array.from({ length: 32 }, (_, k) => { const a = (k / 32) * 2 * Math.PI, r = k % 2 ? 41 : 48; return `${(r * Math.sin(a)).toFixed(1)},${(-r * Math.cos(a)).toFixed(1)}`; }).join(' ')}"/></svg>`;
@@ -213,154 +211,115 @@ async function main() {
     b.onclick = () => { if (session.state.selection.tool !== id) ui('tool'); session.select(id); };
     toolbar.appendChild(b);
   }
-  let shownSelection = '';
+  // The colours (owner, 19 October 2026: at most six at a time, nothing cut off, on every screen): a tool's colours
+  // six to a page, its newest colours of the day first (the one just earned is on the first page), then its base
+  // colours. With more than six, quiet arrows turn the pages: either side of the row in portrait, a pair below the
+  // two rows of three at the side and on a tall counter. The one with nowhere to go fades out; a finger can also swipe
+  // the page, a mouse drag it or flick its wheel. A tool opens on the page with its picked colour. Nothing scrolls, so no colour is ever
+  // half shown, and there are no badges: the colours alone.
+  const back = $('back'), more = $('more'), root = document.documentElement;
+  back.innerHTML = ICON.back; more.innerHTML = ICON.chev; // (Haircut's chevron, as the hint by Next)
+  let shownSelection = '', list = [], page = 0, perPage = 6;
+  const pages = () => Math.max(1, Math.ceil(list.length / perPage));
+  const swatch = (c, tool, picked) => {
+    const b = document.createElement('button');
+    if (c.shape) { b.className = 'gem'; b.innerHTML = gemSwatch(c); } else b.style.background = swatchBackground(c);
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', c.daily ? `${c.name} (colour of the day)` : c.name);
+    b.setAttribute('aria-checked', String(picked));
+    b.onclick = () => { if (session.state.selection.colour[tool] !== c.id) ui('colour'); session.select(tool, c.id); };
+    return b;
+  };
+  // the page on show, and its arrows
+  const showPage = (dir = 0) => {
+    const s = session.state, tool = s.selection.tool, n = pages();
+    page = Math.min(Math.max(page, 0), n - 1);
+    swatches.replaceChildren(...list.slice(page * perPage, (page + 1) * perPage).map((c) => swatch(c, tool, s.selection.colour[tool] === c.id)));
+    $('colours').classList.toggle('paged', n > 1);
+    back.disabled = page === 0;
+    more.disabled = page === n - 1;
+    // in a portrait row every page is a full page wide, so the arrows stay put (a short last page starts at the left)
+    const row = n > 1 && !root.classList.contains('land') && !root.classList.contains('tall');
+    swatches.style.width = row ? `${perPage * 50 - 2}px` : ''; // 40 px colours 10 px apart, 4 px each side
+    swatches.style.justifyContent = row ? 'flex-start' : '';
+    if (dir) { swatches.style.setProperty('--dir', String(dir)); swatches.classList.remove('turn'); void swatches.offsetWidth; swatches.classList.add('turn'); }
+  };
+  const turn = (to) => {
+    to = Math.min(Math.max(to, 0), pages() - 1);
+    if (to === page) return;
+    const dir = Math.sign(to - page);
+    page = to;
+    ui('page');
+    showPage(dir);
+  };
+  back.onclick = () => turn(page - 1);
+  more.onclick = () => turn(page + 1);
+  // how many colours a page holds: six, or as many as fit between the arrows across a narrow portrait counter
+  const fitPage = () => {
+    let fit = 6;
+    if (!root.classList.contains('land') && !root.classList.contains('tall')) {
+      const foot = $('create'), cs = getComputedStyle(foot), room = foot.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const scale = parseFloat(getComputedStyle(root).getPropertyValue('--s')) || 1;
+      const arrow = root.classList.contains('two') ? 50 : Math.max(34, 30 / scale); // index.html's .pg (30 px on screen at least), 4 px off the row
+      fit = Math.min(6, Math.max(3, Math.floor((room - 2 * (arrow + 4) + 2) / 50))); // 40 px colours 10 px apart, 4 px each side
+    }
+    if (fit === perPage) return false;
+    const first = page * perPage;
+    perPage = fit;
+    page = Math.floor(first / perPage);
+    return true;
+  };
   const renderSwatches = () => {
     const s = session.state, tool = s.selection.tool, key = `${tool}:${s.selection.colour[tool]}:${s.owned.length}`;
     if (key === shownSelection) return;
+    const sameTool = shownSelection.startsWith(`${tool}:`) && shownSelection.endsWith(`:${s.owned.length}`);
     shownSelection = key;
-    swatches.replaceChildren(...coloursFor(tool, s.owned).map((c) => {
-      const b = document.createElement('button');
-      if (c.shape) { b.className = 'gem'; b.innerHTML = gemSwatch(c); } else b.style.background = swatchBackground(c);
-      b.setAttribute('role', 'radio');
-      b.setAttribute('aria-label', c.daily ? `${c.name} (colour of the day)` : c.name);
-      b.setAttribute('aria-checked', String(s.selection.colour[tool] === c.id));
-      if (c.daily) b.insertAdjacentHTML('beforeend', ICON.star);
-      b.onclick = () => { if (session.state.selection.colour[tool] !== c.id) ui('colour'); session.select(tool, c.id); };
-      return b;
-    }));
-    fitPages(); // a page's size depends on how many colours there are (one page needs no arrows)
-    page = Math.max(0, [...swatches.children].findIndex((b) => b.getAttribute('aria-checked') === 'true'));
-    page = perPage ? Math.floor(page / perPage) : 0;
-    paginate();
-    if (!perPage) swatches.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: 'center', inline: 'center' });
-    fades();
+    list = coloursFor(tool, s.owned);
+    fitPage();
+    // a new tool (or a new colour) opens on the page with the picked colour; picking on a page stays on it
+    if (!sameTool) page = Math.floor(Math.max(0, list.findIndex((c) => c.id === s.selection.colour[tool])) / perPage);
+    showPage();
   };
-
-  // The colours at the side turn page by page (owner, 19 October 2026): as many whole rows of three as the column
-  // holds, the arrows shown only when there is more than one page. In portrait they scroll (perPage 0): a finger
-  // swipes the row natively, a mouse wheels or drags it, and its ends fade where more colours wait. Either way no
-  // colour is ever cut: the row is as wide as a whole number of colours (the tall counter's box as high as whole
-  // rows) and comes to rest on a whole colour (scroll snapping; a wheel steps and a drag settles on one).
-  const prev = $('prev'), more = $('more'), colours = $('colours'), root = document.documentElement;
-  prev.innerHTML = ICON.up; more.innerHTML = ICON.down;
-  let page = 0, perPage = 0;
-  const SWATCH = 42, GAP = 9, PAD = 24, ARROWS = 2 * (44 + 4); // the side grid's sizes in index.html, at the UI scale
-  const paginate = () => {
-    const all = [...swatches.children], pages = perPage ? Math.max(1, Math.ceil(all.length / perPage)) : 1;
-    page = Math.min(Math.max(page, 0), pages - 1);
-    all.forEach((b, i) => { b.hidden = !!perPage && Math.floor(i / perPage) !== page; });
-    colours.classList.toggle('paged', pages > 1);
-    // every page keeps a full page's height, so the arrows stay put and a short last page fills from the top
-    const rows = perPage / 3;
-    swatches.style.minHeight = pages > 1 ? `${rows * SWATCH + (rows - 1) * GAP + PAD}px` : '';
-    prev.disabled = page === 0;
-    more.disabled = page === pages - 1;
-  };
-  const turn = (d) => {
-    const pages = perPage ? Math.ceil(swatches.children.length / perPage) : 1;
-    if (page + d < 0 || page + d >= pages) return;
-    page += d;
-    paginate();
-    ui('page');
-    swatches.style.setProperty('--dir', String(d));
-    swatches.classList.remove('turn'); void swatches.offsetWidth; swatches.classList.add('turn');
-  };
-  prev.onclick = () => turn(-1);
-  more.onclick = () => turn(1);
-  // the row's width: a whole number of colours (42 px and a 10 px gap each, 10 px each side, so a colour scrolled
-  // out of the row's end is wholly out), centred on the counter
-  const ROW = 52;
-  const pitch = () => (root.classList.contains('tall') ? 60 : ROW); // a tall counter's rows: 48 px and a 12 px gap
-  const sizeRow = () => {
-    swatches.style.width = '';
-    if (perPage || root.classList.contains('tall')) return;
-    const foot = $('create'), cs = getComputedStyle(foot), room = foot.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 20;
-    const n = Math.max(1, Math.floor((room + 10) / ROW));
-    if (n < swatches.children.length) swatches.style.width = `${n * ROW - 10}px`;
-  };
-  // how many colours a page holds, from the column's height
-  const fitPages = () => {
-    let fit = 0;
-    if (root.classList.contains('land')) {
-      const s = parseFloat(getComputedStyle(root).getPropertyValue('--s')) || 1, foot = $('create'), cs = getComputedStyle(foot);
-      const room = foot.getBoundingClientRect().height / s - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - PAD;
-      const rows = (h) => Math.max(1, Math.floor((h + GAP) / (SWATCH + GAP)));
-      fit = rows(room) * 3 >= swatches.children.length ? rows(room) * 3 : rows(room - ARROWS) * 3;
-    }
-    if (fit !== perPage) {
-      const first = perPage ? page * perPage : 0;
-      perPage = fit;
-      page = perPage ? Math.floor(first / perPage) : 0;
-      if (!perPage) for (const b of swatches.children) b.hidden = false;
-      paginate();
-    }
-    sizeRow();
-  };
-  // the scrolling row's ends fade where it has more to show
-  const fades = () => {
-    const down = root.classList.contains('tall'), at = down ? swatches.scrollTop : swatches.scrollLeft;
-    const end = down ? swatches.scrollHeight - swatches.clientHeight : swatches.scrollWidth - swatches.clientWidth;
-    swatches.style.setProperty('--fs', !perPage && at > 1 ? '18px' : '0px');
-    swatches.style.setProperty('--fe', !perPage && at < end - 1 ? '18px' : '0px');
-  };
-  swatches.addEventListener('scroll', fades, { passive: true });
-  // the counter changed shape (a tall counter, a turn): fit the pages or the row again, the picked colour in view
-  new ResizeObserver(() => {
-    fitPages();
-    const picked = swatches.querySelector('[aria-checked="true"]');
-    if (perPage && picked?.hidden) { page = [...swatches.children].indexOf(picked) / perPage | 0; paginate(); }
-    if (!perPage) picked?.scrollIntoView({ block: 'center', inline: 'center' });
-    fades();
-  }).observe($('create'));
-  // a mouse wheel: steps the row sideways a whole colour at a time, or turns one page per flick at the side (a
-  // trackpad's sideways swipe scrolls the row natively)
-  let wheel = { at: 0, sum: 0, done: false }, step = 0;
-  // (on the counter: #colours has no box of its own in portrait, and a browser only stops its own scrolling for a
-  // wheel listener on a box)
+  // a mouse wheel turns one page per flick
+  let wheel = { at: 0, sum: 0, done: false };
   $('create').addEventListener('wheel', (e) => {
+    if (pages() < 2 || e.target.closest('#toolbar')) return;
+    e.preventDefault();
     const d = (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 400 : 1);
-    if (perPage) {
-      e.preventDefault();
-      if (e.timeStamp - wheel.at > 250) wheel = { at: 0, sum: 0, done: false }; // a new flick
-      wheel.at = e.timeStamp; wheel.sum += d;
-      if (!wheel.done && Math.abs(wheel.sum) >= 30) { wheel.done = true; turn(Math.sign(wheel.sum)); }
-    } else if (!root.classList.contains('tall') && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-      e.preventDefault();
-      step += d;
-      const k = Math.trunc(step / (ROW / 2));
-      if (k) { step = 0; swatches.scrollBy({ left: Math.sign(k) * Math.max(1, Math.round(Math.abs(k) / 2)) * ROW, behavior: 'smooth' }); }
-    }
+    if (e.timeStamp - wheel.at > 250) wheel = { at: 0, sum: 0, done: false }; // a new flick
+    wheel.at = e.timeStamp; wheel.sum += d;
+    if (!wheel.done && Math.abs(wheel.sum) >= 30) { wheel.done = true; turn(page + Math.sign(wheel.sum)); }
   }, { passive: false });
-  // a drag: a mouse drags the row along; at the side a swipe or a drag up or down turns the page. A drag is not a
-  // tap: the colour under it isn't picked
+  // a swipe or a drag on the page turns it (left or up for the next page); it never picks the colour under it
   let drag = null, dragged = false;
   swatches.addEventListener('pointerdown', (e) => {
-    if (!e.isPrimary || e.button !== 0 || (!perPage && e.pointerType === 'touch')) return; // a finger scrolls the row natively
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: swatches.scrollLeft, t: swatches.scrollTop };
+    if (!e.isPrimary || e.button !== 0) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
     dragged = false;
   });
   addEventListener('pointermove', (e) => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const s = parseFloat(getComputedStyle(root).getPropertyValue('--s')) || 1, dx = (e.clientX - drag.x) / s, dy = (e.clientY - drag.y) / s;
-    if (!dragged && Math.hypot(dx, dy) < 8) return;
-    if (!dragged && !perPage) swatches.style.scrollSnapType = 'none'; // dragged freely; it settles on a colour when let go
-    dragged = true;
-    if (!perPage) { if (root.classList.contains('tall')) swatches.scrollTop = drag.t - dy; else swatches.scrollLeft = drag.l - dx; }
+    if (drag && e.pointerId === drag.id && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 10) dragged = true;
   });
   const drop = (e) => {
     if (!drag || e.pointerId !== drag.id) return;
-    const dy = e.clientY - drag.y, dx = e.clientX - drag.x;
-    if (perPage && dragged && e.type === 'pointerup' && Math.abs(dy) > 24 && Math.abs(dy) > Math.abs(dx)) turn(dy < 0 ? 1 : -1);
-    if (!perPage && dragged) {
-      const p = pitch(), down = root.classList.contains('tall');
-      swatches.style.scrollSnapType = '';
-      swatches.scrollTo({ [down ? 'top' : 'left']: Math.round((down ? swatches.scrollTop : swatches.scrollLeft) / p) * p, behavior: 'smooth' });
-    }
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y, d = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+    if (dragged && e.type === 'pointerup' && Math.abs(d) > 24) turn(page + (d < 0 ? 1 : -1));
     drag = null;
   };
   addEventListener('pointerup', drop);
   addEventListener('pointercancel', drop);
   swatches.addEventListener('click', (e) => { if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; } }, true);
+  // the counter changed shape (a turn, a tall counter): fit the page again, keeping the picked colour on it
+  let shape = '';
+  new ResizeObserver(() => {
+    fitPage();
+    const now = `${root.className}:${perPage}`;
+    if (now === shape) return; // (browsing the pages never moves you back)
+    shape = now;
+    const s = session.state, at = list.findIndex((c) => c.id === s.selection.colour[s.selection.tool]);
+    if (at >= 0) page = Math.floor(at / perPage);
+    showPage();
+  }).observe($('create'));
 
   // ---- the next customer's picture (a small second view that only draws faces) ----
   const thumbs = new Map(); // seed -> a copy of the render (a few at a time)
@@ -589,8 +548,6 @@ async function main() {
     placeMirror(); // the canvas may also have moved
     tallCounter();
     placeRedo();
-    fitPages();
-    fades();
   }).observe(stage);
 
   // ---- ready ----

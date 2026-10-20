@@ -96,18 +96,32 @@
     background: linear-gradient(#fffaf6 0 7px, #f4e3d7 7px, #e8d0c0 100%); box-shadow: 0 -10px 18px -10px #6a3a3a55; }
   /* the selected colour rises 4 px, grows 12 % and wears a 6 px ring, about 13 px above its box: the row starts low
      enough that all of it stays clear below the counter's top edge, the line between her and the tools */
-  /* in portrait the colours are one row that scrolls sideways (a finger swipes it, a mouse wheels or drags it),
-     as wide as a whole number of colours (main.js sets its width) and always coming to rest on a whole colour, so
-     none is cut at its ends; its ends fade a little where more colours wait (main.js sets --fs and --fe) */
-  #colours { display: contents; }
-  .pg { display: none; }
-  #swatches { --fs: 0px; --fe: 0px; display: flex; gap: 10px; overflow-x: auto; padding: 17px 10px 10px; margin: 0 auto; justify-content: safe center; scrollbar-width: none;
-    scroll-snap-type: x mandatory; scroll-padding: 0 10px;
-    -webkit-mask-image: linear-gradient(90deg, #0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); mask-image: linear-gradient(90deg, #0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); }
-  #swatches::-webkit-scrollbar { display: none; }
-  #swatches button { scroll-snap-align: start; position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
-  #swatches button[aria-checked="true"] { transform: translateY(-4px) scale(1.12); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
-  #swatches .star { position: absolute; right: -7px; top: -7px; width: 20px; height: 20px; }
+  /* the colours (owner, 19 October 2026: at most six at a time, never cut off): a page of up to six, as one row in
+     portrait between its arrows (two rows of three above them at the side and on a tall counter); main.js turns the
+     pages. Nothing scrolls. The picked colour rises 3 px, grows 8 % and wears a 6 px ring, about 11 px above its box
+     and 8 px beside it: the gaps (10 px in the row, more in the grids) and the row's padding leave it room, so it
+     never touches its neighbours, the arrows or the counter's top edge */
+  #colours { display: grid; grid-template-areas: "back row more"; justify-content: center; align-items: center; }
+  #swatches { grid-area: row; display: flex; gap: 10px; padding: 17px 4px 10px; justify-content: center; box-sizing: border-box; }
+  #swatches, #swatches button { touch-action: none; } /* a swipe turns the page */
+  #swatches button { position: relative; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: var(--outline); box-shadow: 0 3px 0 var(--ink); padding: 0; transition: transform .1s; }
+  #swatches button[aria-checked="true"] { transform: translateY(-3px) scale(1.08); box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ink), 0 6px 0 3px var(--ink); }
+  #swatches.turn { animation: turn .2s ease-out; }
+  @keyframes turn { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 18px)); } }
+  /* the arrows: only when there is more than one page, and quiet beside the colours: a bare chevron in a soft ink,
+     no sticker, no ring, no shadow, on a hit area as tall as a colour; it darkens and nudges its way when pointed at
+     or pressed. At either end the arrow with nowhere to go fades out (its place is kept, so nothing moves) */
+  .pg { display: none; place-items: center; width: max(34px, 30px / var(--s, 1)); height: 42px; margin-top: 7px; padding: 0; border: 0; background: none; color: var(--ink);
+    opacity: .42; touch-action: manipulation; transition: opacity .15s, transform .15s; }
+  .pg svg { width: 18px; height: 18px; }
+  #colours.paged .pg { display: grid; }
+  .pg:disabled { opacity: 0; pointer-events: none; }
+  @media (hover: hover) { .pg:not(:disabled):hover { opacity: .8; } #back:not(:disabled):hover { transform: translateX(-2px); } #more:not(:disabled):hover { transform: translateX(2px); } }
+  .pg:not(:disabled):active { opacity: 1; }
+  .pg:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 15px; }
+  #back { grid-area: back; margin-right: 4px; }
+  #more { grid-area: more; margin-left: 4px; }
+  .two .pg { width: 50px; height: 50px; margin-top: 4px; } /* tiny embeds: drawn small, still a finger's size */
   #toolbar { display: grid; grid-template-columns: repeat(8, 43px); justify-content: center; gap: 4px; padding-top: 4px; }
   #toolbar .ctl { width: 43px; height: 43px; border-radius: 50%; }
   #toolbar .ctl svg { width: 23px; height: 23px; }
@@ -117,19 +131,21 @@
   .two #toolbar .ctl { width: 52px; height: 52px; }
   .two #toolbar .ctl svg { width: 26px; height: 26px; }
   /* a tall counter (tall, narrow screens; main.js sets html.tall): bigger tools in two rows of four, the colours in
-     wrapping rows of bigger swatches that scroll up and down, three whole rows at a time (197 px: 17 + 3 × 48 +
-     2 × 12 + 12), spread over the counter; in review, Retry stands above the Next row */
+     two rows of three bigger swatches, spread over the counter; in review, Retry stands above the Next row */
   .tall #create { display: flex; flex-direction: column; justify-content: space-evenly; }
-  .tall #swatches { flex-wrap: wrap; gap: 12px 10px; max-height: 197px; box-sizing: border-box; overflow: hidden auto; padding: 17px 6px 12px; scroll-snap-type: y mandatory; scroll-padding: 17px 0 12px;
-    -webkit-mask-image: linear-gradient(#0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); mask-image: linear-gradient(#0000, #000 var(--fs), #000 calc(100% - var(--fe)), #0000); }
-  .tall #swatches button { width: 48px; height: 48px; }
+  .tall #swatches { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 18px; padding: 17px 10px 12px; }
+  .tall #swatches button { width: 52px; height: 52px; }
+  .tall #colours, .land #colours { grid-template-areas: "row row" "back more"; }
+  .tall .pg, .land .pg { width: 46px; height: 46px; margin: 0; }
+  .tall #back, .land #back { justify-self: end; margin-right: 6px; }
+  .tall #more, .land #more { justify-self: start; margin-left: 6px; }
   .tall #toolbar { grid-template-columns: repeat(4, 62px); gap: 14px 10px; padding: 0; }
   .tall #toolbar .ctl { width: 62px; height: 62px; }
   .tall #toolbar .ctl svg { width: 30px; height: 30px; }
   html.tall #review { flex-direction: column; justify-content: center; align-items: center; gap: 30px; padding: 6px 8px env(safe-area-inset-bottom); }
   /* a gem's swatch is the gem itself */
   #swatches button.gem { background: var(--panel); display: grid; place-items: center; }
-  #swatches button.gem > svg:not(.star) { width: 30px; height: 30px; overflow: visible; }
+  #swatches button.gem > svg { width: 30px; height: 30px; overflow: visible; }
   #toolbar .ctl[aria-pressed="true"] { background: var(--accent); transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 0 var(--ink); }
   /* review, as Haircut's completion: the top buttons give way. Next is a big arrow at the counter's right edge with
      the next customer docked against it in one cream pill (a chevron nudging between them); Retry for a video sits
@@ -236,7 +252,7 @@
   #retry { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); }
   #retry svg { width: 40px; height: 40px; }
   #error-code { font: 600 11px ui-monospace, monospace; opacity: .5; } /* a diagnostic code, not words for the player */
-  @media (prefers-reduced-motion: reduce) { #cover.wait, .blush::after, .nope, #notice svg, #redo, #review > *, #next .hint, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { #cover.wait, .blush::after, .nope, #notice svg, #redo, #review > *, #next .hint, #panel .card.last, #panel .card.last .art, #done.pop { animation: none; } #fx { display: none; } .ctl, #swatches button, .pg { transition: none; } #swatches.turn { animation: none; } }
   /* landscape: the counter is a column at the side (tools beside a grid of colours); the top buttons sit over the
      scene's corners */
   .land #app { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: minmax(0, 1fr); }
@@ -248,19 +264,9 @@
   .land #create { display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 8px; }
   .land #toolbar { grid-template-columns: repeat(2, 44px); padding: 0; gap: 8px; }
   .land #toolbar .ctl { width: 44px; height: 44px; }
-  /* at the side the colours turn page by page (owner, 19 October 2026): main.js fits as many whole rows as the
-     column holds, and the arrows above and below (or a swipe, a drag or the wheel) turn the page; nothing scrolls,
-     so no colour is ever cut in half and the picked colour's ring has room on every side */
-  .land #colours { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; align-self: stretch; touch-action: none; }
-  .land #colours * { touch-action: none; }
-  .land #colours.paged .pg { display: grid; }
-  .land #colours.paged #swatches { align-content: start; box-sizing: border-box; }
-  .land .pg { flex: none; width: 52px; height: 44px; border-radius: 22px; }
-  .land .pg svg { width: 22px; height: 22px; }
-  .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); gap: 9px; align-content: center; overflow: visible; padding: 14px 10px 10px; -webkit-mask-image: none; mask-image: none; }
-  .land #swatches.turn { animation: turn .22s ease-out; }
-  @keyframes turn { from { opacity: 0; transform: translateY(calc(var(--dir, 1) * 14px)); } }
-  @media (prefers-reduced-motion: reduce) { .land #swatches.turn { animation: none; } }
+  /* at the side: two rows of three, wide enough apart that the picked colour's ring clears the colours round it */
+  .land #colours { justify-content: center; align-content: center; align-self: stretch; }
+  .land #swatches { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 42px); gap: 16px 14px; padding: 17px 6px 12px; }
   .land #review { align-items: flex-end; justify-content: flex-end; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) 14px; }
 </style>
 </head>
@@ -273,7 +279,7 @@
     <button id="done" class="ctl" aria-label="Done"></button>
   </header>
   <main id="stage"><div id="fx" aria-hidden="true"></div><div id="notice" role="status" aria-label="Not saved yet. Retrying." hidden></div></main>
-  <footer id="create"><div id="colours"><button id="prev" class="ctl pg" aria-label="Previous colours"></button><div id="swatches" role="radiogroup" aria-label="Colours"></div><button id="more" class="ctl pg" aria-label="More colours"></button></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
+  <footer id="create"><div id="colours"><button id="back" class="pg" aria-label="Previous colours"></button><div id="swatches" role="radiogroup" aria-label="Colours"></div><button id="more" class="pg" aria-label="More colours"></button></div><div id="toolbar" role="toolbar" aria-label="Makeup tools"></div></footer>
   <footer id="review" hidden>
     <button id="redo" class="ctl round" aria-label="Do this face again: watch a video" hidden></button>
     <button id="next" class="ctl" aria-label="Next customer"><span class="pic"></span><span class="hint"></span><span class="go"></span></button>

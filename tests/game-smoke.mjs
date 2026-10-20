@@ -1,6 +1,6 @@
 // Browser test of the game screen (build/game, the YouTube page) with the test stand-in for the YouTube SDK
 // (tools/fake-ytgame.js, injected here by the test runner in place of https://www.youtube.com/game_api/v1).
-// Covers: readiness signals, many colours paging at the side and scrolling at the bottom, painting with the mouse, Done → review, Next, the interstitial on the
+// Covers: readiness signals, many colours six to a page with arrows, painting with the mouse, Done → review, Next, the interstitial on the
 // second finished look, the colour of the day (refused, then earned and kept), Redo for a video, a host pause,
 // reload restoring everything, a missing SDK and a protected save showing Retry, and the dev page without ads.
 // Usage: node tools/build-game.mjs && node tests/game-smoke.mjs
@@ -193,89 +193,73 @@ try {
     await ctx.close();
   });
 
-  await check('many colours: at the side whole pages turn (arrows, wheel, drag, swipe), none cut off; at the bottom the row scrolls (wheel, drag)', async () => {
+  await check('many colours: six to a page, newest first, never cut off; the arrows, a swipe, a drag and the wheel turn the page', async () => {
     const all = Object.values(DAILY).flat().map((c) => c.id), save = G.serialise({ ...G.newGame(21), owned: all });
-    // the tray: which colours show, where, and whether each is whole inside the counter (with the picked one's ring)
+    const newest = DAILY.lip.at(-1);
+    // the page on show: its colours, and whether each is whole inside the counter (the picked one's ring included)
     const tray = (page) => page.evaluate(() => {
-      const foot = document.getElementById('create').getBoundingClientRect(), sw = document.getElementById('swatches');
-      const shown = [...sw.children].map((b, i) => [b, i]).filter(([b]) => !b.hidden);
-      const whole = shown.every(([b]) => {
-        const r = b.getBoundingClientRect(), ring = b.getAttribute('aria-checked') === 'true' ? 8 * r.width / 47 : 0;
-        return r.left - ring >= foot.left && r.right + ring <= foot.right && r.top - ring >= foot.top && r.bottom + ring <= foot.bottom && r.bottom <= innerHeight && r.right <= innerWidth;
+      const foot = document.getElementById('create').getBoundingClientRect(), sw = [...document.querySelectorAll('#swatches button')];
+      const whole = sw.every((b) => {
+        const r = b.getBoundingClientRect(), ring = b.getAttribute('aria-checked') === 'true' ? 9 * r.width / 43 : 0;
+        return r.left - ring >= foot.left && r.right + ring <= foot.right && r.top - ring >= foot.top && r.bottom + ring <= foot.bottom;
       });
-      return { first: shown[0][1], count: shown.length, total: sw.children.length, whole, scroll: sw.scrollLeft, fe: sw.style.getPropertyValue('--fe'), more: document.getElementById('more').disabled, prev: document.getElementById('prev').disabled, pick: game.session.state.selection.colour.lip };
+      return { names: sw.map((b) => b.getAttribute('aria-label')), whole, arrows: !!document.getElementById('more').offsetParent, pick: game.session.state.selection.colour.lip };
     });
-    // a full-screen computer: the column at the side
-    let { ctx, page } = await open({ save, size: [1920, 1080] });
+    for (const [size, phone] of [[[1920, 1080], false], [[400, 780], false], [[844, 390], true]]) {
+      const { ctx, page } = await open({ save, size, phone });
+      await ready(page);
+      const press = (sel) => page[phone ? 'tap' : 'click'](sel);
+      const where = `${size.join('x')}: `;
+      await press('#toolbar [data-tool="lip"]');
+      let t = await tray(page);
+      assert.ok(t.arrows, where + 'arrows for more than six');
+      assert.equal(t.names.length, 6, where + 'six colours on a page');
+      assert.ok(t.whole, where + 'every colour whole');
+      const pick = t.pick, start = t.names[0];
+      // back to the first page: the newest colour of the day first
+      while (!(await page.isDisabled('#back'))) await press('#back');
+      t = await tray(page);
+      assert.ok(t.names[0].startsWith(newest.name), where + `the newest colour first (${t.names[0]})`);
+      await press('#more');
+      const second = (await tray(page)).names[0];
+      assert.notEqual(second, t.names[0], where + 'the next arrow turns the page');
+      // a swipe or a drag to the left on the colours turns to the next page, and picks no colour
+      const b = await page.locator('#swatches').boundingBox(), y = b.y + b.height / 2;
+      if (phone) {
+        const cdp = await ctx.newCDPSession(page), at = (x) => [{ x, y }];
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(b.x + b.width * 0.8) });
+        for (let k = 1; k <= 6; k++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(b.x + b.width * (0.8 - 0.1 * k)) });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      } else {
+        await page.mouse.move(b.x + b.width * 0.8, y); await page.mouse.down();
+        await page.mouse.move(b.x + b.width * 0.2, y, { steps: 6 }); await page.mouse.up();
+      }
+      t = await tray(page);
+      assert.notEqual(t.names[0], second, where + 'a swipe turns the page');
+      assert.equal(t.pick, pick, where + 'a swipe picks no colour');
+      if (!phone) {
+        await page.mouse.move(b.x + b.width / 2, y);
+        await page.mouse.wheel(0, -120);
+        await page.waitForTimeout(50);
+        await page.mouse.wheel(0, -120); // the same flick: still one page
+        await page.waitForFunction((n) => document.querySelector('#swatches button')?.getAttribute('aria-label') === n, second, { timeout: 3000 }).catch(() => {});
+        assert.equal((await tray(page)).names[0], second, where + 'a wheel flick turns one page');
+      }
+      // the last page: the next arrow fades out
+      while (!(await page.isDisabled('#more'))) await press('#more');
+      t = await tray(page);
+      assert.ok(t.whole && t.names.length >= 1 && t.names.length <= 6, where + 'the last page');
+      // another tool, and back: the page with the picked colour
+      await press('#toolbar [data-tool="brush"]');
+      await press('#toolbar [data-tool="lip"]');
+      assert.equal((await tray(page)).names[0], start, where + 'a tool opens on its picked colour');
+      await ctx.close();
+    }
+    // with only the base colours: one page, no arrows
+    const { ctx, page } = await open({ size: [1920, 1080] });
     await ready(page);
     await page.click('#toolbar [data-tool="lip"]');
-    let t = await tray(page);
-    assert.ok(t.whole, 'every colour on the page is whole');
-    assert.ok(!(await page.isHidden('#more')), 'arrows when there are more pages');
-    const per = t.first % t.count === 0 && t.count % 3 === 0 && t.first + t.count < t.total ? t.count : null;
-    while (!(await page.isDisabled('#prev'))) await page.click('#prev');
-    t = await tray(page);
-    assert.equal(t.first, 0); assert.ok(t.prev, 'the first page');
-    const size = t.count;
-    assert.ok(size % 3 === 0 && size >= 18, `whole rows of three on a page (${size})`);
-    if (per) assert.equal(size, per);
-    await page.click('#more');
-    t = await tray(page);
-    assert.equal(t.first, size, 'the arrow turns one page'); assert.ok(t.whole);
-    const box = await page.locator('#swatches').boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.wheel(0, 120);
-    await page.waitForTimeout(50);
-    await page.mouse.wheel(0, 120); // the same flick: still one page
-    t = await tray(page);
-    assert.equal(t.first, 2 * size, 'a wheel flick turns one page');
-    await page.waitForTimeout(400);
-    // a drag down turns back a page, and picks no colour
-    const pick = t.pick;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 120, { steps: 6 }); await page.mouse.up();
-    t = await tray(page);
-    assert.equal(t.first, size, 'a drag turns a page'); assert.equal(t.pick, pick, 'a drag picks no colour');
-    while (!(await page.isDisabled('#more'))) await page.click('#more');
-    t = await tray(page);
-    assert.ok(t.more && t.whole && t.first + t.count === t.total, 'the last page');
-    await ctx.close();
-    // a phone on its side: a finger swipes the pages
-    ({ ctx, page } = await open({ save, size: [844, 390], phone: true }));
-    await ready(page);
-    await page.tap('#toolbar [data-tool="lip"]');
-    while (!(await page.isDisabled('#prev'))) await page.tap('#prev');
-    t = await tray(page);
-    assert.ok(t.whole, 'whole colours on a phone on its side');
-    const before = t.first, b2 = await page.locator('#swatches').boundingBox(), cdp = await ctx.newCDPSession(page);
-    const at = (y) => [{ x: b2.x + b2.width / 2, y }];
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(b2.y + b2.height * 0.7) });
-    for (let k = 1; k <= 6; k++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(b2.y + b2.height * (0.7 - 0.08 * k)) });
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    t = await tray(page);
-    assert.notEqual(t.first, before, 'a swipe up turns the page');
-    await ctx.close();
-    // a desktop window in portrait: the row at the bottom scrolls with the wheel and a drag
-    ({ ctx, page } = await open({ save, size: [600, 1000] }));
-    await ready(page);
-    await page.click('#toolbar [data-tool="lip"]');
-    await page.evaluate(() => { document.getElementById('swatches').scrollLeft = 0; });
-    await page.waitForTimeout(50);
-    t = await tray(page);
-    assert.ok(!(await page.isVisible('#more')), 'no arrows at the bottom');
-    assert.equal(t.count, t.total, 'every colour in the row');
-    assert.equal(t.fe, '18px', 'the row fades where more colours wait');
-    const b3 = await page.locator('#swatches').boundingBox();
-    await page.mouse.move(b3.x + b3.width / 2, b3.y + b3.height / 2);
-    await page.mouse.wheel(0, 200);
-    await page.waitForFunction(() => document.getElementById('swatches').scrollLeft > 100, null, { timeout: 3000 }).catch(() => {});
-    const { scroll: wheeled, pick: picked } = await tray(page);
-    assert.ok(wheeled > 100, `the wheel scrolls the row (${wheeled})`);
-    await page.mouse.move(b3.x + b3.width * 0.8, b3.y + b3.height / 2); await page.mouse.down();
-    await page.mouse.move(b3.x + b3.width * 0.3, b3.y + b3.height / 2, { steps: 8 }); await page.mouse.up();
-    t = await tray(page);
-    assert.ok(t.scroll > wheeled + 150, `a drag scrolls the row (${wheeled} → ${t.scroll})`);
-    assert.equal(t.pick, picked, 'a drag picks no colour');
+    assert.ok(!(await tray(page)).arrows, 'no arrows for one page');
     await ctx.close();
   });
 

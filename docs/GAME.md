@@ -15,7 +15,7 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 
 | State | What the player sees and can do |
 | --- | --- |
-| Create | The face. Seven tools and the lenses, with the selected tool's colours (earned colours of the day first, marked with a star). **Done** (top right, the size of the daily button), and the daily button (top left). |
+| Create | The face. Seven tools and the lenses, with the selected tool's colours (six at a time: the newest earned colours of the day first, then the base colours). **Done** (top right, the size of the daily button), and the daily button (top left). |
 | The finish | A look that changed the face: the Done seal pops, Haircut's bell chime plays (if the host allows sound), and sparkles burst from the face. Review then rises onto the counter. An untouched Done goes straight to review with a soft tone. |
 | Review | As Haircut's completion. The top buttons give way, leaving the finished look on its own (no before/after button: owner decision, 19 October 2026). Arranged as Haircut's completion: **Next** is a big arrow at the counter's right edge, with a picture of the next customer docked against it in one cream pill and a chevron nudging between them (always free). **Retry** (breathing, with the video badge: the same face again, clean) sits level with it at the left edge, the same size as the Next arrow. In landscape, and on portrait screens too narrow for both (under 348 px at the UI scale), Retry takes the top-left corner at the top buttons' size. |
 | Colour of the day | Minimal: a **product shot** of today's colour (owner's choice, 19 October 2026), one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
@@ -62,17 +62,17 @@ on each screen.
   doesn't move.
 - **Landscape** (wider than 1.15 × tall): the counter becomes a column at the side, with the tools in two columns
   beside a grid of colours, and review stacked. The top buttons sit over the scene's corners.
-- **Many colours (owner, 19 October 2026: no colour may be cut off on any screen).** At the side the colours turn
-  page by page: each page holds as many whole rows of three as the column fits, with an up and a down arrow (shown
-  only when there is more than one page). A mouse wheel flick, a drag or a finger swipe up or down also turns one
-  page, and a drag never picks a colour. Every page keeps a full page's height, so the arrows stay put; switching
-  tools opens the page holding that tool's picked colour. At the bottom the colours scroll: a finger swipes the row,
-  a mouse wheel steps it a whole colour at a time, and a mouse drags it. The row is exactly as wide as a whole
-  number of colours and always comes to rest on one, so no colour is ever cut at its ends. Its ends fade a little
-  where more colours wait, and the picked colour is scrolled to the middle. On a tall counter the colours wrap in
-  rows that scroll up and down, three whole rows at a time. `tests/layout.mjs` checks all of this on all 30 screens
-  with every colour earned (85 lipsticks and glosses), and `tests/game-smoke.mjs` turns the pages and scrolls the
-  row with arrows, wheel, drag and swipe.
+- **Many colours (owner, 19–20 October 2026: no colour cut off on any screen; at most six at a time; the arrows
+  quieter than the colours).** A tool shows its colours six to a page, its newest colours of the day first (the
+  one just earned is on the first page), then its base colours. In portrait the page is one row between two arrows
+  (five or four colours on the narrowest phones, so they never crowd); at the side and on a tall counter it is two
+  rows of three with the pair of arrows below. The arrows are bare chevrons in a soft ink, with no button around
+  them. They darken when pointed at or pressed, and the one with nowhere to go fades out without moving anything.
+  Each has a tap area at least 30 px across on screen. A finger swipe, a mouse drag or a wheel flick also turns
+  one page, and a drag never picks a colour. A tool opens on the page holding its picked colour. Nothing scrolls,
+  and there are no badges on the colours. The picked colour's ring clears its neighbours, the arrows and the
+  counter's edges. `tests/layout.mjs` checks all of this on all 30 screens with every colour earned (85 lipsticks and
+  glosses), and `tests/game-smoke.mjs` turns the pages with the arrows, a swipe, a drag and the wheel.
 - **Narrow, tall screens** (such as 225 × 800 and 320 × 1120): as on phones, her face fills the space above the
   counter. The canvas can be as narrow as 0.4 × its height, a close-up where her face fills the width and her hair
   runs off the sides. Only on screens taller still does the spare height go to the counter, which then holds
