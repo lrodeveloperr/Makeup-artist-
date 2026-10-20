@@ -182,7 +182,13 @@ Building blocks:
   straight down from the widest part of the skull and over the ears instead of hugging it like a cap. Below the
   jaw they fall in front of or behind the shoulders. Two face-framing pieces leave the parting, sweep over the
   corners of the forehead and fall beside the cheeks.
-- **Tubes** for box braids, locs and cornrow braids; a thin **cap** layer for the cornrows on the scalp.
+- **Tubes** for box braids, locs and cornrow braids; a thin **cap** layer for the cornrows on the scalp. Braids
+  and locs grow from the head (owner, 20 October 2026: they must never look tacked on). Each grows from its own
+  section of scalp, in rows from the parting at the top of the head down to the nape. It lies along the head, then
+  falls. The front rows sweep from the parting over the temples and fall beside the face. Braids from higher rows
+  lie over the lower ones. Each braid has its own thickness, length and sway. Under them the scalp's parts are
+  matte and in shadow. Cornrow braids carry on from the cornrows at the back of the head. Most hang down the back,
+  and the side ones come round behind the ears and fall over the shoulders.
 - **Two-pass drawing.** Hair is drawn once for its solid parts (writing depth) and again for its soft fringes
   (blended, not writing depth), so nearly transparent edges never punch see-through holes in the hair behind.
 

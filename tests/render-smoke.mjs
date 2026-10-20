@@ -1,6 +1,6 @@
 // Browser smoke test: renders faces in Chromium (WebGL2) and fails on shader/page errors or a blank canvas, and
 // applies every makeup tool to a face with scripted strokes, the mouse and touch (see paintCheck, nearCheck,
-// lipOrderCheck, touchCheck).
+// lipOrderCheck, lashLineCheck, touchCheck).
 // With --gallery it renders one face of every heritage (each profile and each named blend, plus a second East
 // Asian face to fill the grid) and writes docs/face-gallery.jpg, labelled with the heritage.
 // Usage: node tools/build-preview.mjs && node tests/render-smoke.mjs [--gallery]
@@ -184,6 +184,32 @@ async function lipOrderCheck(page, errors) {
 
 // Touch: one finger paints, at the tool's tip a little above it (as Haircut's clipper); a second finger during the
 // stroke adds nothing; a lens or a gem is aimed at the tip and goes on where the finger lifts.
+// The eye tools as a player uses them: a liner traced along the upper lashes draws one unbroken line on the lid (the
+// pointer slipping onto the eye keeps to the lid's edge), and one mascara sweep through the lashes makes the lashes
+// it touched clearly longer, thicker and darker.
+async function lashLineCheck(page, errors) {
+  const r = await page.evaluate(() => {
+    const v = window.view, a = v.makeup, P = a.picker;
+    const up = v.lashes.lashes.map((l, i) => [l, i]).filter(([l]) => l.eye === 'left' && l.row === 'upper').sort(([l], [m]) => l.s - m.s);
+    const at = (i, t) => { const p = v.lashes.paths[i]; return P.project(p[0].map((c, k) => c + (p[5][k] - c) * t)); };
+    // the liner along the lash roots, from the inner to the outer corner
+    let g = a.begin('liner', 'liner-black');
+    for (const [, i] of up) a.move(g, ...at(i, 0));
+    const liner = a.end(g);
+    // one mascara sweep through the middle of the lashes
+    const before = v.lashes.lashes.map((l) => l.widthMul);
+    g = a.begin('mascara', 'mascara-black');
+    for (const [, i] of up) a.move(g, ...at(i, 0.5));
+    a.end(g);
+    const coated = v.lashes.lashes.filter((l, i) => l.widthMul > before[i]);
+    return { segments: liner?.segments.length ?? 0, points: liner ? liner.segments.flat().length / 3 : 0, upper: up.length, coated: coated.length, width: Math.min(...coated.map((l) => l.widthMul)), length: Math.min(...coated.map((l, i) => l.lengthMul)) };
+  });
+  if (r.segments !== 1 || r.points < 10) errors.push(`a liner along the lashes broke up or barely drew (${r.segments} pieces, ${r.points} points)`);
+  if (r.coated < r.upper * 0.6) errors.push(`one mascara sweep coated ${r.coated} of ${r.upper} upper lashes`);
+  if (!(r.width >= 1.5)) errors.push(`one mascara coat left the lashes too thin (×${r.width})`);
+  console.log(`eye tools: the liner along the lashes is one line of ${r.points} points; one mascara sweep coated ${r.coated} of ${r.upper} upper lashes (each at least ×${r.width.toFixed(2)} thick)`);
+}
+
 async function touchCheck(browser, errors) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
@@ -255,6 +281,7 @@ try {
   await paintCheck(first, errors);
   await nearCheck(first, errors);
   await lipOrderCheck(first, errors);
+  await lashLineCheck(first, errors);
   await first.close();
   await touchCheck(browser, errors);
   await page.goto(gallery

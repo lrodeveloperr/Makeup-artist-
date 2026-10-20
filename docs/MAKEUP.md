@@ -36,7 +36,7 @@ part of every face at any screen size.
 | Detail pencil | Brows, soft eyeliner, fine lines, face art | 1.1 mm radius | Crisp (falloff from 70 % of the radius) | 85 % | 85 / 98 / 100 / 100 % | 0.7 mm |
 | Liquid liner | Crisp liner, wings and flicks, graphic lines | 1.2 mm radius, tapering to 30 % at both ends | Very crisp (from 88 %) | 95 % | 95 / 100 / 100 / 100 % | 0.6 mm |
 | Lip applicator | Lipstick and gloss (anywhere on the face; off-lip marks are allowed) | 3 mm radius | Medium (from 50 %) | 55 % | 55 / 80 / 91 / 98 % | 0.8 mm |
-| Mascara wand | Lashes | Touches lashes within 2.2 mm of its path | – | Each stroke adds one coat to each lash it touches: colour moves 55 % towards the mascara, length +8 % (up to 135 % of natural), thickness +25 % (up to 2×) | – | 1 mm |
+| Mascara wand | Lashes | Touches lashes within 3.2 mm of its path (the width of its brush) | – | Each stroke adds one coat to each lash it touches: colour moves 80 % towards the mascara, length +16 % (up to 150 % of natural), thickness +55 % (up to 2.4×), so one coat shows at a glance (owner, 20 October 2026) | – | 1 mm |
 | Face gems | Rhinestones, drops, hearts, stars, flowers and pearls | One gem per tap, 8–13.5 mm across | – | – | – | One point per gem |
 
 - **Dabs.** A stroke places dabs every 20 % (brush, highlighter), 30 % (pencil), 15 % (liner) or 25 % (lip) of
@@ -70,7 +70,10 @@ part of every face at any screen size.
   they're drawn thinning to the tip. Live painting and replay feed it the same points, so both draw the same dabs.
 - **Where paint goes.** The brush, highlighter, pencil, liner and lip applicator paint any visible skin of the face, ears, neck and
   chest. There are no "correct" regions, so asymmetric and off-lip marks are allowed. The eyeball, the skin under
-  the outfit and empty space take no paint: the pen lifts there and puts down again when the pointer returns.
+  the outfit and empty space take no paint: the pen lifts there and puts down again when the pointer returns. The
+  pencil and the liner, traced along the lashes, keep to the lid's edge where the pointer slips just onto the eye
+  (within 45 % of the eye's radius), so a line along the lash line is one unbroken line; a stroke across the middle
+  of the eye still draws nothing there.
   Strokes pass under hair to the skin. The mascara wand works only on lashes. A wand stroke that touches no lash
   is not stored.
 - **Face gems.** Select a gem and tap the skin: the gem sticks there, facing out from the skin and upright to the

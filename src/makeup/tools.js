@@ -20,7 +20,9 @@ export const TOOLS = {
   // liquid liner: a fine, crisp, opaque line that tapers at both ends (wings and flicks)
   liner: { radius: 0.012, edge: 0.88, spacing: 0.15, pass: 0.95, step: 0.006, taper: { start: 0.02, end: 0.07, min: 0.3 } },
   lip: { radius: 0.03, edge: 0.5, spacing: 0.25, pass: 0.55, step: 0.008 },
-  mascara: { reach: 0.022, coat: 0.55, length: 0.08, lengthMax: 1.35, width: 0.25, widthMax: 2.0, step: 0.01 },
+  // (owner, 20 October 2026: a coat must show at a glance: the wand is as wide as its brush, and one coat takes the
+  // lashes most of the way to the mascara's colour, a sixth longer and half again as thick; a second coat adds more)
+  mascara: { reach: 0.032, coat: 0.8, length: 0.16, lengthMax: 1.5, width: 0.55, widthMax: 2.4, step: 0.01 },
 };
 // tools that paint the skin (the mascara wand works on lashes; face gems are placed one at a time)
 export const SURFACE_TOOLS = new Set(['brush', 'glow', 'pencil', 'liner', 'lip']);

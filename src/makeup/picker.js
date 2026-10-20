@@ -111,6 +111,20 @@ export class Picker {
     return best;
   }
 
+  // The lid's edge nearest a point on an eyeball: the first skin met moving straight out from the eye's centre on
+  // screen, within 45 % of the eye's radius (so a line traced along the lashes hugs the lid, but a stroke across the
+  // middle of the eye finds nothing). Returns a skin hit, or null.
+  lidNear(x, y, eye) {
+    const m = this.eyes.meshes[eye === 'left' ? 0 : 1], c = m.position;
+    const [cx, cy] = this.project(c), [rx, ry] = this.project([c[0] + m.scale[0], c[1], c[2]]);
+    const r = Math.hypot(rx - cx, ry - cy), dx = x - cx, dy = y - cy, l = Math.hypot(dx, dy) || 1;
+    for (let k = 0.5; k <= r * 0.45; k += 0.5) {
+      const h = this.pick(x + (dx / l) * k, y + (dy / l) * k);
+      if (h?.kind === 'skin') return h;
+    }
+    return null;
+  }
+
   // whatever is nearest under the pointer: an eyeball (in the eye opening) or skin
   pick(x, y) {
     const s = this.skin(x, y), e = this.eyeHit(x, y);

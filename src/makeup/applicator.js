@@ -15,6 +15,7 @@ import { colourById } from './palette.js';
 import { hexToLinear, IRIS } from '../face/colors.js';
 
 const STEP_PX = 2; // interpolation step between pointer samples (CSS pixels)
+const LID_TOOLS = new Set(['liner', 'pencil']); // fine lines drawn along the lashes
 
 export class Applicator {
   // view: FaceView (renderer, head geometry, eyes, lashes, camera)
@@ -106,8 +107,10 @@ export class Applicator {
   sample(g, x, y) {
     let q = null;
     if (g.painter) {
-      // the eyeball, skin under the outfit and empty space never take paint
-      const hit = this.picker.pick(x, y);
+      // the eyeball, skin under the outfit and empty space never take paint; the liner and the pencil, traced along
+      // the lashes, keep to the lid's edge where the pointer slips just onto the eye
+      let hit = this.picker.pick(x, y);
+      if (hit?.kind === 'eye' && LID_TOOLS.has(g.tool)) hit = this.picker.lidNear(x, y, hit.eye);
       if (hit?.kind === 'skin' && !this.view.garment?.covers(hit.ref)) q = hit.ref.map(toQ);
     } else {
       const p = this.picker.onPlane(x, y, this.view.lashes.zPlane);

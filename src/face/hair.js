@@ -151,7 +151,7 @@ function shellRadius(frame, sh, theta, y) {
 // it moves either in front of the shoulder (front strands) or behind it (back strands), never into the
 // face or body.
 const SPLIT = 1.85; // strands hanging further back than this fall behind the shoulders
-function drapePath(frame, sh, { theta0, theta1 = theta0, y0, yTurn = y0, length, gap, wave, steps }) {
+function drapePath(frame, sh, { theta0, theta1 = theta0, y0, yTurn = y0, length, gap, wave, steps, lie = gap * 0.3 }) {
   const pts = [];
   const back = Math.cos(theta1) < Math.cos(SPLIT);
   let r = 0;
@@ -168,7 +168,7 @@ function drapePath(frame, sh, { theta0, theta1 = theta0, y0, yTurn = y0, length,
     let theta = sgn * a;
     if (wave) theta += wave.twist * Math.sin(y * wave.freq * 0.5 + wave.phase);
     const head = frame.radius(theta, y) + Math.max(gap, y < -1.05 ? 0.08 : 0);
-    const shell = sh ? shellRadius(frame, sh, theta, y) + gap * 0.3 : 0;
+    const shell = sh ? shellRadius(frame, sh, theta, y) + lie : 0;
     // over the shell the strand follows it; once hanging it only ever moves outwards
     r = Math.max(head, shell, over < 1 ? 0 : r);
     const w = wave ? wave.amp * Math.sin(y * wave.freq + wave.phase) * smooth(0, 0.3, j / steps) : 0;
@@ -401,30 +401,53 @@ export class Hair {
         break;
       }
       case 'box-braids': case 'locs': {
+        // Every braid (or loc) grows from its own box of scalp, in rows from the parting at the top of the head down to
+        // the nape, lies along the head as real ones do, then falls: the front rows sweep from the parting over the
+        // temples and fall beside her face, the rest run down the sides and back. Braids from higher rows lie over
+        // the lower ones. Each has its own thickness, length and sway.
         const braid = h.style === 'box-braids';
-        const sh = skullShell(frame, { top: 0.09, side: 0.1, back: 0.1 });
-        hood(frame, capB, sh.c, sh.R, hl, { seed, bumpy: 0.01, lift: 0.012, rise: 1.0, wideSoft: 0.25, flowAt: fromPart(xPart), groove: partGroove(xPart), pixelMask: true });
-        this.add(capB, braid ? HAIR_MODE.braid : HAIR_MODE.loc, colours, { seed, hairline: hl });
-        const n = braid ? 74 : 56, length = (braid ? 2.8 : 2.65) * len;
-        for (let k = 0; k < n; k++) {
-          const layer = k % 3;
-          const theta = mix(thetaFront - 0.05, 2 * Math.PI - thetaFront + 0.05, (k + rng.next() * 0.6) / n);
-          const ys = 0.5 + rng.range(-0.05, 0.12) - layer * 0.05;
-          const path = drapePath(frame, sh, { theta0: theta, y0: ys, length: length * rng.range(0.9, 1.05), gap: 0.03 + layer * 0.045, wave: { amp: 0.015, freq: 5, twist: 0.015, phase: rng.next() * 6 }, steps: 18 });
-          tube(b, path, braid ? 0.032 : 0.042, 6, braid ? 0.55 : 0.8);
+        const sh = skullShell(frame, { top: 0.05, side: 0.06, back: 0.06 });
+        // under the braids, the scalp's parts and the braids' roots: matte and in shadow
+        hood(frame, capB, sh.c, sh.R, hl, { seed, bumpy: 0.01, lift: 0.004, rise: 1.0, wideSoft: 0.25, flowAt: fromPart(xPart), groove: partGroove(xPart), pixelMask: true });
+        const shade = (c) => c.map((v) => v * 0.45);
+        this.add(capB, braid ? HAIR_MODE.braid : HAIR_MODE.loc, { root: shade(colours.root), mid: shade(colours.mid), tip: shade(colours.tip) }, { seed, hairline: hl, shine: 0.15 });
+        const length = (braid ? 2.8 : 2.65) * len, R0 = braid ? 0.028 : 0.036;
+        const top = frame.top - 0.08, rows = braid ? 8 : 6;
+        for (let row = 0; row < rows; row++) {
+          const f = row / (rows - 1); // 0: at the parting, 1: at the nape
+          const y0 = mix(top, -0.1, f ** 1.2);
+          const n = Math.round((braid ? 24 : 16) * (0.75 + 0.5 * Math.sin(Math.PI * Math.min(f + 0.2, 1))));
+          for (let k = 0; k < n; k++) {
+            // around the head from one side of the parting to the other, the back included
+            const u = (k + 0.5 + rng.range(-0.3, 0.3)) / n, side = u < 0.5 ? 1 : -1, v = side > 0 ? u * 2 : (1 - u) * 2; // v: 0 at the front, 1 at the back
+            // (the front of each row starts at the hairline: at the parting on top, behind the ear at the nape)
+            const theta0 = side * mix(mix(0.12, 1.85, f ** 1.3) + xPart * side * 0.6 * (1 - f), Math.PI, v);
+            // the front of the top rows falls beside her face; further back each braid falls about where it grows
+            const theta1 = side * Math.max(thetaFront + 0.08 + 0.1 * f, mix(Math.abs(theta0), Math.PI, 0.25 * (1 - v)) + rng.range(-0.08, 0.08));
+            const path = drapePath(frame, sh, {
+              theta0, theta1, y0, yTurn: Math.min(y0 - 0.12, mix(0.3, -0.2, f)), length: length * rng.range(0.88, 1.06) - (top - y0) * 0.6,
+              gap: 0.022 + (1 - f) * 0.05, lie: R0 * (1.1 + 1.6 * (1 - f)), wave: { amp: 0.012, freq: 4 + rng.next() * 2, twist: 0.012, phase: rng.next() * 6 }, steps: 48,
+            });
+            tube(b, path, R0 * rng.range(0.85, 1.15), 8, braid ? 0.5 : 0.8);
+          }
         }
         this.add(b, braid ? HAIR_MODE.braid : HAIR_MODE.loc, colours, { seed, shine: braid ? 0.8 : 0.4 });
         break;
       }
       case 'cornrow-braids': {
-        // cornrows running back over the scalp, ending in braids that hang behind and over the shoulders
+        // cornrows running back over the scalp; at the back of the head each row carries on as a braid. Most hang
+        // down her back; the side ones come round behind the ears and fall over her shoulders
         cap(frame, hg, hl, capB, { thick: () => 0.018, flowAt: combedBack, minMask: 0.05, alphaEdge: 0.35 });
         this.add(capB, HAIR_MODE.cornrows, colours, { seed });
-        const n = 26, length = 2.7 * len;
+        const n = 28, length = 2.6 * len;
         for (let k = 0; k < n; k++) {
-          const theta = mix(1.55, 2 * Math.PI - 1.55, (k + rng.next() * 0.5) / n);
-          const path = drapePath(frame, null, { theta0: theta, y0: rng.range(0.0, 0.3), length: length * rng.range(0.92, 1.04), gap: 0.04, wave: { amp: 0.012, freq: 5, twist: 0.01, phase: rng.next() * 6 }, steps: 18 });
-          tube(b, path, 0.03, 6, 0.55);
+          const u = (k + 0.5 + rng.range(-0.25, 0.25)) / n, side = u < 0.5 ? 1 : -1, v = side > 0 ? u * 2 : (1 - u) * 2; // v: 0 at the sides, 1 at the middle of the back
+          const theta0 = side * mix(2.0, Math.PI, v), forward = v < 0.45, w = v / 0.45;
+          const path = drapePath(frame, null, {
+            theta0, theta1: forward ? side * mix(1.45, 2.0, w) : theta0, y0: mix(0.1, -0.25, v) + rng.range(-0.04, 0.04), yTurn: forward ? mix(-0.8, -1.0, w) : undefined,
+            length: length * rng.range(0.9, 1.04), gap: 0.03, wave: { amp: 0.012, freq: 5, twist: 0.01, phase: rng.next() * 6 }, steps: 36,
+          });
+          tube(b, path, 0.034 * rng.range(0.9, 1.1), 8, 0.5);
         }
         this.add(b, HAIR_MODE.braid, colours, { seed, shine: 0.8 });
         break;
