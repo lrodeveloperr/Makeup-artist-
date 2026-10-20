@@ -144,9 +144,12 @@ part of every face at any screen size.
     is up. With a finger wobbling ±3 mm along each feature, every tool now paints on 97–100 % of its samples (the
     cheekbone's highlighter and the brow pencil were refused on up to 60 % before). A straight pencil line across an
     arched brow follows the arch.
-    Along the lashes the liner and the pencil are guided: a finger within about 8 mm of the lashes draws on the lash
-    line itself (`toLashes`: the lid's edge found on screen, then 3.2 mm onto the upper lid, where a line shows just
-    above the lashes, or 1 mm below the lower lashes), so a line drawn roughly along the lashes follows them. While a
+    Along the lashes the liner and the pencil paint where the tool is, anywhere in the lash band (about 8 mm round
+    the eye), up or down, on either eye (owner, 20 October 2026: drawing in the lit band must work there). Only a
+    point too close to the lashes for a line to show is moved out to where it shows (`toLashes`: the lid's edge found
+    on screen, then 3.2 mm onto the upper lid, as seen from the front the lashes hide about three millimetres of lid,
+    or 1 mm below the lower lashes); until then any point in the band was pulled onto the lash line, so a line drawn
+    in the band did not follow the tool. While a
     finger is down, the selected tool's zones light up faintly (`ZoneGlow`), so the rule needs no words. Painting
     redraws only the patch round the stroke; the patch covers where guided or captured paint actually lands, so it
     shows while the finger is still down on any screen.
