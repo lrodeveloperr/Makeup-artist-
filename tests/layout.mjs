@@ -66,6 +66,16 @@ try {
       // the face's edges (cheeks, top of the head) are inside the canvas, so she is never cut off at the sides
       for (const [x, y] of m.faceEdges) if (x < m.canvas.x || x > m.canvas.x + m.canvas.w || y < m.canvas.y) errors.push(`${where}: the face is cut off by the canvas`);
     }
+    // the colour of the day: the card in the exact centre of the screen, at least 16 px clear of every edge
+    if (state === 'daily') {
+      const c = m.controls.find((x) => String(x.id).split(' ').includes('card'));
+      if (!c) errors.push(`${where}: no card`);
+      else {
+        const l = c.x, r = W - c.x - c.w, t = c.y, b = H - c.y - c.h;
+        if (Math.abs(l - r) > 1 || Math.abs(t - b) > 1) errors.push(`${where}: the card is off centre (${l.toFixed(1)} | ${r.toFixed(1)} across, ${t.toFixed(1)} | ${b.toFixed(1)} down)`);
+        if (Math.min(l, r, t, b) < 15.5) errors.push(`${where}: the card is ${Math.min(l, r, t, b).toFixed(1)} px from an edge`);
+      }
+    }
     // she sits in the middle of the salon mirror behind her
     if (Math.abs(m.mirrorOff) > 1) errors.push(`${where}: the mirror is ${Math.round(m.mirrorOff)} px off her centre`);
     // the face stays exactly where it was between making a look and review

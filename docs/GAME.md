@@ -18,7 +18,7 @@ Contract sections: §3 (lifecycle and completion), §5 (daily colour), §7 (ads)
 | Create | The face. Seven tools and the lenses, with the selected tool's colours (six at a time: the newest earned colours of the day first, then the base colours). **Done** (top right, the size of the daily button), and the daily button (top left). |
 | The finish | A look that changed the face: the Done seal pops, Haircut's bell chime plays (if the host allows sound), and sparkles burst from the face. Review then rises onto the counter. An untouched Done goes straight to review with a soft tone. |
 | Review | As Haircut's completion. The top buttons give way, leaving the finished look on its own (no before/after button: owner decision, 19 October 2026). Arranged as Haircut's completion: **Next** is a big arrow at the counter's right edge, with a picture of the next customer docked against it in one cream pill and a chevron nudging between them (always free). **Retry** (breathing, with the video badge: the same face again, clean) sits level with it at the left edge, the same size as the Next arrow. In landscape, and on portrait screens too narrow for both (under 348 px at the UI scale), Retry takes the top-left corner at the top buttons' size. |
-| Colour of the day | Minimal: a **product shot** of today's colour (owner's choice, 19 October 2026), one big button (the video badge; a green tick once earned) and the time left. Once earned the colour is already selected. |
+| Colour of the day | **The gift** (owner's choice, 20 October 2026): a gift box tied in today's colour, one big button showing the deal (the video badge → the **product shot** of today's colour), and a clock that ticks until the box is opened. After the video the box opens on the colour, with a sound and confetti, and the button becomes an arrow back to the game with the colour already selected. |
 | Loading / Retry | A loading cover until the face is on screen (owner's choice, 19 October 2026): a blush compact, textless and sized like the controls on every screen, whose pan fills with the face's download where the game can measure it, and otherwise fills and empties in a loop; it completes and fades into the game as it starts, never adding a delay. A missing SDK, a failed load, or a save that isn't this game's stops at **Retry**, and the save is never overwritten. |
 
 **Look: Blush Studio, textless (owner's choice, 19 October 2026).** The controls are Haircut's, recoloured:
@@ -36,17 +36,20 @@ same lights in the same places. Create and review keep the same counter
 height, so the face never moves.
 
 Nothing on screen is a word:
-- The colour of the day shows the product in that colour, drawn to look real (`game/reward.js`): a lipstick, an
-  open compact with its brush, a baked highlighter with its fan brush and a swatch, a sharpened pencil with the
-  line it draws, a liquid liner and its wing, a mascara and its wand, the face gem itself, or an eye wearing the
-  lens. Gloss adds a wet highlight, shimmer adds sparkle. Below it are a video button (a tick once
-  earned) and the time left in numbers.
-- The countdown is Haircut's daily-pick clock:
-  - a ring around the picture that drains anticlockwise with the day, green, then orange from 6 hours left, then
-    red from 2 hours, ending as a red dot
-  - a stopwatch pill in the same colour
-  - in the last ten minutes the card glows red and the picture beats
-  - once the colour is taken the ring goes
+- The colour of the day is a gift (owner's choice, 20 October 2026):
+  - a cream gift box tied with a ribbon and bow in today's colour, in slowly turning light rays; now and then the
+    lid lifts a little and light leaks out. A green ∞ seal says it is kept for good.
+  - the product appears once, on the button, drawn to look real (`game/reward.js`): a lipstick, an open compact
+    with its brush, a baked highlighter with its fan brush and a swatch, a sharpened pencil with the line it draws,
+    a liquid liner and its wing, a mascara and its wand, the face gem itself, or an eye wearing the lens. Gloss adds
+    a wet highlight, shimmer adds sparkle. The button reads video badge → arrow → product: one video for this.
+  - the clock is a stopwatch tag hanging off the bow. From the moment the card opens it ticks and tocks every
+    second: the tag swings, its hand moves, and a soft tick sounds. Its colour is Haircut's daily-pick clock: green,
+    orange from 6 hours left, red from 2 hours. In the last ten minutes the card glows red and the box beats.
+  - after the video the box shakes, the lid flies off with a rustle and a pop, and the product rises out of the box
+    in a flash, with confetti over the whole screen and a sparkling chime. The clock stops, then swings away.
+  - the button becomes a green arrow. It closes the card, and the colour is already selected in its tray, like
+    any other. Opened again the same day, the card shows the open box with the product and the arrow.
 - An unsaved state is a cloud icon.
 - The error screen is a warning icon and a Retry arrow, with a small diagnostic code.
 
@@ -79,7 +82,11 @@ on each screen.
   bigger tools in two rows of four, the colours in wrapping rows of bigger swatches, and in review Retry above
   the Next row (the same size as the Next arrow). Create and review keep the same counter, so her face doesn't
   move.
-- **The daily pop-up** shrinks below the scale when the screen is too short for it.
+- **The daily pop-up** (owner, 20 October 2026: perfectly placed on every screen) is designed at 290 × 400 and scaled
+  as one piece: at the UI scale, shrunk only to keep 16 px clear of every edge of the safe area. It sits in the
+  exact centre of the safe area, and its close button is inside the card, so the card's outline is the whole
+  pop-up. `tests/layout.mjs` checks on all 30 screens that the margins on opposite sides are equal (within a
+  pixel) and at least 16 px.
 - **The mirror** follows her head (`placeMirror` in `game/main.js`), never the screen's percentages.
 - **Making a look and review** keep the same counter, so the face doesn't move.
 - **`npm run test:layout`** (`tests/layout.mjs`) runs Haircut's 30-viewport matrix, from 225×400 to 3840×1080,

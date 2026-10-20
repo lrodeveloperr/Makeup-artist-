@@ -107,7 +107,12 @@ try {
     assert.deepEqual(s.owned, [colour]);
     assert.equal(s.selection.colour[s.selection.tool], colour);
     assert.equal(await words(page), '', 'no words once the colour is earned');
-    await page.click('#panel .get'); // the tick: use it now
+    // the gift opens: the clock stops, then the arrow takes the player back with the colour selected
+    await page.waitForSelector('#panel .get.owned', { timeout: 5000 });
+    const stopped = await page.textContent('#panel .time');
+    await page.waitForTimeout(1300);
+    assert.equal(await page.textContent('#panel .time'), stopped, 'the clock stops once the gift is opened');
+    await page.click('#panel .get'); // continue
     assert.ok(await page.isHidden('#panel'));
     assert.equal(await page.getAttribute('#swatches button:first-child', 'aria-checked'), 'true', 'the new colour leads its row, selected');
     assert.equal(tool, s.selection.tool);
@@ -142,8 +147,8 @@ try {
     await page.click('#daily');
     await page.click('#panel .get'); // the test SDK completes the video
     await page.waitForFunction((n) => game.session.state.owned.length === n, all.length);
-    assert.ok(await page.isVisible('#panel .get.owned'), 'the card shows the tick');
-    await page.click('#panel .get'); // "use it now" closes the card
+    await page.waitForSelector('#panel .get.owned', { timeout: 5000 }); // the box opens, then the arrow
+    await page.click('#panel .get'); // continue closes the card
     assert.ok(await page.isHidden('#daily'), 'the last colour earned: no daily button');
     await ctx.close();
     // a save that already has every colour: no daily button from the start

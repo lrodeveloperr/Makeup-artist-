@@ -32,6 +32,9 @@ const ICON = {
   redo: svg('M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 4.2v4.6h4.6', ' stroke-width="3"'),
   video: svg('M3.5 5.5h17v11h-17zM10.2 8.6v5.2l4.4-2.6zM8 20h8', ' stroke-width="2.4"'),
   clock: svg('M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M12 8.5V13l3 2M9.5 2.5h5', ' stroke-width="2.6"'), // Haircut's stopwatch
+  // the gift's clock: a stopwatch whose hand the second ticks round
+  watch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17M9.5 2.5h5"/><path class="hand" d="M12 13V8.2"/></svg>',
+  forever: svg('M7 8.5c-2.2 0-3.8 1.6-3.8 3.5S4.8 15.5 7 15.5c3 0 7-7 10-7 2.2 0 3.8 1.6 3.8 3.5s-1.6 3.5-3.8 3.5c-3 0-7-7-10-7z', ' stroke-width="2.8"'),
   close: svg('M6.5 6.5l11 11M17.5 6.5l-11 11', ' stroke-width="3.2"'),
   cloud: svg('M7 18.5h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.5 1.6A3.4 3.4 0 0 0 7 18.5zM4 4l16 16', ' stroke-width="2.4"'),
   oops: svg('M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M12 7.5v6M12 16.6v.4', ' stroke-width="2.8"'),
@@ -411,67 +414,115 @@ async function main() {
   };
   const nope = (el) => { el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); ui('nope'); };
 
-  // ---- the colour of the day ----
-  const daily = $('daily'), panel = $('panel'), card = panel.querySelector('.card');
+  // ---- the colour of the day: the gift (owner's choice, 20 October 2026) ----
+  // A gift box tied in today's colour; the product only on the button (one video for this colour). The clock ticks
+  // every second until the box is opened. After the video: a shake, the lid flies off, the colour rises out in a
+  // flash with confetti over the whole screen and the unwrap sound; the clock stops, and the button becomes an arrow
+  // back to the game, the colour already selected in its tray.
+  const daily = $('daily'), panel = $('panel'), card = panel.querySelector('.card'), confetti = panel.querySelector('.burst');
   daily.innerHTML = `${ICON.gift}<span class="dot" hidden></span>`;
   card.querySelector('.x').innerHTML = ICON.close;
-  let panelTimer = 0;
-  const RING_C = 2 * Math.PI * 62;
-  const RING = '<svg class="ring" viewBox="0 0 140 140" aria-hidden="true"><circle class="trk" cx="70" cy="70" r="62"/><g transform="rotate(-90 70 70) translate(0 140) scale(1 -1)"><circle class="arc out" cx="70" cy="70" r="62"/><circle class="arc col" cx="70" cy="70" r="62"/></g></svg>';
-  // minimal: the product in today's colour; one button (a video, or a tick once it is yours); the time left
+  let panelTimer = 0, beat = 0, revealing = false;
+  const art = card.querySelector('.art'), get = card.querySelector('.get'), time = card.querySelector('.time');
   const renderPanel = () => {
     const s = session.state, pick = s.pick, c = pick && colourById(pick.colour), owned = !!c && s.owned.includes(c.id);
-    const t = timeLeft(), art = card.querySelector('.art'), get = card.querySelector('.get'), time = card.querySelector('.time');
-    if (art.dataset.colour !== `${c?.id}:${owned}`) {
-      art.dataset.colour = `${c?.id}:${owned}`;
-      art.innerHTML = `${c && !owned ? RING : ''}${c ? `<span class="pic">${productShot(c)}</span>` : ''}${owned || !c ? `<span class="tick">${ICON.check}</span>` : ''}`;
+    const t = timeLeft(), won = owned && !revealing;
+    if (art.dataset.colour !== c?.id) {
+      art.dataset.colour = c?.id || '';
+      card.style.setProperty('--ribbon', c?.hex || '#ff7aa8');
+      art.innerHTML = `<div class="rays"></div><div class="box"><div class="base"></div><div class="seep"></div><div class="lid"><div class="bow"><i></i></div></div><div class="prize">${c ? productShot(c) : ''}</div></div><span class="forever">${ICON.forever}</span>`;
     }
-    // the countdown, as Haircut's: what is left of the day as an arc emptying anticlockwise towards the top
-    const live = !!c && !owned, len = Math.max(t.frac * RING_C, t.frac > 0 ? 4 : 0);
-    for (const a of art.querySelectorAll('.ring .arc')) a.setAttribute('stroke-dasharray', `${len.toFixed(1)} ${RING_C.toFixed(1)}`);
+    // an opened box stays open (also when the card is opened again later the same day)
+    card.classList.toggle('rest', owned && !card.classList.contains('unwrap'));
+    const live = !!c && !owned;
     for (const l of ['g', 'o', 'r']) { card.classList.toggle(l, live && t.level === l); time.classList.toggle(l, live && t.level === l); }
     card.classList.toggle('last', live && t.last);
-    art.setAttribute('aria-label', c ? `${TOOL_NAME[c.target]} in ${c.name}` : 'You have every colour');
+    art.setAttribute('aria-label', c ? `A gift: ${TOOL_NAME[c.target]} in ${c.name}, yours for good` : 'You have every colour');
     get.hidden = !c;
-    get.disabled = session.busy; // once owned it is a tick that closes the panel (the colour is already selected)
-    get.classList.toggle('owned', owned);
-    get.innerHTML = owned ? ICON.check : `<span class="vb">${ICON.video}</span>`;
-    get.setAttribute('aria-label', owned ? 'Yours. Use it now' : 'Watch one video to keep this colour for good');
-    time.hidden = !c;
-    time.innerHTML = `${ICON.clock} ${t.text}`;
-    time.setAttribute('aria-label', `${owned ? 'Next colour in' : 'Ends in'} ${t.text}`);
+    get.disabled = session.busy || revealing;
+    get.classList.toggle('owned', won);
+    const face = won ? 'next' : `buy:${c?.id}`;
+    if (get.dataset.face !== face) {
+      get.dataset.face = face;
+      get.innerHTML = won ? ICON.next : `<span class="vb">${ICON.video}</span>${ICON.next}<span class="prz">${c ? productShot(c) : ''}</span>`;
+    }
+    get.setAttribute('aria-label', won ? 'Continue: the colour is ready to use' : `Watch one video to keep ${c ? `${TOOL_NAME[c.target]} in ${c.name}` : 'this colour'} for good`);
+    // the clock: only while the colour waits (it stops once the box is opened, and stays away after)
+    time.hidden = !c || (owned && !revealing && !card.classList.contains('unwrap'));
+    if (live) {
+      time.innerHTML = `${ICON.watch} ${t.text}`;
+      time.querySelector('.hand').style.transform = `rotate(${(beat % 60) * 6}deg)`;
+      time.setAttribute('aria-label', `Ends in ${t.text}`);
+    }
   };
+  // every second while the colour waits: the tag swings, the hand moves, the clock ticks and tocks
+  const clockTick = () => {
+    if (paused) return;
+    session.refreshDaily();
+    const s = session.state, live = !!s.pick && !s.owned.includes(s.pick.colour) && !revealing;
+    if (live) { beat++; time.classList.toggle('tick', beat % 2 === 1); time.classList.toggle('tock', beat % 2 === 0); ui(beat % 2 ? 'tick' : 'tock'); }
+    else time.classList.remove('tick', 'tock');
+    renderPanel(); // midnight brings the next colour
+  };
+  // the card: designed at 290 × 400 and scaled as one piece, at the UI scale, shrunk only to keep 16 px clear of
+  // every edge of the safe area; the panel centres it there
+  const CARD = [290, 400], EDGE = 16;
+  const fitCard = () => {
+    if (!panelOpen) return;
+    const cs = getComputedStyle(panel), s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')) || 1;
+    const w = panel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), h = panel.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    card.style.zoom = Math.min(s, (w - 2 * EDGE) / CARD[0], (h - 2 * EDGE) / CARD[1]).toFixed(4);
+  };
+  addEventListener('resize', fitCard);
   const openPanel = () => {
     input.interrupt();
     ui('panel');
     session.refreshDaily(); session.openedDaily();
+    card.classList.remove('unwrap', 'shake');
+    confetti.replaceChildren();
     panelOpen = true; panel.hidden = false;
+    beat = 0; time.classList.remove('tick', 'tock');
     renderPanel();
-    clearInterval(panelTimer);
-    panelTimer = setInterval(() => { if (!paused) { session.refreshDaily(); renderPanel(); } }, 1000); // midnight brings the next colour
     fitCard();
-    card.querySelector('.get').focus();
+    clearInterval(panelTimer);
+    panelTimer = setInterval(clockTick, 1000);
+    get.focus();
   };
-  // the card shrinks below the UI scale when the screen is too short for it
-  const fitCard = () => {
-    if (!panelOpen) return;
-    card.style.zoom = '';
-    const h = card.getBoundingClientRect().height, room = innerHeight - 28;
-    if (h > room) card.style.zoom = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')) * room / h).toFixed(3);
-  };
-  addEventListener('resize', fitCard);
   // (once the last colour is earned the daily button goes away: focus moves to Done)
-  const closePanel = () => { panelOpen = false; panel.hidden = true; clearInterval(panelTimer); render(); (daily.hidden ? $('done') : daily).focus(); };
+  const closePanel = () => {
+    if (revealing) return;
+    panelOpen = false; panel.hidden = true; clearInterval(panelTimer);
+    card.classList.remove('unwrap', 'shake'); confetti.replaceChildren();
+    render(); (daily.hidden ? $('done') : daily).focus();
+  };
+  // confetti in today's colour, gold and pink, from the box over the whole screen, after a flash
+  const celebrate = () => {
+    const r = card.querySelector('.box').getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * 0.3, W = innerWidth, H = innerHeight;
+    const c = colourById(session.state.pick?.colour), cols = [c?.hex || '#ff7aa8', '#ffd23f', '#ff7aa8', '#fff6e6', '#5ccf72', '#e7b85a', c?.hex || '#c8122c'];
+    const bits = [document.createElement('b')];
+    for (let k = 0; k < 80; k++) {
+      const i = document.createElement('i'), a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.6, d = (0.35 + Math.random() * 0.6) * Math.max(W, H) * 0.6;
+      i.style.cssText = `--x:${x}px;--y:${y}px;--s:${7 + Math.random() * 9}px;--c:${cols[k % cols.length]};--r:${k % 3 ? '3px' : '50%'};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d + H * 0.45}px;--rot:${Math.random() * 720}deg;--t:${1.2 + Math.random() * 0.9}s`;
+      bits.push(i);
+    }
+    confetti.replaceChildren(...bits);
+    setTimeout(() => confetti.replaceChildren(), 2400);
+  };
   daily.onclick = openPanel;
   card.querySelector('.x').onclick = closePanel;
   panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && panelOpen) closePanel(); });
-  card.querySelector('.get').onclick = async () => {
-    const get = card.querySelector('.get');
-    if (session.state.owned.includes(session.state.pick?.colour)) { closePanel(); return; } // "use it now": it is selected
+  get.onclick = async () => {
+    if (session.state.owned.includes(session.state.pick?.colour)) { closePanel(); return; } // continue: it is selected
     const p = session.reward('daily');
     renderPanel();
-    if (await p) ui('reward'); else nope(get);
+    if (await p) {
+      // the reveal: shake, the lid off, the colour up, the flash and confetti; then the arrow
+      revealing = true; time.classList.remove('tick', 'tock'); renderPanel();
+      card.classList.add('shake'); ui('unwrap');
+      setTimeout(() => { card.classList.remove('shake'); card.classList.add('unwrap'); celebrate(); }, 420);
+      setTimeout(() => { revealing = false; renderPanel(); get.focus(); }, 1500); // (the stopped clock has gone)
+    } else nope(get);
     render();
   };
 

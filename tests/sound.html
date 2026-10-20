@@ -34,7 +34,7 @@ const TAKES = {
   },
   gems(t) { ['gem-crystal', 'gem-aurora', 'gem-pearl', 'gem-gold-star'].forEach((id, k) => S.tap('gem', colourById(id), t + k * 0.7)); return { end: t + 2.9 }; },
   lens(t) { S.tap('lens', null, t); S.tap('lens', null, t + 0.6); return { end: t + 1.1 }; },
-  controls(t) { S.ui('tool', t); S.ui('colour', t + 0.5); S.ui('panel', t + 1); S.ui('next', t + 1.5); S.ui('reward', t + 2.3); S.ui('nope', t + 3.4); return { end: t + 3.8 }; },
+  controls(t) { S.ui('tool', t); S.ui('colour', t + 0.5); S.ui('panel', t + 1); S.ui('next', t + 1.5); S.ui('tick', t + 2.1); S.ui('tock', t + 2.4); S.ui('unwrap', t + 2.8); S.ui('nope', t + 5.2); return { end: t + 5.6 }; },
   finish(t) { S.chime(true, t); return { end: t + 2 }; },
 };
 window.render = async (name, tool, colour) => {

@@ -82,6 +82,16 @@ function grain(c, t, { f, q = 1.5, dur = 0.006, gain = 0.1, pink = false, type =
   s.start(t, Math.random() * 1.5);
   s.stop(t + dur + 0.01);
 }
+// paper: filtered noise whose pitch sweeps up as it rustles
+function rustle(c, t, f0, f1, dur, gain) {
+  noise(c);
+  const s = c.createBufferSource(), bq = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = sfx.white; bq.type = 'bandpass'; bq.Q.value = 0.9;
+  bq.frequency.setValueAtTime(f0, t); bq.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(bq).connect(g).connect(bus || sfx.out);
+  s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.02);
+}
 // a pure tone that rings and fades (glints, crystal, metal)
 function ping(c, t, f, gain, decay, type = 'sine') {
   const o = c.createOscillator(), g = c.createGain();
@@ -292,8 +302,8 @@ export function tap(kind, colour, at) {
   s.start(at ?? c.currentTime + 0.005);
 }
 
-// The controls: picking up a tool, tapping a colour, turning the colours' page, the daily card opening, the next customer sitting down, a
-// reward, a refusal.
+// The controls: picking up a tool, tapping a colour, turning the colours' page, the daily card opening, its clock
+// ticking, the gift opening, the next customer sitting down, a refusal.
 export function ui(kind, at) {
   const c = live();
   if (!c) return;
@@ -304,6 +314,17 @@ function uiSound(c, kind, at) {
   const t = at ?? c.currentTime + 0.005;
   if (kind === 'tool') { grain(c, t, { f: 1900, q: 1.2, dur: 0.016, gain: 0.2 }); glide(c, t, 170, 95, 0.12, 0.05); }
   else if (kind === 'page') grain(c, t, { f: 2200, q: 1.5, dur: 0.012, gain: 0.1 }); // the colours' page turning
+  // the gift's clock: a soft tick, then a lower tock
+  else if (kind === 'tick' || kind === 'tock') { const tock = kind === 'tock'; grain(c, t, { f: tock ? 1900 : 2600, q: 6, dur: 0.035, gain: 0.05 }); ping(c, t, tock ? 1150 : 1500, 0.02, 0.04, 'triangle'); }
+  else if (kind === 'unwrap') {
+    // the gift opening: a rustle of paper, a pop as the lid comes off, then a sparkling chime that settles on a
+    // warm chord
+    rustle(c, t, 900, 4200, 0.32, 0.12); rustle(c, t + 0.12, 2400, 5200, 0.22, 0.07);
+    glide(c, t + 0.42, 200, 70, 0.2, 0.16); grain(c, t + 0.42, { f: 1100, q: 0.7, dur: 0.05, gain: 0.1 });
+    [1046.5, 1318.5, 1568, 2093, 2637, 3136].forEach((f, k) => { ping(c, t + 0.5 + k * 0.055, f, 0.055, 0.55); ping(c, t + 0.5 + k * 0.055, f * 2.76, 0.012, 0.25); });
+    [523.25, 659.25, 783.99, 1046.5].forEach((f) => { ping(c, t + 0.86, f, 0.035, 1.6); ping(c, t + 0.86, f * 2, 0.009, 1.0); });
+    for (let k = 0; k < 10; k++) ping(c, t + 0.6 + Math.random() * 0.8, 3000 + Math.random() * 3000, 0.025, 0.12);
+  }
   else if (kind === 'colour') { grain(c, t, { f: 2600, q: 2, dur: 0.009, gain: 0.12 }); ping(c, t, 1320, 0.025, 0.06); }
   else if (kind === 'panel') { glide(c, t, 320, 640, 0.07, 0.07); grain(c, t, { f: 1500, q: 1, dur: 0.01, gain: 0.08 }); }
   else if (kind === 'next') {
@@ -315,10 +336,6 @@ function uiSound(c, kind, at) {
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.16); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
     s.connect(bq).connect(g).connect(bus || sfx.out);
     s.start(t, Math.random()); s.stop(t + 0.45);
-  } else if (kind === 'reward') {
-    // a rising sparkle
-    for (let k = 0; k < 8; k++) ping(c, t + k * 0.045, 2000 * 1.16 ** k * (0.97 + Math.random() * 0.06), 0.03, 0.18);
-    ping(c, t + 0.38, 1568, 0.06, 0.6); ping(c, t + 0.38, 2093, 0.04, 0.6);
   } else if (kind === 'nope') glide(c, t, 160, 115, 0.13, 0.1);
 }
 
