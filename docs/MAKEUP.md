@@ -111,7 +111,8 @@ complexion and matches every natural hair and eye colour in the game (`src/makeu
 - pencil 5: black, espresso, brown, auburn, blonde
 - liquid liner 2: black, brown
 - mascara 2: black, brown
-- lip 6: nude, rose, pink, red, berry, brown
+- lip 7: nude, rose, pink, red, berry, brown, and a clear gloss (owner, 20 October 2026: every player can try gloss
+  over a lipstick from the start; the tinted, shimmer and glitter glosses are colours of the day)
 - face gems 4: crystal, pearl, gold star, pink heart
 - lenses 5: brown, hazel, green, blue, grey
 

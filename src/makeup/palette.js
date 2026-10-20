@@ -58,6 +58,9 @@ export const PALETTE = {
     c('lip-pink', 'Pink', '#e46d97'),
     c('lip-red', 'Red', '#b8202e'),
     c('lip-berry', 'Berry', '#8c2346'),
+    // a clear gloss from the start, so every player can try gloss over a lipstick (owner, 20 October 2026); the
+    // tinted, shimmer and glitter glosses are colours of the day. (On the first page of six.)
+    c('lip-clear-gloss', 'Clear gloss', '#f3d4cf', GLOSS(0)),
     c('lip-brown', 'Brown', '#7a4436'),
   ],
   // face gems: a shape (gems.js) in a material (glass, iris: iridescent glass, pearl, metal), one per tap
@@ -336,7 +339,7 @@ export const DAILY = {
     c('lip-white', 'White', '#f4efe9'),
     c('lip-black', 'Black', '#1a1416'),
     // glosses
-    c('lip-clear-gloss', 'Clear gloss', '#f3d4cf', GLOSS(0)),
+    c('lip-peach-gloss', 'Peach gloss', '#ffc9b0', GLOSS(0.4)),
     c('lip-nude-gloss', 'Nude gloss', '#d9a08e', GLOSS(0.4)),
     c('lip-rose-gloss', 'Rose gloss', '#d9748a', GLOSS(0.5)),
     c('lip-pink-gloss', 'Pink gloss', '#ef8fab', GLOSS(0.5)),

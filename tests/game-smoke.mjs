@@ -255,11 +255,13 @@ try {
       assert.equal((await tray(page)).names[0], start, where + 'a tool opens on its picked colour');
       await ctx.close();
     }
-    // with only the base colours: one page, no arrows
+    // with only the base colours: the brush's six on one page, no arrows; the lip's clear gloss on its first page
     const { ctx, page } = await open({ size: [1920, 1080] });
     await ready(page);
-    await page.click('#toolbar [data-tool="lip"]');
+    await page.click('#toolbar [data-tool="brush"]');
     assert.ok(!(await tray(page)).arrows, 'no arrows for one page');
+    await page.click('#toolbar [data-tool="lip"]');
+    assert.ok((await page.locator('#swatches [aria-label="Clear gloss"]').count()) === 1, 'the clear gloss on the lip\'s first page');
     await ctx.close();
   });
 
