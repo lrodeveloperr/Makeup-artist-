@@ -103,9 +103,9 @@ part of every face at any screen size.
     thumb, not too high). As an offset cursor (Potter, Weldon and Shneiderman, 1988; Vogel and Baudisch's Shift,
     2007, which notes that a fixed offset costs speed and reach, so it is kept as small as clears the finger): the
     reported touch point is the middle of the contact, the fingertip reaches about half the contact's height above
-    it, so the tip sits at half the contact's height plus 30 px (about 5 mm on a phone: the nail and a small gap),
-    from 54 px (a forefinger, about 9 mm) to 72 px (a thumb, about 11.5 mm), 58 px where the device gives no contact
-    size, and at most 16 % of the face's height in a tiny embed. (It was 72 px, then 44 px when paint landed away from the finger; the zones below
+    it, so the tip sits at half the contact's height plus 25 px (about 4 mm on a phone: the nail and a small gap),
+    from 48 px (a forefinger, about 8 mm: the owner found 44 px too low and 54 px too high) to 66 px (a thumb, about
+    10.5 mm), 51 px where the device gives no contact size, and at most 16 % of the face's height in a tiny embed. (It was 72 px, then 44 px when paint landed away from the finger; the zones below
     now keep the paint where it belongs, so the tool can stand clear of the finger again.) Its handle runs down to
     the finger, while the finger is down. Strokes paint at the tip from the moment the finger drags; a touch that
     lifts without sliding leaves one dab. A gem or a lens shows at the tip from the touch and goes on where the

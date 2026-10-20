@@ -177,7 +177,7 @@ try {
     const [x, y, tip, fx, fy, mx, my] = await page.evaluate(() => {
       const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, P = v.makeup.picker;
       const [px, py] = P.project([L[0] + 0.12, L[1] - 0.36, L[2]]), [hx, hy] = P.project([0, L[1] + 0.45, L[2] + 0.2]), [ux, uy] = P.project([0, L[1] - 0.62, L[2] + 0.3]);
-      return [c.left + px, c.top + py, Math.min(54, c.height * 0.16), c.left + hx, c.top + hy, c.left + ux, c.top + uy];
+      return [c.left + px, c.top + py, Math.min(48, c.height * 0.16), c.left + hx, c.top + hy, c.left + ux, c.top + uy];
     });
     // the brush's zones at each stored point of a stroke (assisted touch, game/zones.js)
     const zones = (stroke) => page.evaluate((stroke) => {
@@ -235,7 +235,7 @@ try {
     assert.ok(!at.shown && at.cursor === '');
     // a thumb (a wide contact) holds the tool higher than a forefinger, so the tool shows above it
     const thumb = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 2, radiusX: 26, radiusY: 30, force: 1 })) });
-    const high = await page.evaluate(() => Math.min(30 + 30, document.querySelector('#stage canvas').clientHeight * 0.16));
+    const high = await page.evaluate(() => Math.min(30 + 25, document.querySelector('#stage canvas').clientHeight * 0.16));
     await thumb('touchStart', [[x, y + 80]]);
     at = await drawnTip();
     assert.ok(at.shown && Math.abs(at.y - (y + 80 - high)) < 1.5 && high > tip, `a thumb holds it ${high} px up, a forefinger ${tip} px (${at.y})`);
@@ -250,7 +250,7 @@ try {
       await page.waitForFunction(() => document.getElementById('cover').hidden);
       const cdp = await ctx.newCDPSession(page);
       const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1, radiusX: 6, radiusY: 6, force: 1 })) });
-      const tip = await page.evaluate(() => Math.min(54, document.querySelector('#stage canvas').clientHeight * 0.16));
+      const tip = await page.evaluate(() => Math.min(48, document.querySelector('#stage canvas').clientHeight * 0.16));
       const count = () => page.evaluate(() => game.session.state.attempt.makeup.strokes.length);
       for (const tool of ['brush', 'glow', 'pencil', 'liner', 'lip']) {
         await page.evaluate((tool) => game.session.select(tool), tool);
@@ -340,7 +340,7 @@ try {
       const [x0, x1, y, tip] = await page.evaluate((tool) => {
         const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, P = v.makeup.picker;
         const dy = tool === 'glow' ? -0.3 : 0.11, a = P.project([L[0] - 0.06, L[1] + dy, L[2] + 0.15]), b = P.project([L[0] + 0.08, L[1] + dy, L[2] + 0.15]);
-        return [c.left + a[0], c.left + b[0], c.top + a[1], Math.min(54, c.height * 0.16)];
+        return [c.left + a[0], c.left + b[0], c.top + a[1], Math.min(48, c.height * 0.16)];
       }, tool);
       await touch('touchStart', [[x0, y + tip]]);
       for (let k = 1; k <= 12; k++) await touch('touchMove', [[x0 + ((x1 - x0) * k) / 12, y + tip]]);
