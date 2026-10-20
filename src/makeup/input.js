@@ -33,8 +33,9 @@ const touchTip = (e, height) => Math.min(Math.min(Math.max((e.height > 1 ? e.hei
 // input
 // lean (optional): lean(selection, x) -> how far the finger's tool leans, in pixels across for each pixel down from its
 // tip (x: the finger in canvas CSS pixels); its tip is set back by that much, so the tool's handle runs down into the
-// finger rather than beside it
-export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback, aim, lean }) {
+// finger rather than beside it; reach (optional): reach(selection) -> how high a finger's tool is held, as a share of
+// the usual height
+export function attachInput(canvas, applicator, { selection, onChange, onCommit, feedback, aim, lean, reach }) {
   let active = null;
   // where the tool works, in canvas CSS pixels: tip [across, up] from the pointer (a finger's tool is above it)
   const local = (e, tip = [0, 0]) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left - tip[0], e.clientY - r.top - tip[1]]; };
@@ -62,7 +63,7 @@ export function attachInput(canvas, applicator, { selection, onChange, onCommit,
     e.preventDefault();
     const sel = selection();
     if (!sel) return;
-    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', up = kind === 'touch' ? touchTip(e, canvas.clientHeight) : 0;
+    const kind = e.pointerType === 'touch' ? 'touch' : 'mouse', up = kind === 'touch' ? touchTip(e, canvas.clientHeight) * (reach ? reach(sel) : 1) : 0;
     const tip = [up * (up && lean ? lean(sel, local(e)[0]) : 0), up];
     const [x, y] = local(e, tip);
     canvas.setPointerCapture(e.pointerId);

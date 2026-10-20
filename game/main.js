@@ -219,8 +219,11 @@ async function main() {
   // leaning left upset the alignment), so its tip is set back across the finger, 1.5 times its lean (the owner's pick
   // on a phone of B1 to B2): the tool shows over the finger, not beside it
   const lean = () => 1.5 * 0.28;
+  // a contact lens is held nearer the finger than the other tools (owner, 20 October 2026: it was too high)
+  const LENS_REACH = 0.6;
+  const reach = (sel) => (sel.tool === 'lens' ? LENS_REACH : 1);
   const input = attachInput(canvas, view.makeup, {
-    aim, lean,
+    aim, lean, reach,
     selection: () => {
       const s = session.state;
       if (s.attempt.phase !== 'create' || panelOpen || paused || session.busy || finishing) return null;
