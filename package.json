@@ -17,6 +17,7 @@
     "test:layout": "node tools/build-game.mjs && node tests/layout.mjs",
     "test:sound": "node tools/build-game.mjs && node tests/sound.mjs",
     "test:zones": "node tools/build-game.mjs && node tests/zones.mjs",
+    "test:inputs": "node tools/build-game.mjs && node tests/inputs.mjs",
     "sounds": "python3 tools/make-sounds.py"
   },
   "repository": {

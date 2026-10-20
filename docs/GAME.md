@@ -289,6 +289,7 @@ npm run serve:game     # the development page on http://localhost:8130/ (add ?te
 npm test               # includes tests/game.mjs (rules, pacing, daily colour, saves, ad ordering)
 npm run test:game      # tests/game-smoke.mjs: the YouTube page in Chromium with the SDK stand-in
 npm run test:zones     # tests/zones.mjs: assisted touch zones paint, visibly, everywhere they light up
+npm run test:inputs    # tests/inputs.mjs: every tool by finger, mouse and pen, its tip drawn where it works
 ```
 
 **`tests/game.mjs`** covers:
@@ -310,6 +311,11 @@ npm run test:zones     # tests/zones.mjs: assisted touch zones paint, visibly, e
   up only while a finger is down, and a mouse paints anywhere; a thumb holds the tool higher than a forefinger
 - on a tablet-sized screen, guided liner and pencil lines and captured highlighter show while the finger is still
   down (what is on screen mid-stroke is the whole picture)
+
+**`tests/inputs.mjs`** (`npm run test:inputs`): every tool (brush, highlighter, pencil, liner, mascara, lipstick, gems,
+lenses) by a finger, a mouse and a pen, on three faces: the tool's tip is drawn exactly where it works (a finger's
+above and across from it, a mouse's or pen's at the pointer), its stroke, gem or lens is stored, and the picture
+changes there.
 
 **`tests/zones.mjs`** (`npm run test:zones`): assisted touch integrity on three faces (every zone point of every
 tool paints and shows; nothing lands outside the zones; gems on the face, not the lips).
