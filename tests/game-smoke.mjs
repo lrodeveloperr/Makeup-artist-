@@ -337,11 +337,12 @@ try {
     const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1, radiusX: 6, radiusY: 6, force: 1 })) });
     for (const tool of ['liner', 'pencil', 'glow']) {
       await page.evaluate((tool) => game.session.select(tool), tool);
-      // 7 mm above her left upper lashes (the liner and pencil are guided down onto them), or just under her left
-      // cheekbone (the highlighter is pulled up onto it)
+      // about 1.5 mm above her left upper lashes, where a line would hide under them (the liner and pencil are lifted
+      // clear of them), or just under her left cheekbone (the highlighter is pulled up onto it); either way the paint
+      // lands away from the finger
       const [x0, x1, y, tip] = await page.evaluate((tool) => {
         const v = game.view, c = document.querySelector('#stage canvas').getBoundingClientRect(), L = v.eyes.meshes[0].position, P = v.makeup.picker;
-        const dy = tool === 'glow' ? -0.3 : 0.11, a = P.project([L[0] - 0.06, L[1] + dy, L[2] + 0.15]), b = P.project([L[0] + 0.08, L[1] + dy, L[2] + 0.15]);
+        const dy = tool === 'glow' ? -0.3 : 0.055, a = P.project([L[0] - 0.06, L[1] + dy, L[2] + 0.15]), b = P.project([L[0] + 0.08, L[1] + dy, L[2] + 0.15]);
         return [c.left + a[0], c.left + b[0], c.top + a[1], Math.min(48, c.height * 0.16)];
       }, tool);
       // the finger: below the working point and across by the tool's lean (the tool shows over the finger)
