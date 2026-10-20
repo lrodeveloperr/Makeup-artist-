@@ -220,7 +220,7 @@ async function main() {
   // on a phone of B1 to B2): the tool shows over the finger, not beside it
   const lean = () => 1.5 * 0.28;
   // a contact lens is held nearer the finger than the other tools (owner, 20 October 2026: it was too high)
-  const LENS_REACH = 0.75;
+  const LENS_REACH = 0.8; // (the owner's pick on a phone)
   const reach = (sel) => (sel.tool === 'lens' ? LENS_REACH : 1);
   const input = attachInput(canvas, view.makeup, {
     aim, lean, reach,
