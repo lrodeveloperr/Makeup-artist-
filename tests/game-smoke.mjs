@@ -344,8 +344,10 @@ try {
         const dy = tool === 'glow' ? -0.3 : 0.11, a = P.project([L[0] - 0.06, L[1] + dy, L[2] + 0.15]), b = P.project([L[0] + 0.08, L[1] + dy, L[2] + 0.15]);
         return [c.left + a[0], c.left + b[0], c.top + a[1], Math.min(48, c.height * 0.16)];
       }, tool);
-      await touch('touchStart', [[x0, y + tip]]);
-      for (let k = 1; k <= 12; k++) await touch('touchMove', [[x0 + ((x1 - x0) * k) / 12, y + tip]]);
+      // the finger: below the working point and across by the tool's lean (the tool shows over the finger)
+      const lean = (await page.evaluate(() => game.lean())) * tip;
+      await touch('touchStart', [[x0 + lean, y + tip]]);
+      for (let k = 1; k <= 12; k++) await touch('touchMove', [[x0 + lean + ((x1 - x0) * k) / 12, y + tip]]);
       // the picture on screen mid-stroke, against the whole face drawn again
       const diff = await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => {
         const v = game.view, gl = v.renderer.gl, w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, a = new Uint8Array(w * h * 4), b = new Uint8Array(w * h * 4);
