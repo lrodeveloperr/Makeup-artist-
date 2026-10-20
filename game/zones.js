@@ -132,7 +132,13 @@ const INSIDE = {
   arch: (ax) => [clamp(ax, 0.32, 0.45), 0.1325],
   bow: (ax, y, m) => [Math.min(ax, 0.04), m.lineCentre + m.upperCentre + 0.012],
   // the liner's wing (beside the outer corner; along the lashes the liner is guided onto them instead)
-  lash: (ax) => (ax > EYE.outer ? [clamp(ax, EYE.outer, EYE.outer + 0.08), 0.009 + 0.575 * (clamp(ax, EYE.outer, EYE.outer + 0.08) - EYE.outer + 0.01)] : null),
+  // the lash band: a little way out from the lashes, above or below them (where the point is), between the corners;
+  // the wing: its middle line
+  lash: (ax, y) => {
+    if (ax > EYE.outer) { const w = clamp(ax, EYE.outer, EYE.outer + 0.08); return [w, 0.009 + 0.575 * (w - EYE.outer + 0.01)]; }
+    const a = clamp(ax, EYE.inner, EYE.outer - 0.01);
+    return [a, y >= 0 ? lidTop(a) + 0.03 : -lidTop(a) - 0.03];
+  },
   brow: (ax, y, m, brows) => {
     const sh = BROW_SHAPES[brows.shape] || BROW_SHAPES['soft-arch'], end = 0.49 * brows.length, u = clamp((ax - 0.115) / (end - 0.115), 0.05, 0.95);
     const a = u < sh.pu ? Math.sin((Math.PI / 2) * (u / sh.pu)) ** sh.k1 : 1 - (1 - sh.tail) * ((u - sh.pu) / (1 - sh.pu)) ** sh.k2;
@@ -145,7 +151,7 @@ const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow', 'lash']);
 
 // The zone for a finger's point: as zoneAt, in the zone `locked` once the stroke has one (null before it starts), with
 // capture: the hit (ref and pos) may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference
-// (x, y), nearest depth z, as [ref, pos], or null. -> the zone, or null (the pen is up)
+// (x, y), nearest depth z, as [ref, pos, regions], or null. -> the zone, or null (the pen is up)
 export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
   // (the lash-line guide moves the hit only once its zone is taken)
   let guided = null;
@@ -163,7 +169,12 @@ export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
     const target = inside(Math.abs(p[0]), p[1], mouth, brows);
     if (!target) continue;
     const q = [sx * target[0], target[1]];
-    const at = (t) => { test.ref[0] = p[0] + (q[0] - p[0]) * t; test.ref[1] = p[1] + (q[1] - p[1]) * t; return zoneAt(tool, test, reg, brows, mouth) === id; };
+    // (the lash band is measured from the lids, so its test points take the head's regions where they are)
+    const at = (t) => {
+      test.ref[0] = p[0] + (q[0] - p[0]) * t; test.ref[1] = p[1] + (q[1] - p[1]) * t;
+      const r = name === 'lash' ? lift(test.ref[0], test.ref[1], inner ? undefined : p[2])?.[2] : reg;
+      return !!r && zoneAt(tool, test, r, brows, mouth) === id;
+    };
     if (!at(1)) continue;
     let lo = 0, hi = 1; // outside at lo, inside at hi
     for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (at(m)) hi = m; else lo = m; }

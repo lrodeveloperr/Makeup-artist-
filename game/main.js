@@ -198,7 +198,12 @@ async function main() {
   // assisted touch (zones.js): under a finger each tool works only in its zones, which light up faintly while it is down
   const mouth = view.head.header.landmarks.mouth, glow = new ZoneGlow(view);
   const guide = (hit) => toLashes(hit, view.makeup.picker, view.eyes);
-  const lift = (x, y, z) => { const h = view.sampler.locate(x, y, z); return h && [evalPoint(h, view.headGeometry.refSub, []), evalPoint(h, view.headGeometry.subPos, [])]; };
+  const lift = (x, y, z) => {
+    const h = view.sampler.locate(x, y, z), R = view.headGeometry.subRegions;
+    if (!h) return null;
+    const reg = [0, 1, 2, 3, 4, 5, 6, 7].map((c) => h.w[0] * R[h.i[0] * 8 + c] + h.w[1] * R[h.i[1] * 8 + c] + h.w[2] * R[h.i[2] * 8 + c]);
+    return [evalPoint(h, view.headGeometry.refSub, []), evalPoint(h, view.headGeometry.subPos, []), reg];
+  };
   view.makeup.zones = (tool, hit, locked) => {
     const z = assist(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, locked, guide, lift);
     // guided or captured paint lands away from the finger (up to about 11 mm): the patch redrawn covers where it went
