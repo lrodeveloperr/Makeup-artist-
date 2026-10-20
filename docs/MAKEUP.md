@@ -81,15 +81,16 @@ part of every face at any screen size.
   drag, does nothing. A lens never changes the makeup. On a phone the lens is aimed (below).
 - **The tool in hand (owner, 19 October 2026: "as you are moving your hand, you are seeing the tool actually
   work"; the tool's graphics must match the face's, and how it is held must be right with a mouse and on a touch
-  screen).** The selected tool is drawn where it works as a 3D model (`src/makeup/tools3d.js`): the brush's tuft, a
-  real fan brush (its bristles fanning out from a flat ferrule, turned a little on its axis so it sweeps along the
-  cheekbone rather than lying flat like a flag), the pencil's lead, the liner's felt tip, the mascara's brush, the
+  screen).** The selected tool is drawn where it works as a 3D model (`src/makeup/tools3d.js`) in real proportions
+  at her scale (the owner preferred real size to a smaller tool, 20 October 2026): the brush's tuft, a real fan brush
+  (its bristles fanning out from a flat ferrule), the pencil's lead, the liner's felt tip, the mascara's brush, the
   lipstick's slanted bullet (wound up about 1.5 cm, as far as a woman winds it to use), tweezers holding the gem (the
-  placed gems' own geometry and material), a contact lens. Real-size tools looked too big next to her face (owner,
-  19 October 2026), so the handles are short and the brushes, pencils and lipstick are drawn at 80 % of her scale;
-  the gem keeps its real size (it goes on her at that size) and the lens is as wide as an iris. It is lit by the
-  face's three lights, sky and ground, with her tone mapping, colour space and camera perspective; a soft shadow
-  falls down and to the right, as from her key light. It is drawn once for each tool, colour and grip, then moved with the pointer.
+  placed gems' own geometry and material), a contact lens. The fan brush is held as it sweeps highlighter along the
+  cheekbone: its fan lies along the bone, which rises outwards, so its handle runs down and away from the middle of
+  her face, on whichever side it is. It is lit by the face's three lights, sky and ground, with her tone mapping,
+  colour space and camera perspective, so a brush's tuft is as wide as the stroke it paints and the lens as wide as
+  an iris; a soft shadow falls down and to the right, as from her key light. It is drawn once for each tool, colour
+  and grip, then moved with the pointer.
   - **Mouse or pen:** the tool takes the cursor's place over her face, its tip exactly at the pointer, from the
     moment it is over her (so the player aims before pressing), held at a pen's angle; strokes, gems and lenses go on
     at the pointer. Off her face the cursor comes back.

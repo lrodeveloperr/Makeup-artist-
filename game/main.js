@@ -148,11 +148,15 @@ async function main() {
   const aim = (x, y, sel, kind) => {
     if (x === null) { hand.hidden = true; canvas.style.cursor = ''; return; }
     const P = view.makeup.picker, [ax] = P.project([0, 0, 0.5]), [bx] = P.project([0.1, 0, 0.5]), k = Math.abs(bx - ax) * 10; // pixels a decimetre
-    const dpr = Math.min(devicePixelRatio, 2), key = `${sel.tool}:${sel.colour}:${kind}:${k.toFixed(1)}:${dpr}`;
+    // a pen-like angle under a mouse; under a finger, the handle runs down to it. The highlighter's fan brush sweeps
+    // along her cheekbone, which rises outwards, so its fan lies along it: the handle runs down and out, away from
+    // the middle of her face, on whichever side it is
+    const out = x < ax ? -1 : 1, fan = sel.tool === 'glow';
+    const dir = fan ? [(kind === 'touch' ? 0.4 : 0.5) * out, 1] : kind === 'touch' ? [0.28, 1] : [1, 1.15];
+    const dpr = Math.min(devicePixelRatio, 2), key = `${sel.tool}:${sel.colour}:${kind}:${fan ? out : ''}:${k.toFixed(1)}:${dpr}`;
     if (handFor !== key) {
       handFor = key;
-      // a pen-like angle under a mouse; under a finger, the handle runs down to it
-      ({ tip } = tools.draw(sel.tool, colourById(sel.colour), { dir: kind === 'touch' ? [0.28, 1] : [1, 1.15] }, k, dpr));
+      ({ tip } = tools.draw(sel.tool, colourById(sel.colour), { dir }, k, dpr));
       hand.dataset.tip = tip.map((v) => v.toFixed(1)).join(','); // where its tip is in its picture (for tests)
     }
     const r = canvas.getBoundingClientRect();

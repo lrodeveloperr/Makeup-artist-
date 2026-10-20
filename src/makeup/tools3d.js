@@ -143,64 +143,56 @@ function strip(p0, p1, w0, w1, depth) {
 const TOOLS = {
   brush: (c) => [
     [lathe([[0, 0], [0.032, 0.005], [0.062, 0.02], [0.082, 0.05], [0.089, 0.085], [0.082, 0.13], [0.064, 0.17], [0.052, 0.2]]), bristles(mix(CREAM, lin(c.hex), 0.6))],
-    [lathe([[0.052, 0.2], [0.054, 0.215], [0.054, 0.36], [0.046, 0.38]]), ROSE_GOLD],
-    [lathe([[0.046, 0.38], [0.041, 0.46], [0.032, 0.68], [0.034, 0.74], [0.02, 0.775], [0, 0.78]]), lacquer(INK)],
+    [lathe([[0.052, 0.2], [0.054, 0.215], [0.054, 0.42], [0.046, 0.44]]), ROSE_GOLD],
+    [lathe([[0.046, 0.44], [0.041, 0.6], [0.032, 0.92], [0.034, 1.0], [0.02, 1.04], [0, 1.05]]), lacquer(INK)],
   ],
-  // a fan brush: a thin spread of bristles fanning out from a flattened ferrule, its rounded edge the working tip
+  // a fan brush: a thin spread of bristles fanning out from a flattened ferrule, its rounded edge the working tip (the
+  // game holds it with that edge along her cheekbone)
   glow: (c) => [
     [fan(0.27, 0.27, 0.6, 0.006), bristles(mix(CREAM, lin(c.hex), 0.45))],
     [lathe([[0.03, 0.2], [0.03, 0.32]], { squash: [1.5, 0.4] }), GOLD],
-    [lathe([[0.022, 0.32], [0.019, 0.55], [0.016, 0.76], [0, 0.78]]), lacquer(lin('#f2e3e8'))],
+    [lathe([[0.022, 0.32], [0.019, 0.7], [0.016, 0.98], [0, 1.0]]), lacquer(lin('#f2e3e8'))],
   ],
   pencil: (c) => [
     [lathe([[0, 0], [0.011, 0.03]], { segments: 18 }), satin(lin(c.hex))],
     [lathe([[0.011, 0.03], [0.038, 0.17]], { segments: 18 }), { color: WOOD, rough: 0.75 }],
-    [lathe([[0.038, 0.17], [0.038, 0.72]], { facets: 6 }), lacquer(lin(c.hex))],
-    [lathe([[0.039, 0.72], [0.039, 0.78], [0.02, 0.79], [0, 0.79]]), GOLD],
+    [lathe([[0.038, 0.17], [0.038, 0.94]], { facets: 6 }), lacquer(lin(c.hex))],
+    [lathe([[0.039, 0.94], [0.039, 1.0], [0.02, 1.01], [0, 1.01]]), GOLD],
   ],
   liner: (c) => [
     [lathe([[0, 0], [0.006, 0.012], [0.012, 0.05]], { segments: 16 }), satin(lin(c.hex))],
     [lathe([[0.018, 0.05], [0.022, 0.06], [0.027, 0.12]]), SILVER],
     [lathe([[0.04, 0.12], [0.04, 0.2]]), lacquer(lin(c.hex))],
-    [lathe([[0.04, 0.2], [0.04, 0.73], [0.033, 0.77], [0, 0.78]]), lacquer(BLACK)],
+    [lathe([[0.04, 0.2], [0.04, 0.95], [0.033, 1.0], [0, 1.01]]), lacquer(BLACK)],
   ],
   // the mascara works with the middle of its brush (the origin)
   mascara: (c) => [
     [lathe([[0.01, -0.12], [0.027, -0.095], [0.034, -0.02], [0.031, 0.08], [0.012, 0.12]]), bristles(mix(BLACK, lin(c.hex), 0.55))],
-    [lathe([[0.007, 0.12], [0.007, 0.36]], { segments: 12 }), SILVER],
-    [lathe([[0.053, 0.36], [0.053, 0.42]]), GOLD],
-    [lathe([[0.05, 0.42], [0.05, 0.82], [0.043, 0.86], [0, 0.87]]), lacquer(mix(BLACK, lin(c.hex), 0.25))],
+    [lathe([[0.007, 0.12], [0.007, 0.45]], { segments: 12 }), SILVER],
+    [lathe([[0.053, 0.45], [0.053, 0.51]]), GOLD],
+    [lathe([[0.05, 0.51], [0.05, 1.05], [0.043, 1.1], [0, 1.11]]), lacquer(mix(BLACK, lin(c.hex), 0.25))],
   ],
   // the lipstick works with the low point of its slanted bullet (moved to the origin), wound up as far as a woman
   // winds it to use: about 1.5 cm of bullet above the gold sleeve
   lip: (c) => [
     [bullet(0.045, 0.08, 0.15), satin(lin(c.hex)), [0.045, 0]],
-    [lathe([[0.05, 0.15], [0.05, 0.24]]), GOLD, [0.045, 0]],
-    [lathe([[0.058, 0.24], [0.058, 0.4], [0.059, 0.4], [0.059, 0.44], [0.058, 0.44], [0.058, 0.74], [0.05, 0.77], [0, 0.77]]), lacquer(BLACK), [0.045, 0]],
+    [lathe([[0.05, 0.15], [0.05, 0.27]]), GOLD, [0.045, 0]],
+    [lathe([[0.058, 0.27], [0.058, 0.45], [0.059, 0.45], [0.059, 0.49], [0.058, 0.49], [0.058, 0.8], [0.05, 0.83], [0, 0.83]]), lacquer(BLACK), [0.045, 0]],
   ],
   // tweezers: two sprung arms joined at the back, their tips gripping the gem's sides (the gem is added separately,
   // facing her)
   gem: (c) => {
     const g = 0.5 * (c.shape === 'pearl' ? 0.08 : { stone: 0.095, drop: 0.11, heart: 0.125, star: 0.135, flower: 0.125 }[c.shape] ?? 0.1);
     return [
-      [strip([g * 0.75, 0.01], [g + 0.012, 0.14], 0.004, 0.009, 0.006), SILVER],
-      [strip([-g * 0.75, 0.01], [-g - 0.012, 0.14], 0.004, 0.009, 0.006), SILVER],
-      [strip([g + 0.012, 0.14], [0.016, 0.5], 0.009, 0.013, 0.006), SILVER],
-      [strip([-g - 0.012, 0.14], [-0.016, 0.5], 0.009, 0.013, 0.006), SILVER],
-      [lathe([[0.03, 0.48], [0.03, 0.55], [0.02, 0.57], [0, 0.57]], { squash: [1, 0.35] }), SILVER],
+      [strip([g * 0.75, 0.01], [g + 0.012, 0.16], 0.004, 0.009, 0.006), SILVER],
+      [strip([-g * 0.75, 0.01], [-g - 0.012, 0.16], 0.004, 0.009, 0.006), SILVER],
+      [strip([g + 0.012, 0.16], [0.016, 0.82], 0.009, 0.013, 0.006), SILVER],
+      [strip([-g - 0.012, 0.16], [-0.016, 0.82], 0.009, 0.013, 0.006), SILVER],
+      [lathe([[0.03, 0.8], [0.03, 0.88], [0.02, 0.9], [0, 0.9]], { squash: [1, 0.35] }), SILVER],
     ];
   },
   lens: () => [],
 };
-
-// how big each tool is drawn, against her real scale: in hand, a tool at its real size looks too big next to her
-// face on a screen (owner, 19 October 2026), so the brushes, pencils and lipstick are drawn at 80 %; the tweezers
-// keep the gem's real size (it goes on her at that size; their arms are short instead) and the lens is an iris's
-// size
-const SIZE = { brush: 0.8, glow: 0.8, pencil: 0.8, liner: 0.8, mascara: 0.8, lip: 0.8 };
-// how each tool is held, beyond the pose the game gives: the fan brush is turned a little on its axis, so its fan
-// sweeps along the cheekbone with its edge to her rather than lying flat to the viewer like a flag
-const GRIP = { glow: { roll: 0.5 } };
 
 // a pose: the tool lies along `dir` on screen (from its tip to its handle, y down) and leans `tilt` radians towards
 // the viewer, as a hand holds it; `roll` turns it about its own axis
@@ -230,7 +222,7 @@ export class ToolView {
     for (const m of this.meshes) m.geometry.dispose();
     this.meshes = [];
     this.scene.clear();
-    const place = poser({ ...GRIP[tool], ...pose }), size = SIZE[tool] ?? 1, bounds = [Infinity, Infinity, -Infinity, -Infinity];
+    const place = poser(pose), bounds = [Infinity, Infinity, -Infinity, -Infinity];
     const grow = ([x, y, z]) => {
       const f = CAMERA.distance / (CAMERA.distance - z); // nearer the viewer looks a little bigger
       bounds[0] = Math.min(bounds[0], x * f); bounds[1] = Math.min(bounds[1], y * f); bounds[2] = Math.max(bounds[2], x * f); bounds[3] = Math.max(bounds[3], y * f);
@@ -238,7 +230,7 @@ export class ToolView {
     for (const [part, mat, shift = [0, 0]] of TOOLS[tool](c)) {
       const pos = [], nrm = [];
       for (let i = 0; i < part.pos.length; i += 3) {
-        const p = place([(part.pos[i] + shift[0]) * size, (part.pos[i + 1] + shift[1]) * size, part.pos[i + 2] * size]), q = place([part.nrm[i], part.nrm[i + 1], part.nrm[i + 2]]);
+        const p = place([part.pos[i] + shift[0], part.pos[i + 1] + shift[1], part.pos[i + 2]]), q = place([part.nrm[i], part.nrm[i + 1], part.nrm[i + 2]]);
         pos.push(...p); nrm.push(...q); grow(p);
       }
       const geo = new GL.BufferGeometry();
