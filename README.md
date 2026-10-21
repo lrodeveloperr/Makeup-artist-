@@ -56,6 +56,8 @@ dresses in complexion-flattering colours. Every customer is a young woman with l
 - **Release:** the owner makes the release package and publishes. No release archive, certification or publication
   is claimed here, and the public game title is not locked.
 
+Marketing screenshots, portrait and landscape: [marketing/screenshots](marketing/screenshots/README.md).
+
 More detail: [docs/GAME.md](docs/GAME.md) (screen, sound, ads, saves, tests) and [docs/MAKEUP.md](docs/MAKEUP.md)
 (tools, zones, input).
 
