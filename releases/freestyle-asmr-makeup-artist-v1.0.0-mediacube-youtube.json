@@ -1,0 +1,121 @@
+{
+  "title": "Freestyle ASMR Makeup Artist",
+  "studio": "WorksBien Studios",
+  "target": "YouTube Playables via MediaCube (McPlay)",
+  "release": "freestyle-asmr-makeup-artist-v1.0.0-mediacube-youtube",
+  "version": "1.0.0",
+  "sourceCommit": "931927363a9622a89d3740f89ede9cc31df289e8",
+  "sourceDirty": false,
+  "archive": {
+    "file": "freestyle-asmr-makeup-artist-v1.0.0-mediacube-youtube.zip",
+    "sha256": "1ae570ffbafd9cbaace7fed01581c7e44f28f202a1f332c450369612b8f85a7e",
+    "bytes": 572846
+  },
+  "expandedBytes": 740992,
+  "fileCount": 15,
+  "largestFile": {
+    "name": "head.bin.gz",
+    "bytes": 250571
+  },
+  "budgets": {
+    "zipUnder": 5000000,
+    "expandedUnder": 5000000,
+    "gameUnder": 1000000,
+    "fileUnder": 524288,
+    "filesAtMost": 8000
+  },
+  "withinBudgets": true,
+  "sdk": "https://www.youtube.com/game_api/v1 (official, unmodified, loaded before game code)",
+  "externalUrlsInPage": [],
+  "saveSchema": 1,
+  "faceGenerator": 6,
+  "rewardedPlacements": {
+    "replay": "makeup-replay-face",
+    "daily": "makeup-daily-colour"
+  },
+  "scoreReporting": "disabled (sendScore is never called)",
+  "files": [
+    {
+      "name": "fflate-MIT.txt",
+      "bytes": 1069,
+      "sha256": "0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551"
+    },
+    {
+      "name": "head.bin.gz",
+      "bytes": 250571,
+      "sha256": "346c349c174554832586288b7f06cd4663d71f4917015f39d17b8a2cbc1e8fc9"
+    },
+    {
+      "name": "index.html",
+      "bytes": 33481,
+      "sha256": "5e12f5729c2adf181a2bebd036a1660773ce02314b44c4ade12ed9b00334f98e"
+    },
+    {
+      "name": "main.js",
+      "bytes": 234865,
+      "sha256": "8d6387b6f5318b732147cc4c157c0ab596cf1d217217e4f8e7848cff54b98657"
+    },
+    {
+      "name": "snd-brush.mp3",
+      "bytes": 28387,
+      "sha256": "aeb14ba1daae253faf5b2cf5b2fbc14b82e649c7c9633c3ddacef6c5dc1c1224"
+    },
+    {
+      "name": "snd-gem-glass.mp3",
+      "bytes": 3335,
+      "sha256": "430e069cf2b245ddd4986409d1497a9481be730bfe52a1843e8ad548a5d85577"
+    },
+    {
+      "name": "snd-gem-metal.mp3",
+      "bytes": 2604,
+      "sha256": "47f88efbe2e58bf068f586cb8611a718e5bd39a08f242420f48485d9130b3ddb"
+    },
+    {
+      "name": "snd-gem-pearl.mp3",
+      "bytes": 2238,
+      "sha256": "a69dac666915d6f58d7320dd50536052e37fe3811482bcc3dbffeccedc4da7d4"
+    },
+    {
+      "name": "snd-gloss.mp3",
+      "bytes": 28204,
+      "sha256": "118412d90bc632feb40e7739ee709f590662849c85feafde0ba0dc2ab2495d5f"
+    },
+    {
+      "name": "snd-glow.mp3",
+      "bytes": 30215,
+      "sha256": "08ebf70edd0b8ad25bd1105685a5fcbd2cbae290887e8c9ca173dd29631c5295"
+    },
+    {
+      "name": "snd-lens.mp3",
+      "bytes": 2969,
+      "sha256": "06b0a4fe8aebdc1c3395bc44675a7a0e0465fa12ec145815c7d997ec32969488"
+    },
+    {
+      "name": "snd-liner.mp3",
+      "bytes": 29849,
+      "sha256": "8e9cc3d022c4299e0dd0e6abd873abf73a9e6c2031dd03cdb759ca8443494bec"
+    },
+    {
+      "name": "snd-lip.mp3",
+      "bytes": 29484,
+      "sha256": "685b19d685b0eb3b7e490a4a6bb26f8ef48460677bdad91b4acd65524a399f0a"
+    },
+    {
+      "name": "snd-mascara.mp3",
+      "bytes": 33872,
+      "sha256": "b0fb91624fefd02cc1a66b1c02c9d521f786ec3fa1a8be160da4a8d8c1bfa6ef"
+    },
+    {
+      "name": "snd-pencil.mp3",
+      "bytes": 29849,
+      "sha256": "1f3dbdbb030cc255bd186d26105e12d62eb895e2f01cc74c75af77b452fe546d"
+    }
+  ],
+  "states": {
+    "locallyVerified": "see the QA ledger built from these exact bytes",
+    "physicalDevice": "NOT RUN",
+    "mcplayPreflight": "NOT RUN",
+    "mcplayCertification": "NOT RUN",
+    "published": "NO"
+  }
+}

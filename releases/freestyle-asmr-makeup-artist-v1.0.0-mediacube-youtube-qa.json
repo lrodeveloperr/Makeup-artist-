@@ -1,0 +1,149 @@
+{
+  "release": "freestyle-asmr-makeup-artist-v1.0.0-mediacube-youtube",
+  "archiveSha256": "1ae570ffbafd9cbaace7fed01581c7e44f28f202a1f332c450369612b8f85a7e",
+  "sourceCommit": "931927363a9622a89d3740f89ede9cc31df289e8",
+  "ranAt": "2026-10-21T05:05:16.580Z",
+  "environment": "GitHub Actions run 39543566017, Node v22.23.3, linux x64, headless Chromium (Playwright)",
+  "summary": "13/13 PASS",
+  "results": [
+    {
+      "id": "UNIT",
+      "what": "Face system unit tests",
+      "command": "node tests/unit.mjs",
+      "covers": "face generator, geometry, saves of faces",
+      "result": "PASS",
+      "checks": 9,
+      "seconds": 5.4,
+      "tail": "ok - dimension impact table matches the head asset\nok - morph: neutral is the reference, values are additive and anchored\nok - head geometry: subdivided mesh has finite positions for random faces\nok - lash roots: four root lines ordered inner to outer corner\nok - generator: deterministic, plain JSON, young adults\nok - generator: different seeds give different faces\nok - queue: deterministic, survives save/load, no immediate repeat\n9 tests passed"
+    },
+    {
+      "id": "MAKEUP",
+      "what": "Makeup domain",
+      "command": "node tests/makeup.mjs",
+      "covers": "G01–G05, G07",
+      "result": "PASS",
+      "checks": 18,
+      "seconds": 0.5,
+      "tail": "ok - saved form: compact, lossless, and malformed saves are refused\n  700 strokes, about 164 dm, 11768 points: 53474 bytes saved\nok - a maximum-work session fits the 64 KiB save target\nok - face gems: a tap stores one point; off the skin, under the outfit or past the cap nothing is stored\nok - lenses and the completion predicate\nok - mascara: each stroke coats a touched lash once; length and thickness stop at their caps\nok - picker: a projected skin point picks itself; the iris and the eye white are told apart\n18 makeup checks passed"
+    },
+    {
+      "id": "GAME",
+      "what": "Game logic: lifecycle, daily colour, cadence, saves",
+      "command": "node tests/game.mjs",
+      "covers": "FLOW01–03, R01–R06, AD01–AD06, SAVE01–SAVE05, METRIC01",
+      "result": "PASS",
+      "checks": 12,
+      "seconds": 0.3,
+      "tail": "ok - game rules: a lens that matches the natural iris is not a change\nok - game rules: replay is the same face, clean, as a new attempt; colours of the day are kept for good\nok - saved form: round trip, empty saves, and protected unknown data\nok - session: an interstitial on every second finished look, after the save is acknowledged\nok - session: a refused or failed interstitial keeps the progress; a failed save means no ad\nok - session: rewarded replay and colour of the day, granted only on true, once, with the captured offer\nok - session: double taps do nothing twice; a change made during a write stays unsaved until the next one\n12 game checks passed"
+    },
+    {
+      "id": "CONTENT01",
+      "what": "Face audit, 2,000 faces",
+      "command": "node tests/face-audit.mjs 2000 300",
+      "covers": "CONTENT01",
+      "result": "PASS",
+      "checks": 0,
+      "seconds": 26,
+      "tail": "PASS: 2000 faces, 1990 distinct signatures, queue adjacent identical 0"
+    },
+    {
+      "id": "SIZE",
+      "what": "Download size budget",
+      "command": "node tests/size-budget.mjs",
+      "covers": "§14 budgets",
+      "result": "PASS",
+      "checks": 0,
+      "seconds": 0.2,
+      "tail": "  snd-glow.mp3       30215 bytes\n  snd-lens.mp3        2969 bytes\n  snd-liner.mp3      29849 bytes\n  snd-lip.mp3        29484 bytes\n  snd-mascara.mp3     33872 bytes\n  snd-pencil.mp3     29849 bytes\n  total             740992 bytes (game budget 1000000)\nPASS"
+    },
+    {
+      "id": "PACK01",
+      "what": "Rebuilt ZIP is byte-identical",
+      "command": "(in release-qa)",
+      "covers": "PACK01",
+      "result": "PASS",
+      "checks": 1,
+      "seconds": 0,
+      "tail": "second build sha256 1ae570ffbafd9cbaace7fed01581c7e44f28f202a1f332c450369612b8f85a7e"
+    },
+    {
+      "id": "PACK-EXTRACT",
+      "what": "Extracted ZIP matches the manifest file by file",
+      "command": "(in release-qa)",
+      "covers": "PACK01",
+      "result": "PASS",
+      "checks": 1,
+      "seconds": 0,
+      "tail": "15 files, index.html at root: true"
+    },
+    {
+      "id": "GAME-BROWSER",
+      "what": "Full game flow in the browser (SDK stand-in injected)",
+      "command": "node tests/game-smoke.mjs",
+      "covers": "FLOW01–03, R01–R02, AD03, AD05, AD07, SAVE03, BOOT01, LIFE01–02, UI02 (textless)",
+      "result": "PASS",
+      "checks": 8,
+      "seconds": 786.1,
+      "tail": "ok - every colour of the day earned: the daily button goes away (on earning the last, once its card closes)\nok - the tool in hand: under a finger at its tip above it, gone when it lifts; under a mouse in place of the cursor, at the pointer\nok - assisted touch: under a finger every tool paints in its own zones, one movement in every zone it passes over, gems go on the face\nok - guided paint shows while the finger is still down, on a big screen (the redrawn patch covers where it went)\nok - many colours: six to a page, newest first, never cut off; the arrows, a swipe, a drag and the wheel turn the page\nok - a missing SDK and a save from elsewhere stop at Retry, leaving the save untouched\nok - the dev page has no ads: no daily colour, no Redo, local saves\nPASS: 8 game checks in the browser"
+    },
+    {
+      "id": "UI01",
+      "what": "Layout on 30 screens, portrait and landscape",
+      "command": "node tests/layout.mjs",
+      "covers": "UI01",
+      "result": "PASS",
+      "checks": 0,
+      "seconds": 217.5,
+      "tail": "PASS: 30 screens × 3 states laid out cleanly, and with every colour earned (screenshots in tests/out/)"
+    },
+    {
+      "id": "INPUTS",
+      "what": "Every tool by finger, mouse and pen",
+      "command": "node tests/inputs.mjs",
+      "covers": "G01–G06",
+      "result": "PASS",
+      "checks": 72,
+      "seconds": 379.8,
+      "tail": "ok   pen    face 17 glow    tip drawn at the working point: true (-0.1, 0.0 px); at the pointer; stroke stored: true; picture changed by 24 where it worked\nok   pen    face 17 pencil  tip drawn at the working point: true (0.0, -0.1 px); at the pointer; stroke stored: true; picture changed by 100 where it worked\nok   pen    face 17 liner   tip drawn at the working point: true (0.0, -0.0 px); at the pointer; stroke stored: true; picture changed by 125 where it worked\nok   pen    face 17 mascara tip drawn at the working point: true (0.0, -0.1 px); at the pointer; stroke stored: true; picture changed by 63 where it worked\nok   pen    face 17 lip     tip drawn at the working point: true (0.1, 0.0 px); at the pointer; stroke stored: true; picture changed by 40 where it worked\nok   pen    face 17 gem     tip drawn at the working point: true (0.0, -0.0 px); at the pointer; stroke stored: true; picture changed by 114 where it worked\nok   pen    face 17 lens    tip drawn at the working point: true (-0.0, -0.0 px); at the pointer; lens set: true; picture changed by 206 where it worked\nPASS: every tool works by finger, mouse and pen, its tip drawn where it works, on 3 faces"
+    },
+    {
+      "id": "ZONES",
+      "what": "Touch zones of every tool",
+      "command": "node tests/zones.mjs",
+      "covers": "G01–G05 (assisted touch)",
+      "result": "PASS",
+      "checks": 18,
+      "seconds": 1035.1,
+      "tail": "ok   face 8 gems: forehead true, cheek true, lips false\nok   face 17 lip    44/44 zone points paint, 9/9 show, 0 stray\nok   face 17 brush  140/140 zone points paint, 28/28 show, 0 stray\nok   face 17 glow   76/76 zone points paint, 16/16 show, 0 stray\nok   face 17 pencil 154/154 zone points paint, 31/31 show, 0 stray\nok   face 17 liner  98/98 zone points paint, 20/20 show, 0 stray\nok   face 17 gems: forehead true, cheek true, lips false\nPASS: every zone point of every tool paints and shows, on 3 faces; nothing lands outside the zones"
+    },
+    {
+      "id": "SOUND",
+      "what": "Sounds keep time with the hand",
+      "command": "node tests/sound.mjs",
+      "covers": "LIFE02 (audio paths)",
+      "result": "PASS",
+      "checks": 0,
+      "seconds": 1.3,
+      "tail": "mascara      11 units  11 played for 8 sweeps  peak 0.060  resting -150 dB\nlipstick      8 units  11 played for 8 sweeps  peak 0.065  resting -150 dB\nlipgloss      7 units  11 played for 8 sweeps  peak 0.050  resting -150 dB\ngems         peak 0.089\nlens         peak 0.070\ncontrols     peak 0.186\nfinish       peak 0.259\nPASS: the sounds keep time with the hand (samples in tests/out/sounds/)"
+    },
+    {
+      "id": "RENDER",
+      "what": "Faces and tools render; touch and patch redraws",
+      "command": "node tests/render-smoke.mjs",
+      "covers": "RECOVERY01 (render), CONTENT01 (visual)",
+      "result": "PASS",
+      "checks": 0,
+      "seconds": 158.2,
+      "tail": "first face on screen 5879 ms after navigation (local server, CI WebGL)\npaint: 1403 pixels painted by 7 strokes, a gem and a lens; restore differs in 0 pixels (max 1); reset is clean: true\npaint reach: 68687 paint values, 0 differ from drawing the whole head\nlip order: lip-red + lip-clear-gloss: 0 paint values and 0 pixels differ (max 0); lip-red + lip-pink-gloss: 0 paint values and 0 pixels differ (max 0); lip-nude + lip-red-glitter: 0 paint values and 0 pixels differ (max 0)\neye tools: the liner along the lashes is one line of 29 points; one mascara sweep coated 68 of 68 upper lashes (each at least ×1.55 thick)\npatch redraw: 40 patches, 27 channel values differ from a full redraw (two full redraws differ in 5)\ntouch: one finger paints at the tool's tip, a second finger is ignored, lens and gem aimed at the tip: ok\nPASS: rendered 8 faces"
+    }
+  ],
+  "notRun": {
+    "BROWSER01 (Firefox, WebKit, Edge)": "NOT RUN: the suites run in Chromium only",
+    "DEVICE01 (physical Android/iOS in the YouTube app)": "NOT RUN here: owner play-through on a phone is recorded in README, not as evidence for these bytes",
+    "PERF01 (cold/warm first playable on a named device)": "NOT RUN",
+    "SOAK01 (50 transitions, 10 active minutes)": "NOT RUN",
+    "HOST01 (McPlay pre-flight on these bytes)": "NOT RUN at ledger time",
+    "HOST02 (real host saves and test-inventory ads)": "NOT RUN",
+    "HOST03 (listing answers)": "see the McPlay listing record"
+  }
+}
