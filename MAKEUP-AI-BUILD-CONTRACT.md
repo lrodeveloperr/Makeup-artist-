@@ -74,7 +74,7 @@ Keep the domain independent of the UI, host SDK and persistence adapter. A small
 
 The reusable Haircut structure reduces navigation and integration work. The differentiated action is intentional colour application to faces with varied brows, lids, lashes and lips. The whole promise must be playable through touch or mouse without a login, purchase or ad.
 
-**D:** Target the selected general-audience YouTube route, with current suitability checked before release. Do not infer a child-targeted audience from Toca or copy its commercial model. The public title is not locked; use the descriptive working label “freestyle makeup game” until naming/listing work is authorized. No search ranking or distribution guarantee is made.
+**D:** Target the selected general-audience YouTube route, with current suitability checked before release. Do not infer a child-targeted audience from Toca or copy its commercial model. The public title is “Freestyle ASMR Makeup Artist” (owner decision, 21 October 2026). No search ranking or distribution guarantee is made.
 
 **H:** Engagement comes from authorship, visible consequence, trying colour combinations on a different face, appreciating the finished work and returning for a desirable daily colour. Rewarded replay and colour variety support these motives. Reviews and cross-platform demand support testing this hypothesis; they do not establish optimal revenue or expected plays/day.
 
