@@ -1,6 +1,6 @@
 {
   "name": "makeup-artist-",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "WorksBien Studios freestyle makeup game: build contract and the generated-face prototype.",
   "scripts": {
     "fetch:makehuman": "node tools/makehuman/fetch.mjs",
@@ -8,11 +8,13 @@
     "build:preview": "node tools/build-preview.mjs --minify",
     "serve": "node tools/serve.mjs build/preview",
     "audit": "node tests/face-audit.mjs 2000 300",
-    "test": "node tests/unit.mjs && node tests/makeup.mjs && node tests/game.mjs && node tests/face-audit.mjs 2000 300 && node tests/size-budget.mjs",
+    "test": "node tests/unit.mjs && node tests/makeup.mjs && node tests/game.mjs && node tests/hosts.mjs && node tests/face-audit.mjs 2000 300 && node tests/size-budget.mjs",
     "test:render": "node tools/build-preview.mjs && node tests/render-smoke.mjs",
     "size": "node tests/size-budget.mjs",
     "build:game": "node tools/build-game.mjs --minify",
     "package:mcplay": "node tools/package-mcplay.mjs",
+    "package:minigame": "node tools/package-platform.mjs minigame",
+    "package:gamepush": "node tools/package-platform.mjs gamepush",
     "serve:game": "node tools/build-game.mjs && node tools/serve.mjs build/game-dev",
     "test:game": "node tools/build-game.mjs && node tests/game-smoke.mjs",
     "test:layout": "node tools/build-game.mjs && node tests/layout.mjs",

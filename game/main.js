@@ -12,7 +12,7 @@ import { isChanged } from '../src/makeup/makeup.js';
 import { coloursFor, colourById } from '../src/makeup/palette.js';
 import { chime, hush, setEnabled, stroke, tap, ui, preload, logUnits, stats as sounds } from './sound.js';
 import { productShot } from './reward.js';
-import { createHost } from '../src/game/youtube.js';
+import { createHost } from '../src/game/host.js';
 import * as G from '../src/game/game.js';
 import { Session } from '../src/game/session.js';
 import { timeLeft } from '../src/game/daily.js';
