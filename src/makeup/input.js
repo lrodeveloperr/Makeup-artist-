@@ -9,8 +9,9 @@
 //   (press, aim, release); a mouse or a pen works right at the pointer, where its tool is shown from the moment it is
 //   over the face
 // - a finger is assisted (owner, 20 October 2026: on a touch screen there is almost no margin for error, since the
-//   tool works the moment it is dragged): each tool paints only in its own small zones of the face, a stroke stays in
-//   the zone it starts in, and a gem goes on only where gems sit (the applicator's `zones`); a mouse or a pen is free
+//   tool works the moment it is dragged): each tool paints only in its own small zones of the face (one movement paints
+//   every zone it passes over, nothing between), and a gem goes on only where gems sit (the applicator's `zones`); a
+//   mouse or a pen is free
 const TAP_SLOP = 10; // CSS pixels a lens or gem tap may move (mouse and pen)
 // Where a finger's tool works (owner, 20 October 2026: a one-finger game; the sweet spot is slightly above the
 // finger or thumb, where the tool is seen and felt in hand, and not too high). As an offset cursor (Potter et al.,

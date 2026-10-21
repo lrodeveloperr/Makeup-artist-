@@ -208,7 +208,7 @@ try {
     for (let k = 1; k <= 16; k++) await touch('touchMove', [[x + ((mx - x) * k) / 16, y + tip + ((my - y) * k) / 16]]);
     await touch('touchEnd', []);
     assert.equal((await state(page)).strokes, 2);
-    assert.deepEqual(await zones(await last()), ['cheekl'], 'the stroke stays in the zone it started in');
+    assert.deepEqual(await zones(await last()), ['cheekl'], 'nothing is painted on her nose or mouth, outside the brush zones');
     // a touch that lifts without sliding leaves one dab, where the tip was
     await touch('touchStart', [[x + 10, y + tip]]);
     await touch('touchEnd', []);
@@ -243,7 +243,7 @@ try {
     await ctx.close();
   });
 
-  await check('assisted touch: under a finger every tool paints in its own zones, a stroke stays in its zone, gems go on the face', async () => {
+  await check('assisted touch: under a finger every tool paints in its own zones, one movement in every zone it passes over, gems go on the face', async () => {
     for (const seed of [4, 9, 17]) {
       const { ctx, page } = await open({ phone: true, save: G.serialise(G.newGame(seed)) });
       await ready(page);
@@ -286,7 +286,7 @@ try {
           for (let k = 1; k <= 3; k++) await touch('touchMove', [[x + (k % 2 ? 2 : -2), y + tip + k]]);
           await touch('touchEnd', []);
           assert.equal(await count(), before + 1, `${tool} paints in ${zone} (seed ${seed})`);
-          // a long slip from the zone across her whole face: the stroke's points stay in the zone it started in
+          // a long slip from the zone across her whole face: it paints only in the tool's zones, a new segment in each
           await page.evaluate(() => {
             const m = game.view.makeup, zones = m.zones;
             window.__zones = []; m.zones = (...a) => { const z = zones(...a); window.__zones.push(z); return z; }; window.__restore = () => { m.zones = zones; };
@@ -300,8 +300,10 @@ try {
           assert.equal(await count(), before + 2, `${tool}: the slip painted in ${zone}`);
           assert.equal(seen.find((z) => z !== null), zone, `${tool}: the slip started in ${zone}`);
           assert.ok(seen.some((z) => z === null) || new Set(seen.filter(Boolean)).size > 1, `${tool}: the slip left ${zone} (${[...new Set(seen)]})`);
-          const points = stroke.segments.reduce((n, s) => n + s.length / 3, 0);
-          assert.ok(points <= seen.filter((z) => z === zone).length + stroke.segments.length, `${tool}: only points in ${zone} were kept`);
+          const points = stroke.segments.reduce((n, s) => n + s.length / 3, 0), took = seen.filter((z) => z !== null);
+          assert.ok(points <= took.length + stroke.segments.length, `${tool}: only points in its zones were kept`);
+          const changes = took.filter((z, i) => i && z !== took[i - 1]).length;
+          assert.ok(stroke.segments.length >= changes + 1, `${tool}: each zone reached starts a new segment (${changes} changes, ${stroke.segments.length} segments)`);
         }
         // her forehead is in none of these tools' zones: nothing is painted there
         const [fx, fy] = await page.evaluate(() => {

@@ -204,8 +204,8 @@ async function main() {
     const reg = [0, 1, 2, 3, 4, 5, 6, 7].map((c) => h.w[0] * R[h.i[0] * 8 + c] + h.w[1] * R[h.i[1] * 8 + c] + h.w[2] * R[h.i[2] * 8 + c]);
     return [evalPoint(h, view.headGeometry.refSub, []), evalPoint(h, view.headGeometry.subPos, []), reg];
   };
-  view.makeup.zones = (tool, hit, locked) => {
-    const z = assist(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, locked, guide, lift);
+  view.makeup.zones = (tool, hit, current) => {
+    const z = assist(tool, hit, regionsAt(view.headGeometry.geometry, hit.at), view.profile.brows, mouth, current, guide, lift);
     // guided or captured paint lands away from the finger (up to about 11 mm): the patch redrawn covers where it went
     if (z !== null && tool !== 'gem') { const [x, y] = view.makeup.picker.project(hit.pos); grow(x, y, x, y, tool); }
     return z;

@@ -25,8 +25,9 @@ until midnight; one rewarded video keeps it for good. An interstitial plays at N
 
 - **A mouse or a pen is free.** The tool takes the cursor's place, its tip exactly at the pointer.
 - **A finger is assisted** (owner decisions, 20 October 2026):
-  - Each tool works only in its own zones of the face, which glow faintly while the finger is down. A stroke stays in
-    the zone it starts in, and a finger that strays a little is pulled to the zone's edge, so no tool has to be forced.
+  - Each tool works only in its own zones of the face, which glow faintly while the finger is down. One movement
+    paints every zone it passes over (one lid, then the other) and nothing between them, and a finger that strays a
+    little is pulled to the zone's edge, so no tool has to be forced.
   - The liner and the pencil follow the lash line.
   - The tool is held just above the finger and set back over it, so it is seen in hand: 48 px above a forefinger, up
     to 66 px for a thumb, and a contact lens at 85 % of that. These heights were tuned by the owner on a phone.

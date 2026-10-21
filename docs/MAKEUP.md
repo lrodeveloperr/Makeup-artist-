@@ -118,8 +118,10 @@ part of every face at any screen size.
     tool is drawn ahead, as soon as the face is ready, so it appears the moment the finger lands.
   - **A finger is assisted; a mouse or a pen is free** (owner, 20 October 2026: on a touch screen there is almost
     no margin for error, since the tool works the moment it is dragged). Under a finger each tool paints only in
-    its own zones of the face, and a stroke stays in the zone it starts in: a slip onto the nose or the eye paints
-    nothing (the pen is up outside the zone, and comes down again if the finger comes back). The zones are drawn
+    its own zones of the face, and one movement paints every zone it passes over (owner, 20 October 2026: with the
+    finger kept down, one lid, then the other, or a lid then a cheek): a slip onto the nose or the eye paints
+    nothing (the pen is up outside the zones, and comes down again in the next zone it reaches), and each zone it
+    reaches starts a new segment, so no line is drawn across the skin between them. The zones are drawn
     once on the reference head (`game/zones.js`), so they fit every face, and they hold the points a stroke passes
     through, so a tool's soft edge reaches a little past them, as a real brush does:
 
