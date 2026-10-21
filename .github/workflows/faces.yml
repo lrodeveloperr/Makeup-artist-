@@ -35,3 +35,7 @@ jobs:
           npx playwright install --with-deps chromium
           node tools/build-preview.mjs
           node tests/render-smoke.mjs
+      - name: GamePush build (with the test stand-in for its SDK)
+        run: |
+          node tools/build-gamepush.mjs --test-only
+          node tests/gamepush-smoke.mjs

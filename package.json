@@ -18,7 +18,11 @@
     "test:sound": "node tools/build-game.mjs && node tests/sound.mjs",
     "test:zones": "node tools/build-game.mjs && node tests/zones.mjs",
     "test:inputs": "node tools/build-game.mjs && node tests/inputs.mjs",
-    "sounds": "python3 tools/make-sounds.py"
+    "sounds": "python3 tools/make-sounds.py",
+    "build:gamepush": "node tools/build-gamepush.mjs --minify",
+    "test:gamepush": "node tools/build-gamepush.mjs --test-only && node tests/gamepush-smoke.mjs",
+    "release:youtube": "node tools/release-game.mjs",
+    "release:gamepush": "node tools/release-game.mjs --target gamepush"
   },
   "repository": {
     "type": "git",
