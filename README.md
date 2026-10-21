@@ -51,8 +51,8 @@ dresses in complexion-flattering colours. Every customer is a young woman with l
 - **Pre-release integrity check passed.** Every test suite passes on the final code. A three-part code review fixed 17
   issues. The most serious were a GPU memory leak, recovery when a phone discards the game's graphics, the gift reveal,
   a lost Done, and paused saves.
-- **Testing by the owner:** played on a laptop, with touch tuned on a phone. All automated tests run in a desktop
-  browser with simulated touch, so a final play-through on a phone is the owner's step before publishing.
+- **Testing by the owner:** played on a laptop, with touch tuned on a phone, and a final play-through on a phone
+  before publishing. The automated tests run in a desktop browser with simulated touch.
 - **Release:** the owner makes the release package and publishes. No release archive, certification or publication
   is claimed here. The owner chose the public title "Freestyle ASMR Makeup Artist".
 
