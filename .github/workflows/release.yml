@@ -1,0 +1,34 @@
+name: release
+
+# Packages the YouTube Playables upload and runs every suite against its exact bytes (contract §14–§15).
+# The ZIP, its manifest and the QA ledger are kept as the run's artifact. Nothing is uploaded to a host from here.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['release/**']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Package the release
+        run: node tools/release-game.mjs
+      - name: QA on the exact release bytes
+        run: node tools/release-qa.mjs
+      - name: Keep the release, manifest, ledger and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: |
+            releases/
+            tests/out/
+          if-no-files-found: warn
