@@ -3,6 +3,7 @@
 // customer. The colour of the day is behind the button at the top left.
 // Rules and saving are in src/game; this file is the screen.
 import { FaceView } from '../src/face/face-view.js';
+import { parseHead } from '../src/face/head-data.js';
 import { attachInput } from '../src/makeup/input.js';
 import { ToolView } from '../src/makeup/tools3d.js';
 import { zoneAt, assist, regionsAt, toLashes, ZoneGlow } from './zones.js';
@@ -90,6 +91,25 @@ const loading = (p, measure = false) => {
   cover.firstChild.setAttribute('aria-valuenow', Math.round(p * 100));
 };
 
+async function loadReleaseHead(options, onProgress, size) {
+  let got = 0;
+  const parts = await Promise.all(['head-0.bin', 'head-1.bin'].map(async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`head asset: HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    got += buffer.byteLength;
+    if (size) onProgress(Math.min(got / size, 0.99));
+    return new Uint8Array(buffer);
+  }));
+  const bytes = new Uint8Array(parts.reduce((sum, part) => sum + part.byteLength, 0));
+  let at = 0;
+  for (const part of parts) { bytes.set(part, at); at += part.byteLength; }
+  onProgress(1);
+  const view = new FaceView(options);
+  view.init(parseHead(bytes.buffer));
+  return view;
+}
+
 function fail(code, error) {
   $('cover').hidden = true;
   $('error').hidden = false;
@@ -115,7 +135,7 @@ async function main() {
   let view, raw;
   try {
     [view, raw] = await Promise.all([
-      FaceView.load('head.bin.gz', { canvas, width: W, height: H, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true }, (f) => loading(0.1 + 0.75 * f, true), typeof HEAD_BYTES === 'number' ? HEAD_BYTES : 0),
+      loadReleaseHead({ canvas, width: W, height: H, pixelRatio: Math.min(devicePixelRatio, 2), transparent: true }, (f) => loading(0.1 + 0.75 * f, true), typeof HEAD_BYTES === 'number' ? HEAD_BYTES : 0),
       host.load(),
     ]);
   } catch (e) { return fail('LOAD', e); }
@@ -637,7 +657,7 @@ async function main() {
   const tick = (t) => {
     const dt = Math.min(t - last, 250);
     last = t;
-    if (!paused && !panelOpen && document.visibilityState === 'visible') session.tick(dt);
+    if (!paused && !panelOpen) session.tick(dt);
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);

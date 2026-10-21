@@ -1,6 +1,6 @@
 {
   "name": "makeup-artist-",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WorksBien Studios freestyle makeup game: build contract and the generated-face prototype.",
   "scripts": {
     "fetch:makehuman": "node tools/makehuman/fetch.mjs",
@@ -12,6 +12,7 @@
     "test:render": "node tools/build-preview.mjs && node tests/render-smoke.mjs",
     "size": "node tests/size-budget.mjs",
     "build:game": "node tools/build-game.mjs --minify",
+    "package:mcplay": "node tools/package-mcplay.mjs",
     "serve:game": "node tools/build-game.mjs && node tools/serve.mjs build/game-dev",
     "test:game": "node tools/build-game.mjs && node tests/game-smoke.mjs",
     "test:layout": "node tools/build-game.mjs && node tests/layout.mjs",
