@@ -1,4 +1,4 @@
-# Freestyle makeup game
+# Freestyle ASMR Makeup Artist
 
 WorksBien Studios' makeup game for YouTube Playables, built on the reusable structure of
 [Haircut](https://github.com/lrodeveloperr/Haircut).
@@ -54,7 +54,7 @@ dresses in complexion-flattering colours. Every customer is a young woman with l
 - **Testing by the owner:** played on a laptop, with touch tuned on a phone. All automated tests run in a desktop
   browser with simulated touch, so a final play-through on a phone is the owner's step before publishing.
 - **Release:** the owner makes the release package and publishes. No release archive, certification or publication
-  is claimed here, and the public game title is not locked.
+  is claimed here. The owner chose the public title "Freestyle ASMR Makeup Artist".
 
 Logo for game platforms (SVG and transparent PNGs): [marketing/logo](marketing/logo/README.md). Marketing
 screenshots, portrait and landscape: [marketing/screenshots](marketing/screenshots/README.md).
