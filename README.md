@@ -56,8 +56,9 @@ dresses in complexion-flattering colours. Every customer is a young woman with l
 - **Release:** the owner makes the release package and publishes. No release archive, certification or publication
   is claimed here. The owner chose the public title "Freestyle ASMR Makeup Artist".
 
-Logo for game platforms (SVG and transparent PNGs): [marketing/logo](marketing/logo/README.md). Marketing
-screenshots, portrait and landscape: [marketing/screenshots](marketing/screenshots/README.md).
+Logo for game platforms (SVG and transparent PNGs): [marketing/logo](marketing/logo/README.md). App icon for iOS,
+Android and portals: [marketing/icon](marketing/icon/README.md). Marketing screenshots, portrait and landscape:
+[marketing/screenshots](marketing/screenshots/README.md).
 
 More detail: [docs/GAME.md](docs/GAME.md) (screen, sound, ads, saves, tests) and [docs/MAKEUP.md](docs/MAKEUP.md)
 (tools, zones, input).
