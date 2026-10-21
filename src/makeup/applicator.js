@@ -28,10 +28,9 @@ export class Applicator {
     view.scene.add(this.gems.mesh);
     this.makeup = createMakeup();
     this.allowed = () => true; // the game sets which colours the player may use (colours of the day once earned)
-    // the game's zones for assisted (touch) work: (tool, skin hit, the stroke's zone so far or null) -> the zone the
-    // point is in (any value but null; the stroke's own once it has one), or null to refuse it; it may move the hit's
-    // ref to guide the tool (onto the lash line, or in to a zone's edge); without it, assisted work is free like a
-    // mouse's
+    // the game's zones for assisted (touch) work: (tool, skin hit, the zone the stroke is painting or null) -> the zone
+    // the point is in (any value but null), or null to refuse it; it may move the hit's ref to guide the tool (onto the
+    // lash line, or in to a zone's edge); without it, assisted work is free like a mouse's
     this.zones = null;
   }
 
@@ -133,12 +132,13 @@ export class Applicator {
     return Math.hypot(...q.map((v, i) => v - g.lastQ[i])) >= g.step && this.store(g, q);
   }
 
-  // assisted: a stroke paints only in its tool's zones, and only in the zone it first painted in (outside it, the pen
-  // is up)
+  // assisted: a stroke paints only in its tool's zones (outside them the pen is up), every zone it passes over; moving
+  // into another zone starts a new segment there, so no line is drawn across the skin between them
   inZone(g, hit) {
     if (!g.assist) return true;
     const z = g.assist(g.tool, hit, g.zone);
     if (z === null) return false;
+    if (g.zone !== null && z !== g.zone) this.lift(g);
     g.zone = z;
     return true;
   }

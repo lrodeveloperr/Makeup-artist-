@@ -1,6 +1,6 @@
 // Assisted touch (owner, 20 October 2026): a finger has almost no margin for error, since a tool works the moment it
-// is dragged, so on a touch screen each tool works only in its own zones of the face, and a stroke stays in the zone it
-// starts in. A mouse or a pen is free. The zones are drawn once on the reference head (decimetres; the eyes' centres at
+// is dragged, so on a touch screen each tool works only in its own zones of the face; one movement paints every zone
+// it passes over, and nothing between them. A mouse or a pen is free. The zones are drawn once on the reference head (decimetres; the eyes' centres at
 // x = ±0.284, y = 0; the mouth's line at y ≈ -0.61; +z towards the camera), where every customer's makeup is stored,
 // so they fit every face. They hold the points a tool's stroke passes through: its soft edge reaches a little
 // further, as a real brush does.
@@ -149,18 +149,19 @@ const INSIDE = {
 const CAPTURED = { lip: ['lips'], brush: ['lid', 'cheek'], glow: ['bone', 'nose', 'arch', 'bow'], pencil: ['brow', 'lash'], liner: ['lash'] };
 const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow', 'lash']);
 
-// The zone for a finger's point: as zoneAt, in the zone `locked` once the stroke has one (null before it starts), with
-// capture: the hit (ref and pos) may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference
+// The zone for a finger's point: as zoneAt, any of the tool's zones (one movement paints every zone it passes over:
+// owner, 20 October 2026), with capture: the hit (ref and pos) may be moved to the edge of the zone being painted
+// (`current`, or null) or of the nearest of the tool's zones. lift(x, y, z): the head's surface point at reference
 // (x, y), nearest depth z, as [ref, pos, regions], or null. -> the zone, or null (the pen is up)
-export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
+export function assist(tool, hit, reg, brows, mouth, current, guide, lift) {
   // (the lash-line guide moves the hit only once its zone is taken)
   let guided = null;
   const z = zoneAt(tool, hit, reg, brows, mouth, (h) => { guided = h; });
-  if (z !== null && (locked == null || z === locked)) { if (guided) guide?.(guided); return z; }
+  if (z !== null) { if (guided) guide?.(guided); return z; }
   // (a touch that looks into the mouth or an eye's socket, as at the corners of the lips, is taken on the face's
   // front surface there)
   const p = hit.ref, inner = reg[7] > 0.5 || p[2] < 0, side = p[0] < 0 ? 'r' : 'l', test = { ref: [0, 0, inner ? 0.25 : p[2]] };
-  const ids = locked != null ? [locked] : (CAPTURED[tool] || []).map((n) => (PAIRED.has(n) ? n + side : n));
+  const ids = [...new Set([...(current != null ? [current] : []), ...(CAPTURED[tool] || []).map((n) => (PAIRED.has(n) ? n + side : n))])];
   let best = null;
   for (const id of ids) {
     const name = PAIRED.has(id.slice(0, -1)) ? id.slice(0, -1) : id, inside = INSIDE[name];
