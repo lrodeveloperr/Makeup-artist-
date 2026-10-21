@@ -58,7 +58,8 @@ dresses in complexion-flattering colours. Every customer is a young woman with l
 
 Logo for game platforms (SVG and transparent PNGs): [marketing/logo](marketing/logo/README.md). App icon for iOS,
 Android and portals: [marketing/icon](marketing/icon/README.md). Portal cover images (landscape, portrait,
-square): [marketing/covers](marketing/covers/README.md). Marketing screenshots, portrait and landscape:
+square): [marketing/covers](marketing/covers/README.md). Wide promotional banner:
+[marketing/banner](marketing/banner/README.md). Marketing screenshots, portrait and landscape:
 [marketing/screenshots](marketing/screenshots/README.md).
 
 More detail: [docs/GAME.md](docs/GAME.md) (screen, sound, ads, saves, tests) and [docs/MAKEUP.md](docs/MAKEUP.md)
