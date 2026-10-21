@@ -1,11 +1,20 @@
 name: release
 
 # Packages the YouTube Playables upload and runs every suite against its exact bytes (contract §14–§15).
-# The ZIP, its manifest and the QA ledger are kept as the run's artifact. Nothing is uploaded to a host from here.
+# On a release/** branch the ZIP, its manifest and the QA ledger are committed to releases/, where they stay
+# immutable: a later run checks the committed ZIP rebuilds byte for byte and runs QA on it again. Nothing is
+# uploaded to a host from here.
 on:
   workflow_dispatch:
   push:
     branches: ['release/**']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -19,10 +28,29 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Package the release
-        run: node tools/release-game.mjs
+      - name: Package the release (only if this version has none yet)
+        id: pack
+        run: |
+          NAME="freestyle-asmr-makeup-artist-v$(node -p 'require("./package.json").version')-mediacube-youtube"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          if [ -f "releases/$NAME.zip" ]; then
+            echo "releases/$NAME.zip is already committed: QA checks it rebuilds and tests it"
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            node tools/release-game.mjs
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: QA on the exact release bytes
         run: node tools/release-qa.mjs
+      - name: Commit the release, manifest and ledger
+        if: success() && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/
+          if git diff --cached --quiet; then echo "nothing new to commit"; exit 0; fi
+          git commit -m "Release ${{ steps.pack.outputs.name }}: ZIP, manifest and QA ledger [skip ci]"
+          git push
       - name: Keep the release, manifest, ledger and screenshots
         if: always()
         uses: actions/upload-artifact@v4
