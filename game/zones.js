@@ -54,14 +54,15 @@ function onLashLine(ax, y, reg) {
   if (reg[7] > 0.5) return null;
   const w = ax - EYE.outer + 0.01; // the wing, up to 0.09 beyond the corner
   if (ax > EYE.outer && w < 0.1 && y > -0.012 + 0.25 * w && y < 0.03 + 0.9 * w) return 'wing'; // (at the corner, guided)
-  return ax >= EYE.inner - 0.02 && ax <= EYE.outer && reg[1] < 0.14 ? 'lashes' : null;
+  return ax >= EYE.inner - 0.04 && ax <= EYE.outer && reg[1] < 0.14 ? 'lashes' : null; // (from just inside the inner corner)
 }
 
 // The lash line on screen: moving from a point above or below the eye straight down or up towards it (or, beside a
-// corner, towards its centre), the last skin before the eye is the lid's edge, where the lashes grow. The point is
-// moved there, then back out onto the lid the same way: 3.2 mm on the upper lid, where a line shows just above the
-// lashes (seen from the front they hide about three millimetres of lid), 1 mm on the lower (picker: the face's
-// picker; eyes: its eyes). A guide for the liner and the pencil under a finger.
+// corner, towards its centre), the last skin before the eye is the lid's edge, where the lashes grow. A point closer
+// to it than a line can show is moved out to where it shows: 3.2 mm onto the upper lid (seen from the front the
+// lashes hide about three millimetres of lid), 1 mm below the lower lashes; further out the tool paints where it is,
+// so it works anywhere the lash band lights up, up or down (owner, 20 October 2026) (picker: the face's picker;
+// eyes: its eyes). A guide for the liner and the pencil under a finger.
 export function toLashes(hit, picker, eyes) {
   const m = eyes.meshes[hit.pos[0] < 0 ? 1 : 0], [cx, cy] = picker.project(m.position), [hx, hy] = picker.project(hit.pos);
   const [px] = picker.project([m.position[0] + 0.1, m.position[1], m.position[2]]), k = Math.abs(px - cx) * 10; // pixels a dm
@@ -79,7 +80,7 @@ export function toLashes(hit, picker, eyes) {
   };
   let dx = 0, dy = Math.sign(cy - hy) || 1, t = edge(dx, dy, Math.abs(cy - hy));
   if (t < 0) { const l = Math.hypot(cx - hx, cy - hy) || 1; dx = (cx - hx) / l; dy = (cy - hy) / l; t = edge(dx, dy, l); }
-  const h = t >= 0 ? picker.pick(hx + dx * (t - out), hy + dy * (t - out)) : null;
+  const h = t >= 0 && t < out ? picker.pick(hx + dx * (t - out), hy + dy * (t - out)) : null;
   if (h?.kind === 'skin') { hit.ref = h.ref; hit.pos = h.pos; }
 }
 
@@ -131,7 +132,13 @@ const INSIDE = {
   arch: (ax) => [clamp(ax, 0.32, 0.45), 0.1325],
   bow: (ax, y, m) => [Math.min(ax, 0.04), m.lineCentre + m.upperCentre + 0.012],
   // the liner's wing (beside the outer corner; along the lashes the liner is guided onto them instead)
-  lash: (ax) => (ax > EYE.outer ? [clamp(ax, EYE.outer, EYE.outer + 0.08), 0.009 + 0.575 * (clamp(ax, EYE.outer, EYE.outer + 0.08) - EYE.outer + 0.01)] : null),
+  // the lash band: a little way out from the lashes, above or below them (where the point is), between the corners;
+  // the wing: its middle line
+  lash: (ax, y) => {
+    if (ax > EYE.outer) { const w = clamp(ax, EYE.outer, EYE.outer + 0.08); return [w, 0.009 + 0.575 * (w - EYE.outer + 0.01)]; }
+    const a = clamp(ax, EYE.inner, EYE.outer - 0.01);
+    return [a, y >= 0 ? lidTop(a) + 0.03 : -lidTop(a) - 0.03];
+  },
   brow: (ax, y, m, brows) => {
     const sh = BROW_SHAPES[brows.shape] || BROW_SHAPES['soft-arch'], end = 0.49 * brows.length, u = clamp((ax - 0.115) / (end - 0.115), 0.05, 0.95);
     const a = u < sh.pu ? Math.sin((Math.PI / 2) * (u / sh.pu)) ** sh.k1 : 1 - (1 - sh.tail) * ((u - sh.pu) / (1 - sh.pu)) ** sh.k2;
@@ -144,13 +151,15 @@ const PAIRED = new Set(['lid', 'cheek', 'bone', 'arch', 'brow', 'lash']);
 
 // The zone for a finger's point: as zoneAt, in the zone `locked` once the stroke has one (null before it starts), with
 // capture: the hit (ref and pos) may be moved to a zone's edge. lift(x, y, z): the head's surface point at reference
-// (x, y), nearest depth z, as [ref, pos], or null. -> the zone, or null (the pen is up)
+// (x, y), nearest depth z, as [ref, pos, regions], or null. -> the zone, or null (the pen is up)
 export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
   // (the lash-line guide moves the hit only once its zone is taken)
   let guided = null;
   const z = zoneAt(tool, hit, reg, brows, mouth, (h) => { guided = h; });
   if (z !== null && (locked == null || z === locked)) { if (guided) guide?.(guided); return z; }
-  const p = hit.ref, side = p[0] < 0 ? 'r' : 'l', test = { ref: [0, 0, p[2]] };
+  // (a touch that looks into the mouth or an eye's socket, as at the corners of the lips, is taken on the face's
+  // front surface there)
+  const p = hit.ref, inner = reg[7] > 0.5 || p[2] < 0, side = p[0] < 0 ? 'r' : 'l', test = { ref: [0, 0, inner ? 0.25 : p[2]] };
   const ids = locked != null ? [locked] : (CAPTURED[tool] || []).map((n) => (PAIRED.has(n) ? n + side : n));
   let best = null;
   for (const id of ids) {
@@ -160,7 +169,12 @@ export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
     const target = inside(Math.abs(p[0]), p[1], mouth, brows);
     if (!target) continue;
     const q = [sx * target[0], target[1]];
-    const at = (t) => { test.ref[0] = p[0] + (q[0] - p[0]) * t; test.ref[1] = p[1] + (q[1] - p[1]) * t; return zoneAt(tool, test, reg, brows, mouth) === id; };
+    // (the lash band is measured from the lids, so its test points take the head's regions where they are)
+    const at = (t) => {
+      test.ref[0] = p[0] + (q[0] - p[0]) * t; test.ref[1] = p[1] + (q[1] - p[1]) * t;
+      const r = name === 'lash' ? lift(test.ref[0], test.ref[1], inner ? undefined : p[2])?.[2] : reg;
+      return !!r && zoneAt(tool, test, r, brows, mouth) === id;
+    };
     if (!at(1)) continue;
     let lo = 0, hi = 1; // outside at lo, inside at hi
     for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (at(m)) hi = m; else lo = m; }
@@ -169,7 +183,7 @@ export function assist(tool, hit, reg, brows, mouth, locked, guide, lift) {
     const t = Math.min(hi + 0.004 / Math.max(Math.hypot(q[0] - p[0], q[1] - p[1]), 1e-6), 1); // a little way in
     best = { d, id, x: p[0] + (q[0] - p[0]) * t, y: p[1] + (q[1] - p[1]) * t };
   }
-  const r = best && lift(best.x, best.y, p[2]);
+  const r = best && lift(best.x, best.y, inner ? undefined : p[2]);
   if (!r) return null;
   [hit.ref, hit.pos] = r;
   return best.id;
